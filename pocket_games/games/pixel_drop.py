@@ -1,7 +1,11 @@
 from __future__ import annotations
+
 import random
+
 import pygame
-from pocket_games.core.engine import VIRTUAL_WIDTH, VIRTUAL_HEIGHT
+
+# from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
+
 
 class PixelDropGame:
     def __init__(self, engine) -> None:
@@ -27,10 +31,10 @@ class PixelDropGame:
                 self.__init__(self.engine)
             return
 
-        if inp.is_key_pressed(pygame.K_LEFT) and self.block_x > 0:
+        if inp.is_key_pressed(pygame.K_LEFT) and self.block_x > 0:  # noqa: SIM102
             if self.grid[int(self.block_y)][self.block_x - 1] == 0:
                 self.block_x -= 1
-        if inp.is_key_pressed(pygame.K_RIGHT) and self.block_x < self.cols - 1:
+        if inp.is_key_pressed(pygame.K_RIGHT) and self.block_x < self.cols - 1:  # noqa: SIM102
             if self.grid[int(self.block_y)][self.block_x + 1] == 0:
                 self.block_x += 1
         if inp.is_key_pressed(pygame.K_DOWN):

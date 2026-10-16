@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import pygame
-from pocket_games.core.engine import VIRTUAL_WIDTH, VIRTUAL_HEIGHT
+
+from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
+
 
 class SettingsScreen:
     def __init__(self, engine) -> None:
@@ -31,7 +34,7 @@ class SettingsScreen:
             self.engine.audio.play("select")
 
         # Value adjustments or selection
-        current_label, action = self.options[self.selected_index]
+        _current_label, action = self.options[self.selected_index]
 
         if inp.is_key_pressed(pygame.K_LEFT) or inp.is_key_pressed(pygame.K_a):
             self.adjust_value(action, -1)

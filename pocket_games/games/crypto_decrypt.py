@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import random
+
 import pygame
+
 
 class CryptoDecryptGame:
     def __init__(self, engine) -> None:
@@ -20,7 +23,7 @@ class CryptoDecryptGame:
         if inp.is_key_pressed(pygame.K_RIGHT): self.cursor = (self.cursor + 1) % 4
         if inp.is_key_pressed(pygame.K_UP): self.user_code[self.cursor] = (self.user_code[self.cursor] + 1) % 10
         if inp.is_key_pressed(pygame.K_DOWN): self.user_code[self.cursor] = (self.user_code[self.cursor] - 1) % 10
-        if inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):
+        if inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):  # noqa: SIM102
             if self.user_code == self.target_code:
                 self.score += 100
                 self.engine.highscores.submit_score("Crypto Decrypt", self.score)

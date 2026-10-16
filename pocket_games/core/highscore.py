@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
+from pocket_games.core.logger import logger
 
 HIGHSCORE_FILE = Path("highscores.json")
 
@@ -13,14 +16,15 @@ class HighScoreManager:
         if HIGHSCORE_FILE.exists():
             try:
                 self.scores = json.loads(HIGHSCORE_FILE.read_text())
-            except Exception:
+            except Exception as e:  # noqa: BLE001
+                logger.error(e)
                 self.scores = {}
 
     def save(self) -> None:
         try:
             HIGHSCORE_FILE.write_text(json.dumps(self.scores, indent=2))
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.error(e)
 
     def get_score(self, game_name: str) -> int:
         return self.scores.get(game_name, 0)

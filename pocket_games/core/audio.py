@@ -1,8 +1,13 @@
 from __future__ import annotations
+
 import math
 import random
 import struct
+
 import pygame
+
+from pocket_games.core.logger import logger
+
 
 class AudioManager:
     def __init__(self, enabled: bool = True, volume: float = 0.8) -> None:
@@ -10,8 +15,9 @@ class AudioManager:
         self.volume = volume
         try:
             pygame.mixer.init(frequency=22050, size=-16, channels=1)
-        except Exception:
+        except Exception as e:  # noqa: BLE001
             self.enabled = False
+            logger.error(e)
         self._cache: dict[str, pygame.mixer.Sound] = {}
 
     def _create_tone(self, freq: float, duration: float, wave_type: str = "square") -> pygame.mixer.Sound:
@@ -62,5 +68,5 @@ class AudioManager:
 
         try:
             self._cache[sound_type].play()
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.error(e)

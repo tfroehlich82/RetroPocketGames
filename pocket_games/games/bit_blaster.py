@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pygame
+
 
 class BitBlasterGame:
     def __init__(self, engine) -> None:
@@ -34,7 +36,7 @@ class BitBlasterGame:
 
         # Block collision
         for blk in self.blocks:
-            if blk["alive"]:
+            if blk["alive"]:  # noqa: SIM102
                 if abs(self.bx - (blk["x"] + 18)) < 20 and abs(self.by - (blk["y"] + 6)) < 10:
                     blk["alive"] = False
                     self.bvy *= -1

@@ -1,15 +1,19 @@
 from __future__ import annotations
+
 import pygame
-from pocket_games.core.input import InputManager
-from pocket_games.core.settings import Settings
-from pocket_games.core.highscore import HighScoreManager
+
 from pocket_games.core.audio import AudioManager
+from pocket_games.core.highscore import HighScoreManager
+from pocket_games.core.input import InputManager
+from pocket_games.core.logger import logger
+from pocket_games.core.settings import Settings
 
 VIRTUAL_WIDTH = 320
 VIRTUAL_HEIGHT = 240
 
 class Engine:
-    def __init__(self, title: str = "PocketTerm35 Games") -> None:
+    def __init__(self, title: str = "RetroPocket Games") -> None:
+        logger.info("Initializing Pygame and Engine...")
         pygame.init()
         pygame.font.init()
 
@@ -32,12 +36,21 @@ class Engine:
         pygame.display.flip()
 
     def run_scene(self, scene_cls) -> None:
+        scene_name = scene_cls.__name__
+        logger.info(f"Selected Game: {scene_name}")
         scene = scene_cls(self)
-        while self.running and scene.active:
-            dt = self.clock.tick(60) / 1000.0
-            self.input.update()
-            scene.handle_input()
-            scene.update(dt)
-            self.virtual_surface.fill((15, 15, 25))
-            scene.render(self.virtual_surface)
-            self.render_to_screen()
+
+        try:
+            while self.running and scene.active:
+                dt = self.clock.tick(60) / 1000.0
+                self.input.update()
+                scene.handle_input()
+                scene.update(dt)
+                self.virtual_surface.fill((15, 15, 25))
+                scene.render(self.virtual_surface)
+                self.render_to_screen()
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Unexpected Error in {scene_name}: {e}", exc_info=True)
+            raise Exception  # noqa: TRY002
+
+        logger.info(f"Leaving Game: {scene_name}")

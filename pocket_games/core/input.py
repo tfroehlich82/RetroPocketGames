@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pygame
+
 
 class InputManager:
     def __init__(self) -> None:

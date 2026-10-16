@@ -34,6 +34,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install . pyinstaller ruff
 
+      - name: Run Unit Tests
+        run: |
+          python -m unittest discover -s tests
+
       - name: Lint Code
         run: ruff check .
 

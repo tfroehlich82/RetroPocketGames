@@ -1,6 +1,9 @@
-from __future5__ import annotations
+from __future__ import annotations
+
 import random
+
 import pygame
+
 
 class PulseRacerGame:
     def __init__(self, engine) -> None:

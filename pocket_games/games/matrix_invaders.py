@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import random
+
 import pygame
+
 
 class MatrixInvadersGame:
     def __init__(self, engine) -> None:

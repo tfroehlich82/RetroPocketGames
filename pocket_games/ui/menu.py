@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import pygame
-from pocket_games.core.engine import VIRTUAL_WIDTH, VIRTUAL_HEIGHT
+
+from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
 from pocket_games.ui.settings_screen import SettingsScreen
+
 
 class MainMenu:
     def __init__(self, engine) -> None:
@@ -9,9 +12,9 @@ class MainMenu:
         self.active = True
 
         # Import all 14 games
-        from pocket_games.games.pixel_drop import PixelDropGame
         # ... (import other 13 game classes) ...
         from pocket_games.games.kernel_panic import KernelPanicGame
+        from pocket_games.games.pixel_drop import PixelDropGame
 
         self.games = [
             ("Pixel Drop", PixelDropGame),
@@ -31,7 +34,7 @@ class MainMenu:
         if inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w):
             self.selected_index = (self.selected_index - 1) % len(self.menu_items)
             self.engine.audio.play("select")
-            if self.selected_index < self.scroll_offset:
+            if self.selected_index < self.scroll_offset:  # noqa: PLR1730
                 self.scroll_offset = self.selected_index
         elif inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s):
             self.selected_index = (self.selected_index + 1) % len(self.menu_items)
@@ -55,7 +58,7 @@ class MainMenu:
                         self.launch_selected()
 
     def launch_selected(self) -> None:
-        name, cls = self.menu_items[self.selected_index]
+        _name, cls = self.menu_items[self.selected_index]
         self.engine.run_scene(cls)
 
     def update(self, dt: float) -> None:

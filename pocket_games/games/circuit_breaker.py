@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pygame
+
 
 class CircuitBreakerGame:
     def __init__(self, engine) -> None:

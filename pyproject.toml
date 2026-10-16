@@ -12,6 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "tfroehlich82" }]
 dependencies = [
     "pygame-ce>=2.4.0",
+    "ruff==0.17.1",
 ]
 
 [project.scripts]
