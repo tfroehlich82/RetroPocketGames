@@ -11,15 +11,37 @@ class MainMenu:
         self.engine = engine
         self.active = True
 
-        # Import all 14 games
-        # ... (import other 13 game classes) ...
+        # Import all games
+        from pocket_games.games.bit_blaster import BitBlasterGame
+        from pocket_games.games.bug_hunter import BugHunterGame
+        from pocket_games.games.byte_hopper import ByteHopperGame
+        from pocket_games.games.circuit_breaker import CircuitBreakerGame
+        from pocket_games.games.crypto_decrypt import CryptoDecryptGame
+        from pocket_games.games.cyber_snake import CyberSnakeGame
         from pocket_games.games.kernel_panic import KernelPanicGame
+        from pocket_games.games.matrix_invaders import MatrixInvadersGame
+        from pocket_games.games.neon_dash import NeonDashGame
         from pocket_games.games.pixel_drop import PixelDropGame
+        from pocket_games.games.pulse_racer import PulseRacerGame
+        from pocket_games.games.quantum_maze import QuantumMazeGame
+        from pocket_games.games.retro_pong import RetroPongGame
+        from pocket_games.games.sub_zero_miner import SubZeroMinerGame
 
         self.games = [
             ("Pixel Drop", PixelDropGame),
-            # ... (list of 14 games) ...
+            ("Cyber Snake", CyberSnakeGame),
+            ("Circuit Breaker", CircuitBreakerGame),
+            ("Matrix Invaders", MatrixInvadersGame),
+            ("Pulse Racer", PulseRacerGame),
+            ("Neon Dash", NeonDashGame),
+            ("Byte Hopper", ByteHopperGame),
+            ("Quantum Maze", QuantumMazeGame),
+            ("Sub-Zero Miner", SubZeroMinerGame),
+            ("Retro Pong 2077", RetroPongGame),
+            ("Bug Hunter", BugHunterGame),
             ("Kernel Panic", KernelPanicGame),
+            ("Bit Blaster", BitBlasterGame),
+            ("Crypto Decrypt", CryptoDecryptGame),
         ]
 
         # Append Settings option to launcher list
@@ -66,7 +88,7 @@ class MainMenu:
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 20))
-        title_surf = self.title_font.render("POCKETTERM35 ARCADE", True, (0, 255, 200))
+        title_surf = self.title_font.render("POCKET ARCADE", True, (0, 255, 200))
         surface.blit(title_surf, (VIRTUAL_WIDTH // 2 - title_surf.get_width() // 2, 6))
 
         self.item_rects = []
