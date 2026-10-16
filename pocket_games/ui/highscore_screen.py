@@ -14,14 +14,17 @@ class HighScoreScreen:
         logger.info("Highscore-Bildschirm geöffnet.")
 
     def handle_input(self) -> None:
-        for event in self.engine.input.events:
-            if event.type == pygame.KEYDOWN and event.key in (
-                pygame.K_ESCAPE,
-                pygame.K_BACKSPACE,
-                pygame.K_RETURN,
-                pygame.K_SPACE,
-            ):
-                self.active = False
+        inp = self.engine.input
+        keys = pygame.key.get_pressed()
+
+        if (
+            keys[pygame.K_ESCAPE]
+            or keys[pygame.K_BACKSPACE]
+            or keys[pygame.K_RETURN]
+            or keys[pygame.K_SPACE]
+            or getattr(inp, "mouse_clicked", False)
+        ):
+            self.active = False
 
     def update(self, dt: float) -> None:
         pass
