@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import pygame
 
 from pocket_games.core.audio import AudioManager
@@ -11,6 +13,7 @@ from pocket_games.core.settings import Settings
 VIRTUAL_WIDTH = 320
 VIRTUAL_HEIGHT = 240
 
+
 class Engine:
     def __init__(self, title: str = "RetroPocket Games") -> None:
         logger.info("Initializing Pygame and Engine...")
@@ -20,10 +23,24 @@ class Engine:
         self.settings = Settings()
         self.highscores = HighScoreManager()
         self.input = InputManager()
-        self.audio = AudioManager(enabled=self.settings.sound_enabled, volume=self.settings.master_volume)
+        self.audio = AudioManager(
+            enabled=self.settings.sound_enabled, volume=self.settings.master_volume
+        )
 
-        flags = pygame.FULLSCREEN if self.settings.fullscreen else 0
-        self.screen = pygame.display.set_mode((480, 320), flags)
+        is_windows = sys.platform == "win32"
+        if is_windows:
+            window_width = 960
+            window_height = 720
+            flags = 0
+            logger.info(
+                "Windows-System detected: Run windowed mode with 960x720px."
+            )
+        else:
+            window_width = 480
+            window_height = 320
+            flags = pygame.FULLSCREEN if self.settings.fullscreen else 0
+
+        self.screen = pygame.display.set_mode((window_width, window_height), flags)
         pygame.display.set_caption(title)
 
         self.virtual_surface = pygame.Surface((VIRTUAL_WIDTH, VIRTUAL_HEIGHT))
@@ -31,7 +48,9 @@ class Engine:
         self.running = True
 
     def render_to_screen(self) -> None:
-        scaled = pygame.transform.smoothscale(self.virtual_surface, self.screen.get_size())
+        scaled = pygame.transform.smoothscale(
+            self.virtual_surface, self.screen.get_size()
+        )
         self.screen.blit(scaled, (0, 0))
         pygame.display.flip()
 
