@@ -1,4 +1,4 @@
-name: Build & Release Executables
+name: Build & Release
 
 on:
   push:
@@ -7,19 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            artifact_name: pocket-games-linux
-            asset_name: pocket-games-linux.tar.gz
-          - os: windows-latest
-            artifact_name: pocket-games-windows
-            asset_name: pocket-games-windows.zip
-
+  build-linux:
+    name: Build for Linux
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -35,32 +25,69 @@ jobs:
           pip install . pyinstaller ruff
 
       - name: Run Unit Tests
-        run: |
-          python -m unittest discover -s tests
+        run: python -m unittest discover -s tests
 
       - name: Lint Code
         run: ruff check .
 
-      - name: Build Executable with PyInstaller
-        run: |
-          pyinstaller --noconsole --onefile --name pocket-games pocket_games/main.py
+      - name: Build Executable
+        run: pyinstaller --noconsole --onefile --name pocket-games pocket_games/main.py
 
       - name: Package Linux Archive
-        if: matrix.os == 'ubuntu-latest'
+        run: tar -czvf pocket-games-linux.tar.gz dist/pocket-games README.md
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pocket-games-linux
+          path: pocket-games-linux.tar.gz
+
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies & PyInstaller
         run: |
-          tar -czvf pocket-games-linux.tar.gz dist/pocket-games README.md
+          python -m pip install --upgrade pip
+          pip install . pyinstaller ruff
+
+      - name: Build Executable
+        run: pyinstaller --noconsole --onefile --name pocket-games pocket_games/main.py
 
       - name: Package Windows Archive
-        if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: |
-          Compress-Archive -Path dist/pocket-games.exe, README.md -DestinationPath pocket-games-windows.zip
+        run: Compress-Archive -Path dist/pocket-games.exe, README.md -DestinationPath pocket-games-windows.zip
 
-      - name: Upload Release Asset
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pocket-games-windows
+          path: pocket-games-windows.zip
+
+  release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Behebt den 403-Fehler
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            pocket-games-linux.tar.gz
-            pocket-games-windows.zip
+          files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
