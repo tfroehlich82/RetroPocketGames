@@ -59,16 +59,24 @@ class MainMenu:
         self.title_font = pygame.font.SysFont(None, 24)
 
     def handle_input(self) -> None:
+        visible_count = 8
         inp = self.engine.input
         if inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w):
-            self.selected_index = (self.selected_index - 1) % len(self.menu_items)
             self.engine.audio.play("select")
-            self.scroll_offset = min(self.scroll_offset, self.selected_index)
+            self.selected_index -= 1
+            if self.selected_index < 0:
+                self.selected_index = len(self.menu_items) - 1
+                self.scroll_offset = max(0, len(self.menu_items) - visible_count)
+            elif self.selected_index < self.scroll_offset:
+                self.scroll_offset = self.selected_index
         elif inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s):
-            self.selected_index = (self.selected_index + 1) % len(self.menu_items)
             self.engine.audio.play("select")
-            if self.selected_index >= self.scroll_offset + 8:
-                self.scroll_offset = self.selected_index - 7
+            self.selected_index += 1
+            if self.selected_index >= len(self.menu_items):
+                self.selected_index = 0
+                self.scroll_offset = 0
+            elif self.selected_index >= self.scroll_offset + visible_count:
+                self.scroll_offset = self.selected_index - visible_count + 1
         elif inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):
             self.engine.audio.play("confirm")
             self.launch_selected()
