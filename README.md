@@ -1,6 +1,6 @@
-# PocketTerm35 Retro Game Collection
+# Retro Game Collection for Handhelds
 
-A production-ready Python 3.12 & Pygame-ce retro game suite built specifically for the **PocketTerm35** Raspberry Pi handheld device. Features a 320x240 virtual canvas scaled for crisp pixel art, dual touch-screen and physical hardware button inputs, and 8 original arcade/puzzle games.
+A production-ready Python 3.12 & Pygame-ce retro game suite built specifically for Raspberry Pi handheld devices. Features a 320x240 virtual canvas scaled for crisp pixel art, dual touch-screen and physical hardware button inputs, and 14 original arcade/puzzle games.
 
 ---
 
