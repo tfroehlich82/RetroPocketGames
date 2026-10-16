@@ -3,6 +3,7 @@ import pygame
 from pocket_games.core.input import InputManager
 from pocket_games.core.settings import Settings
 from pocket_games.core.highscore import HighScoreManager
+from pocket_games.core.audio import AudioManager
 
 VIRTUAL_WIDTH = 320
 VIRTUAL_HEIGHT = 240
@@ -15,6 +16,7 @@ class Engine:
         self.settings = Settings()
         self.highscores = HighScoreManager()
         self.input = InputManager()
+        self.audio = AudioManager(enabled=self.settings.sound_enabled, volume=self.settings.master_volume)
 
         flags = pygame.FULLSCREEN if self.settings.fullscreen else 0
         self.screen = pygame.display.set_mode((480, 320), flags)

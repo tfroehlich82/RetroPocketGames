@@ -11,3 +11,4 @@ dist/
 *.egg-info/
 highscores.json
 settings.json
+.idea/
