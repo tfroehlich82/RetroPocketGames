@@ -7,12 +7,10 @@ from pocket_games.core.settings import SETTINGS_FILE, Settings
 
 class TestSettings(unittest.TestCase):
     def setUp(self) -> None:
-        # Vor jedem Test eventuelle alte Test-Dateien löschen
         if SETTINGS_FILE.exists():
             SETTINGS_FILE.unlink()
 
     def tearDown(self) -> None:
-        # Nach dem Test aufräumen
         if SETTINGS_FILE.exists():
             SETTINGS_FILE.unlink()
 
@@ -29,7 +27,6 @@ class TestSettings(unittest.TestCase):
         settings.fullscreen = False
         settings.save()
 
-        # Instanz neu laden, um Persistenz zu prüfen
         new_settings = Settings()
         self.assertFalse(new_settings.sound_enabled)
         self.assertEqual(new_settings.master_volume, 0.5)

@@ -19,7 +19,11 @@ class QuantumMazeGame:
 
     def handle_input(self) -> None:
         inp = self.engine.input
-        if inp.is_key_pressed(pygame.K_ESCAPE):
+        if (
+            inp.is_key_pressed(pygame.K_ESCAPE)
+            or inp.is_key_pressed(pygame.K_BACKSPACE)
+            or self.engine.input.is_back_pressed()
+        ):
             self.active = False
         dx, dy = 0, 0
         speed = 80

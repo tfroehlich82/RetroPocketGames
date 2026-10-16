@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import sys
+
 import pygame
 
 from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
+from pocket_games.ui.highscore_screen import HighScoreScreen
 from pocket_games.ui.settings_screen import SettingsScreen
 
 
@@ -45,7 +48,11 @@ class MainMenu:
         ]
 
         # Append Settings option to launcher list
-        self.menu_items = self.games + [("Settings & Audio", SettingsScreen)]
+        self.menu_items = self.games + [
+            ("Settings", SettingsScreen),
+            ("Highscores", HighScoreScreen),
+            ("Exit", None),
+        ]
         self.selected_index = 0
         self.scroll_offset = 0
         self.font = pygame.font.SysFont(None, 18)
@@ -56,8 +63,7 @@ class MainMenu:
         if inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w):
             self.selected_index = (self.selected_index - 1) % len(self.menu_items)
             self.engine.audio.play("select")
-            if self.selected_index < self.scroll_offset:  # noqa: PLR1730
-                self.scroll_offset = self.selected_index
+            self.scroll_offset = min(self.scroll_offset, self.selected_index)
         elif inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s):
             self.selected_index = (self.selected_index + 1) % len(self.menu_items)
             self.engine.audio.play("select")
@@ -80,8 +86,12 @@ class MainMenu:
                         self.launch_selected()
 
     def launch_selected(self) -> None:
-        _name, cls = self.menu_items[self.selected_index]
-        self.engine.run_scene(cls)
+        name, cls = self.menu_items[self.selected_index]
+        if name.lower() == "exit":
+            self.engine.running = False
+            sys.exit(0)
+        else:
+            self.engine.run_scene(cls)
 
     def update(self, dt: float) -> None:
         pass

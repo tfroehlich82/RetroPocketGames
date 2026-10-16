@@ -17,7 +17,11 @@ class SubZeroMinerGame:
 
     def handle_input(self) -> None:
         inp = self.engine.input
-        if inp.is_key_pressed(pygame.K_ESCAPE):
+        if (
+            inp.is_key_pressed(pygame.K_ESCAPE)
+            or inp.is_key_pressed(pygame.K_BACKSPACE)
+            or self.engine.input.is_back_pressed()
+        ):
             self.active = False
         speed = 3
         if inp.is_key_down(pygame.K_LEFT): self.rx = max(10, self.rx - speed)

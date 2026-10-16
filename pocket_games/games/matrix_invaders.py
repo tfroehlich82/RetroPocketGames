@@ -17,7 +17,11 @@ class MatrixInvadersGame:
 
     def handle_input(self) -> None:
         inp = self.engine.input
-        if inp.is_key_pressed(pygame.K_ESCAPE):
+        if (
+            inp.is_key_pressed(pygame.K_ESCAPE)
+            or inp.is_key_pressed(pygame.K_BACKSPACE)
+            or self.engine.input.is_back_pressed()
+        ):
             self.active = False
         if inp.is_key_down(pygame.K_LEFT): self.px = max(15, self.px - 4)
         if inp.is_key_down(pygame.K_RIGHT): self.px = min(305, self.px + 4)

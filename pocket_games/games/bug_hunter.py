@@ -16,7 +16,11 @@ class BugHunterGame:
 
     def handle_input(self) -> None:
         inp = self.engine.input
-        if inp.is_key_pressed(pygame.K_ESCAPE):
+        if (
+            inp.is_key_pressed(pygame.K_ESCAPE)
+            or inp.is_key_pressed(pygame.K_BACKSPACE)
+            or self.engine.input.is_back_pressed()
+        ):
             self.active = False
         if inp.mouse_clicked:
             mw, mh = self.engine.screen.get_size()

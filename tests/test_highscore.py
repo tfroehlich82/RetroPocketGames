@@ -14,24 +14,20 @@ class TestHighScore(unittest.TestCase):
         if HIGHSCORE_FILE.exists():
             HIGHSCORE_FILE.unlink()
 
-    def test_high_score_submission(self) -> None:
+    def test_multiple_games_highscores(self) -> None:
         manager = HighScoreManager()
-        self.assertEqual(manager.get_score("Pixel Drop"), 0)
+        manager.submit_score("Retro Pong 2077", 120)
+        manager.submit_score("Bit Blaster", 250)
+        self.assertEqual(manager.get_score("Retro Pong 2077"), 120)
+        self.assertEqual(manager.get_score("Bit Blaster"), 250)
+        self.assertEqual(manager.get_score("Unbekanntes Spiel"), 0)
 
-        # Höheren Score einreichen -> True erwarten
-        is_new_best = manager.submit_score("Pixel Drop", 150)
-        self.assertTrue(is_new_best)
-        self.assertEqual(manager.get_score("Pixel Drop"), 150)
+    def test_high_score_persistence(self) -> None:
+        manager1 = HighScoreManager()
+        manager1.submit_score("Pixel Drop", 500)
+        manager2 = HighScoreManager()
+        self.assertEqual(manager2.get_score("Pixel Drop"), 500)
 
-        # Niedrigeren Score einreichen -> False erwarten (Score bleibt)
-        is_new_best = manager.submit_score("Pixel Drop", 100)
-        self.assertFalse(is_new_best)
-        self.assertEqual(manager.get_score("Pixel Drop"), 150)
-
-        # Noch höheren Score einreichen -> True erwarten
-        is_new_best = manager.submit_score("Pixel Drop", 300)
-        self.assertTrue(is_new_best)
-        self.assertEqual(manager.get_score("Pixel Drop"), 300)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,4 @@
-# 🕹️ Retro Game Collection for Handhelds (v0.1.4)
+# 🕹️ Retro Game Collection for Handhelds (v0.1.5)
 
 Welcome to the official manual and documentation for the **Retro Game Collection for Handhelds**! Built with Python 3.12 and Pygame-ce, this suite offers **14 arcade and puzzle games** optimized for 3.5" handheld displays ($320 \times 240$ virtual resolution) with full touch and D-Pad controls, high score persistence, and procedural sound synthesis.
 
