@@ -5,39 +5,30 @@ import pygame
 
 class InputManager:
     def __init__(self) -> None:
-        self.keys_pressed: dict[int, bool] = {}
-        self.keys_down: dict[int, bool] = {}
+        self.events: list[pygame.event.Event] = []
+        self.keys_pressed: set[int] = set()
         self.mouse_pos: tuple[int, int] = (0, 0)
         self.mouse_clicked: bool = False
-        self.mouse_released: bool = False
-        self.touch_active: bool = False
 
     def update(self) -> None:
-        self.keys_pressed.clear()
         self.mouse_clicked = False
-        self.mouse_released = False
+        self.events = pygame.event.get()
+        for event in self.events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.mouse_clicked = True
+                self.mouse_pos = event.pos
 
-        for event in pygame.event.get():
-            match event.type:
-                case pygame.QUIT:
-                    raise SystemExit
-                case pygame.KEYDOWN:
-                    self.keys_down[event.key] = True
-                    self.keys_pressed[event.key] = True
-                case pygame.KEYUP:
-                    self.keys_down[event.key] = False
-                case pygame.MOUSEBUTTONDOWN:
-                    self.mouse_pos = event.pos
-                    self.mouse_clicked = True
-                    self.touch_active = True
-                case pygame.MOUSEBUTTONUP:
-                    self.mouse_pos = event.pos
-                    self.mouse_released = True
-                case pygame.MOUSEMOTION:
-                    self.mouse_pos = event.pos
+        self.keys_pressed = {
+            event.key for event in self.events if event.type == pygame.KEYDOWN
+        }
 
     def is_key_down(self, key: int) -> bool:
-        return self.keys_down.get(key, False)
+        return key in self.keys_pressed
 
     def is_key_pressed(self, key: int) -> bool:
-        return self.keys_pressed.get(key, False)
+        pressed = pygame.key.get_pressed()
+        return bool(pressed[key])
+
+    def is_back_pressed(self) -> bool:
+        keys = pygame.key.get_pressed()
+        return bool(keys[pygame.K_ESCAPE] or keys[pygame.K_BACKSPACE])
