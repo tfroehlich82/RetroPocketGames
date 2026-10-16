@@ -1,53 +1,51 @@
-# 🕹️ Retro Game Collection for Handhelds (v0.1.3)
+# 🕹️ Retro Game Collection for Handhelds (v0.1.4)
 
 Welcome to the official manual and documentation for the **Retro Game Collection for Handhelds**! Built with Python 3.12 and Pygame-ce, this suite offers **14 arcade and puzzle games** optimized for 3.5" handheld displays ($320 \times 240$ virtual resolution) with full touch and D-Pad controls, high score persistence, and procedural sound synthesis.
 
 ---
 
-## 🐧 Detailed Installation Guide for Linux & Raspberry Pi OS
+## 🚀 Quick Start & Installation for Linux / Raspberry Pi OS
 
-Since the suite is built with Python 3.12 and Pygame-ce (Community Edition), several SDL2 system libraries are required for graphics, audio, and touch input.
-
-### Step 1: Update system packages & install SDL2 dependencies
-Open your terminal on your Raspberry Pi or Linux system and run:
+You can use the automated shell script to install dependencies and run the game instantly:
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y python3-pip python3-venv python3-dev git \
-    libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-    libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev
+chmod +x install_and_run.sh
+./install_and_run.sh
 ```
 
-### Step 2: Clone the repository
-Download or clone your GitHub repository:
+### Manual Installation Steps:
+1. **Install SDL2 System Dependencies:**
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install -y python3-pip python3-venv python3-dev git \
+       libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+       libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev
+   ```
+2. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/tfroehlich82/RetroPocketGames.git
+   cd RetroPocketGames
+   ```
+3. **Set up Virtual Environment:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+4. **Install Package:**
+   ```bash
+   pip install --upgrade pip
+   pip install .
+   ```
+5. **Launch:**
+   ```bash
+   pocket-games
+   ```
 
-```bash
-git clone https://github.com/tfrohlich82/RetroPocketGames.git
-cd RetroPocketGames
-```
+---
 
-### Step 3: Create & activate a virtual Python environment
-It is strongly recommended to use a virtual environment to avoid system conflicts:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### Step 4: Install the project
-Install the package and all Python dependencies in editable mode:
-
-```bash
-pip install --upgrade pip
-pip install .
-```
-
-### Step 5: Launch the game collection
-After successful installation, you can launch the main menu directly via the console command:
-
-```bash
-pocket-games
-```
+## 🖥️ Platform-Specific Window Behavior
+- **Linux / Raspberry Pi OS:** Runs optimized for the PocketTerm35 form-factor ($480 \times 320$ viewport with optional fullscreen toggle).
+- **Windows Desktops:** Automatically starts in a comfortable, scaled windowed mode ($960 \times 720$ pixels) without forcing fullscreen.
 
 ---
 
