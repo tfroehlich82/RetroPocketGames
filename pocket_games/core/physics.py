@@ -14,7 +14,7 @@ def handle_paddle_collision(ball, paddle):
         current_speed = (
             math.hypot(ball.vx, ball.vy) * 1.04
         )  # 4% Acceleration
-        max_speed = 10.0
+        max_speed = 400.0
         current_speed = min(current_speed, max_speed)
         direction = -1 if ball.vx > 0 else 1
         ball.vx = direction * current_speed * math.cos(bounce_angle)
