@@ -1,4 +1,4 @@
-name: Release Pipeline
+name: Build & Release Executables
 
 on:
   push:
@@ -6,10 +6,19 @@ on:
       - 'v*'
 
 jobs:
-  build-and-release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: pocket-games-linux
+            asset_name: pocket-games-linux.tar.gz
+          - os: windows-latest
+            artifact_name: pocket-games-windows
+            asset_name: pocket-games-windows.zip
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,20 +28,34 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Dependencies
+      - name: Install Dependencies & PyInstaller
         run: |
           python -m pip install --upgrade pip
-          pip install build ruff
+          pip install . pyinstaller ruff
 
-      - name: Lint with Ruff
+      - name: Lint Code
         run: ruff check .
 
-      - name: Build Distribution
-        run: python -m build
+      - name: Build Executable with PyInstaller
+        run: |
+          pyinstaller --noconsole --onefile --name pocket-games pocket_games/main.py
 
-      - name: Create GitHub Release
+      - name: Package Linux Archive
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          tar -czvf pocket-games-linux.tar.gz dist/pocket-games README.md
+
+      - name: Package Windows Archive
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/pocket-games.exe, README.md -DestinationPath pocket-games-windows.zip
+
+      - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: |
+            pocket-games-linux.tar.gz
+            pocket-games-windows.zip
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

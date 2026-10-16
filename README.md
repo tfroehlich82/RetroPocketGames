@@ -1,19 +1,14 @@
 # Retro Game Collection for Handhelds
 
-A production-ready Python 3.12 & Pygame-ce retro game suite built specifically for Raspberry Pi handheld devices. Features a 320x240 virtual canvas scaled for crisp pixel art, dual touch-screen and physical hardware button inputs, and 14 original arcade/puzzle games.
+Welcome to the ultimate Python 3.12 & Pygame-ce retro game suite designed specifically for Raspberry Pi handheld devices, and fully playable on standard Windows and Linux desktops!
+
+Featuring a crisp 320x240 virtual canvas, dual input support (Touchscreen + D-Pad / Keyboard controls), high score tracking, and **14 original arcade and puzzle games**.
 
 ---
 
-## Hardware & OS Requirements
-- **Device:** Raspberry Pi (Zero 2 W, Pi 3/4/5) with 3.5" Touchscreen (SPI/DPI) and GPIO/Keyboard gamepad buttons.
-- **OS:** Raspberry Pi OS (Bookworm 64-bit recommended)
-- **Python:** `>= 3.12`
+## 🚀 Quick Start (Raspberry Pi OS / Linux)
 
----
-
-## Installation on Raspberry Pi OS
-
-1. **System Dependencies:**
+1. **Install System Dependencies (SDL2 & Python):**
    ```bash
    sudo apt update && sudo apt upgrade -y
    sudo apt install -y python3-pip python3-venv git libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
