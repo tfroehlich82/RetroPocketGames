@@ -4,65 +4,112 @@ import random
 
 import pygame
 
+from pocket_games.games.base import BaseGame
 
-class CyberSnakeGame:
+
+class CyberSnakeGame(BaseGame):
+    """Refactored Cyber Snake utilizing BaseGame framework."""
+
     def __init__(self, engine) -> None:
-        self.engine = engine
-        self.active = True
-        self.score = 0
-        self.font = pygame.font.SysFont(None, 18)
+        super().__init__(engine, game_name="Cyber Snake")
+        self.grid_size = 10
+        self.cols = 32
+        self.rows = 21  # Top area reserved for HUD
+        self.reset_snake()
+
+    def reset_snake(self) -> None:
         self.snake = [{"x": 10, "y": 10}, {"x": 9, "y": 10}, {"x": 8, "y": 10}]
         self.dir = (1, 0)
-        self.food = {"x": random.randint(2, 28), "y": random.randint(2, 18)}
-        self.timer = 0.0
+        self.next_dir = (1, 0)
+        self.food = self.spawn_food()
+        self.move_timer = 0.0
+        self.speed = 0.11
         self.game_over = False
 
+    def spawn_food(self) -> dict[str, int]:
+        while True:
+            fx = random.randint(1, self.cols - 2)
+            fy = random.randint(3, self.rows - 1)
+            if not any(s["x"] == fx and s["y"] == fy for s in self.snake):
+                return {"x": fx, "y": fy}
+
     def handle_input(self) -> None:
-        inp = self.engine.input
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or self.engine.input.is_back_pressed()
-        ):
-            self.active = False
-        if self.game_over:
-            if inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked:
-                self.__init__(self.engine)
+        super().handle_input()
+        if not self.active:
             return
+
+        inp = self.engine.input
+        if self.game_over:
+            if inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked:
+                self.reset_snake()
+            return
+
         if (inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w)) and self.dir != (0, 1):
-            self.dir = (0, -1)
+            self.next_dir = (0, -1)
         elif (inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s)) and self.dir != (0, -1):
-            self.dir = (0, 1)
+            self.next_dir = (0, 1)
         elif (inp.is_key_pressed(pygame.K_LEFT) or inp.is_key_pressed(pygame.K_a)) and self.dir != (1, 0):
-            self.dir = (-1, 0)
+            self.next_dir = (-1, 0)
         elif (inp.is_key_pressed(pygame.K_RIGHT) or inp.is_key_pressed(pygame.K_d)) and self.dir != (-1, 0):
-            self.dir = (1, 0)
+            self.next_dir = (1, 0)
 
     def update(self, dt: float) -> None:
-        if self.game_over:
+        super().update(dt)
+        if not self.active or self.paused or self.game_over:
             return
-        self.timer += dt
-        if self.timer >= 0.12:
-            self.timer = 0.0
+
+        self.move_timer += dt
+        if self.move_timer >= self.speed:
+            self.move_timer = 0.0
+            self.dir = self.next_dir
+
             head = {"x": self.snake[0]["x"] + self.dir[0], "y": self.snake[0]["y"] + self.dir[1]}
-            if head["x"] < 0 or head["x"] >= 32 or head["y"] < 0 or head["y"] >= 24 or head in self.snake:
+
+            # Wall collision or self collision
+            if (
+                head["x"] < 0
+                or head["x"] >= self.cols
+                or head["y"] < 2
+                or head["y"] >= self.rows + 2
+                or any(s["x"] == head["x"] and s["y"] == head["y"] for s in self.snake)
+            ):
                 self.game_over = True
+                self.engine.audio.play("hit")
                 return
+
             self.snake.insert(0, head)
+
             if head["x"] == self.food["x"] and head["y"] == self.food["y"]:
-                self.score += 15
-                self.engine.highscores.submit_score("Cyber Snake", self.score)
-                self.food = {"x": random.randint(2, 28), "y": random.randint(2, 18)}
+                self.add_score(15)
+                self.food = self.spawn_food()
+                self.speed = max(0.05, self.speed - 0.002)
+                self.engine.audio.play("confirm")
             else:
                 self.snake.pop()
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((10, 15, 10))
-        for s in self.snake:
-            pygame.draw.rect(surface, (0, 255, 100), (s["x"] * 10, s["y"] * 10, 9, 9), border_radius=2)
-        pygame.draw.rect(surface, (255, 0, 100), (self.food["x"] * 10, self.food["y"] * 10, 9, 9), border_radius=2)
-        sc = self.font.render(f"Cyber Snake: {self.score}", True, (255, 255, 255))
-        surface.blit(sc, (10, 10))
+        surface.fill((8, 12, 10))
+
+        # Grid lines background
+        for x in range(0, 320, 20):
+            pygame.draw.line(surface, (15, 25, 20), (x, 20), (x, 240), 1)
+        for y in range(20, 240, 20):
+            pygame.draw.line(surface, (15, 25, 20), (0, y), (320, y), 1)
+
+        # Render Food
+        fx, fy = self.food["x"] * self.grid_size, self.food["y"] * self.grid_size
+        pygame.draw.rect(surface, (255, 0, 100), (fx + 1, fy + 1, 8, 8), border_radius=2)
+
+        # Render Snake
+        for idx, s in enumerate(self.snake):
+            sx, sy = s["x"] * self.grid_size, s["y"] * self.grid_size
+            color = (0, 255, 150) if idx == 0 else (0, 180, 100)
+            pygame.draw.rect(surface, color, (sx + 1, sy + 1, 8, 8), border_radius=2)
+
         if self.game_over:
-            go = self.font.render("GAME OVER - Tap/Enter", True, (255, 0, 0))
-            surface.blit(go, (80, 110))
+            go = self.title_font.render("GAME OVER", True, (255, 50, 50))
+            sub = self.font.render("Press Enter or Tap to Restart", True, (200, 200, 200))
+            surface.blit(go, (160 - go.get_width() // 2, 100))
+            surface.blit(sub, (160 - sub.get_width() // 2, 130))
+
+        self.render_ui(surface)

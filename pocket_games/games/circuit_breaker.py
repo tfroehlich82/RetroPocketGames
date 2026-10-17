@@ -1,63 +1,99 @@
-from __future__ import annotations
+# ==========================================
+# 4. CIRCUIT BREAKER (Dynamic Logic Flow Puzzle)
+# ==========================================
+import random
 
 import pygame
 
+from pocket_games.games.base import BaseGame
 
-class CircuitBreakerGame:
+
+class CircuitBreakerGame(BaseGame):
     def __init__(self, engine) -> None:
-        self.engine = engine
-        self.active = True
-        self.score = 0
-        self.font = pygame.font.SysFont(None, 18)
-        self.nodes = [
-            {"pos": (50, 60), "connected": True},
-            {"pos": (120, 60), "connected": False},
-            {"pos": (200, 140), "connected": False},
-            {"pos": (270, 180), "connected": False},
-        ]
-        self.selected_node = 0
+        super().__init__(engine, "Circuit Breaker")
+        self.grid_w, self.grid_h = 5, 4
+        self.nodes = []
+        self.timer = 15.0
+        self._generate_circuit()
+
+    def _generate_circuit(self) -> None:
+        self.nodes.clear()
+        for r in range(self.grid_h):
+            row = []
+            for c in range(self.grid_w):
+                row.append({"state": random.choice([0, 1, 2]), "active": False})
+
+            self.nodes.append(row)
+        self.nodes[0][0]["active"] = True
 
     def handle_input(self) -> None:
-        inp = self.engine.input
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or self.engine.input.is_back_pressed()
-        ):
-            self.active = False
-        if inp.is_key_pressed(pygame.K_LEFT) and self.selected_node > 0:
-            self.selected_node -= 1
-        if inp.is_key_pressed(pygame.K_RIGHT) and self.selected_node < len(self.nodes) - 1:
-            self.selected_node += 1
-        if inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):
-            self.nodes[self.selected_node]["connected"] = True
-            self.score = sum(100 for n in self.nodes if n["connected"])
-            self.engine.highscores.submit_score("Circuit Breaker", self.score)
+        super().handle_input()
+        if self.game_over:
+            return
 
+        inp = self.engine.input
         if inp.mouse_clicked:
-            for i, node in enumerate(self.nodes):
-                nx, ny = node["pos"]
-                if pygame.Rect(nx - 12, ny - 12, 24, 24).collidepoint(inp.mouse_pos):
-                    self.selected_node = i
-                    node["connected"] = True
-                    self.score = sum(100 for n in self.nodes if n["connected"])
-                    self.engine.highscores.submit_score("Circuit Breaker", self.score)
+            mx, my = inp.mouse_pos
+            for r in range(self.grid_h):
+                for c in range(self.grid_w):
+                    rx, ry = 50 + c * 48, 50 + r * 40
+                    if pygame.Rect(rx, ry, 36, 30).collidepoint(mx, my):
+                        self.nodes[r][c]["state"] = (self.nodes[r][c]["state"] + 1) % 3
+                        self.play_sound("hit")
+                        self._update_flow()
+
+    def _update_flow(self) -> None:
+        for r in range(self.grid_h):
+            for c in range(self.grid_w):
+                self.nodes[r][c]["active"] = False
+
+        self.nodes[0][0]["active"] = True
+        queue = [(0, 0)]
+        connected = 0
+
+        while queue:
+            cr, cc = queue.pop(0)
+            connected += 1
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = cr + dr, cc + dc
+                if 0 <= nr < self.grid_h and 0 <= nc < self.grid_w and (
+                        not self.nodes[nr][nc]["active"]
+                        and self.nodes[nr][nc]["state"] == self.nodes[cr][cc]["state"]
+                ):
+                    self.nodes[nr][nc]["active"] = True
+                    queue.append((nr, nc))
+
+        if self.nodes[self.grid_h - 1][self.grid_w - 1]["active"]:
+            self.add_score(200)
+            self.play_sound("score")
+            self.timer = max(5.0, 15.0 - self.elapsed_time * 0.2)
+            self._generate_circuit()
 
     def update(self, dt: float) -> None:
-        pass
+        super().update(dt)
+        if self.game_over:
+            return
+
+        self.timer -= dt
+        if self.timer <= 0:
+            self.game_over = True
+            self.play_sound("gameover")
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((10, 25, 20))
-        # Draw wires
-        for i in range(len(self.nodes) - 1):
-            n1, n2 = self.nodes[i], self.nodes[i+1]
-            color = (0, 255, 100) if n1["connected"] and n2["connected"] else (80, 80, 80)
-            pygame.draw.line(surface, color, n1["pos"], n2["pos"], 3)
 
-        # Draw nodes
-        for i, node in enumerate(self.nodes):
-            color = (255, 255, 0) if i == self.selected_node else ((0, 255, 0) if node["connected"] else (150, 50, 50))
-            pygame.draw.circle(surface, color, node["pos"], 10)
+        for r in range(self.grid_h):
+            for c in range(self.grid_w):
+                node = self.nodes[r][c]
+                rx, ry = 50 + c * 48, 50 + r * 40
+                color = (0, 255, 100) if node["active"] else (80, 80, 90)
+                pygame.draw.rect(surface, color, (rx, ry, 36, 30), border_radius=4)
 
-        sc = self.font.render(f"Circuit Score: {self.score}", True, (255, 255, 255))
-        surface.blit(sc, (10, 10))
+                lbl = self.font.render(str(node["state"]), True, (0, 0, 0))
+                surface.blit(lbl, (rx + 14, ry + 8))
+
+        # Render Timer Bar
+        pygame.draw.rect(
+            surface, (255, 50, 50), (10, 220, int(300 * (self.timer / 15.0)), 8)
+        )
+        self.render_ui(surface)

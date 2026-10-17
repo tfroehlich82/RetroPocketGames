@@ -1,92 +1,135 @@
-from __future__ import annotations
-
+# ==========================================
+# 2. PIXEL DROP (Full Tetris Engine)
+# ==========================================
 import random
 
 import pygame
 
-# from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
+from pocket_games.games.base import BaseGame
+
+SHAPES = [
+    [[1, 1, 1, 1]],  # I
+    [[1, 1], [1, 1]],  # O
+    [[0, 1, 0], [1, 1, 1]],  # T
+    [[1, 0, 0], [1, 1, 1]],  # L
+    [[0, 0, 1], [1, 1, 1]],  # J
+    [[0, 1, 1], [1, 0, 0]],  # S
+    [[1, 1, 0], [0, 1, 1]]   # Z
+]
+SHAPE_COLORS = [(0, 240, 240), (240, 240, 0), (160, 0, 240), (240, 160, 0), (0, 0, 240), (0, 240, 0), (240, 0, 0)]
 
 
-class PixelDropGame:
+class PixelDropGame(BaseGame):
     def __init__(self, engine) -> None:
-        self.engine = engine
-        self.active = True
-        self.score = 0
-        self.font = pygame.font.SysFont(None, 18)
-        self.cols, self.rows = 10, 16
-        self.grid = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
-        self.block_y = 0.0
-        self.block_x = 4
-        self.block_color = 1
+        super().__init__(engine, "Pixel Drop")
+        self.cols, self.rows = 10, 18
+        self.grid = [[None for _ in range(self.cols)] for _ in range(self.rows)]
+        self.next_shape_idx = random.randint(0, len(SHAPES) - 1)
+        self._spawn_piece()
         self.drop_timer = 0.0
-        self.drop_speed = 0.5
-        self.game_over = False
+
+    def _spawn_piece(self) -> None:
+        self.current_shape_idx = self.next_shape_idx
+        self.next_shape_idx = random.randint(0, len(SHAPES) - 1)
+        self.shape = SHAPES[self.current_shape_idx]
+        self.color = SHAPE_COLORS[self.current_shape_idx]
+        self.px = self.cols // 2 - len(self.shape[0]) // 2
+        self.py = 0
+
+        if self._check_collision(self.px, self.py, self.shape):
+            self.game_over = True
+            self.play_sound("gameover")
+
+    def _check_collision(self, px: int, py: int, shape: list[list[int]]) -> bool:
+        for r, row in enumerate(shape):
+            for c, val in enumerate(row):
+                if val:
+                    gx, gy = px + c, py + r
+                    if gx < 0 or gx >= self.cols or gy >= self.rows:
+                        return True
+                    if gy >= 0 and self.grid[gy][gx] is not None:
+                        return True
+        return False
+
+    def _rotate_shape(self) -> list[list[int]]:
+        return [list(row) for row in zip(*self.shape[::-1])]
 
     def handle_input(self) -> None:
-        inp = self.engine.input
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or self.engine.input.is_back_pressed()
-        ):
-            self.active = False
+        super().handle_input()
         if self.game_over:
-            if inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked:
-                self.__init__(self.engine)
             return
 
-        if inp.is_key_pressed(pygame.K_LEFT) and self.block_x > 0:  # noqa: SIM102
-            if self.grid[int(self.block_y)][self.block_x - 1] == 0:
-                self.block_x -= 1
-        if inp.is_key_pressed(pygame.K_RIGHT) and self.block_x < self.cols - 1:  # noqa: SIM102
-            if self.grid[int(self.block_y)][self.block_x + 1] == 0:
-                self.block_x += 1
-        if inp.is_key_pressed(pygame.K_DOWN):
-            self.drop_speed = 0.1
+        inp = self.engine.input
+        if inp.is_key_down(pygame.K_LEFT) and not self._check_collision(self.px - 1, self.py, self.shape):
+            self.px -= 1
+        elif inp.is_key_down(pygame.K_RIGHT) and not self._check_collision(self.px + 1, self.py, self.shape):
+            self.px += 1
+
+        if inp.is_key_down(pygame.K_UP):
+            rotated = self._rotate_shape()
+            if not self._check_collision(self.px, self.py, rotated):
+                self.shape = rotated
+                self.play_sound("bounce")
+
+        if inp.is_key_down(pygame.K_DOWN) and not self._check_collision(self.px, self.py + 1, self.shape):
+            self.py += 1
 
     def update(self, dt: float) -> None:
+        super().update(dt)
         if self.game_over:
             return
+
+        drop_speed = max(0.1, 0.6 - (self.elapsed_time * 0.015))
         self.drop_timer += dt
-        if self.drop_timer >= self.drop_speed:
+        if self.drop_timer >= drop_speed:
             self.drop_timer = 0.0
-            next_y = int(self.block_y) + 1
-            if next_y >= self.rows or self.grid[next_y][self.block_x] != 0:
-                # Lock block
-                self.grid[int(self.block_y)][self.block_x] = self.block_color
-                self.score += 10
-                self.engine.highscores.submit_score("Pixel Drop", self.score)
-                # Reset new block
-                self.block_x = random.randint(0, self.cols - 1)
-                self.block_y = 0.0
-                self.block_color = random.randint(1, 4)
-                self.drop_speed = 0.5
-                if self.grid[0][self.block_x] != 0:
-                    self.game_over = True
+            if not self._check_collision(self.px, self.py + 1, self.shape):
+                self.py += 1
             else:
-                self.block_y += 1.0
+                for r, row in enumerate(self.shape):
+                    for c, val in enumerate(row):
+                        if val:
+                            self.grid[self.py + r][self.px + c] = self.color
+                self._clear_lines()
+                self._spawn_piece()
+
+    def _clear_lines(self) -> None:
+        cleared = 0
+        new_grid = [row for row in self.grid if any(cell is None for cell in row)]
+        cleared = self.rows - len(new_grid)
+        for _ in range(cleared):
+            new_grid.insert(0, [None for _ in range(self.cols)])
+        self.grid = new_grid
+        if cleared > 0:
+            self.add_score(cleared * 100)
+            self.play_sound("score")
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((20, 20, 30))
-        ox, oy = 80, 20
-        cw, ch = 12, 12
+        surface.fill((15, 15, 25))
+        ox, oy, cw, ch = 30, 20, 11, 11
 
-        # Draw grid
+        # Render Grid
+        pygame.draw.rect(surface, (40, 40, 60), (ox - 2, oy - 2, self.cols * cw + 4, self.rows * ch + 4), 2)
         for r in range(self.rows):
             for c in range(self.cols):
-                rect = pygame.Rect(ox + c * cw, oy + r * ch, cw - 1, ch - 1)
-                val = self.grid[r][c]
-                color = (60, 60, 80) if val == 0 else (0, 200, 255)
-                pygame.draw.rect(surface, color, rect)
+                color = self.grid[r][c] or (25, 25, 35)
+                pygame.draw.rect(surface, color, (ox + c * cw, oy + r * ch, cw - 1, ch - 1))
 
-        # Draw active block
+        # Render Active Block
         if not self.game_over:
-            act_rect = pygame.Rect(ox + self.block_x * cw, oy + int(self.block_y) * ch, cw - 1, ch - 1)
-            pygame.draw.rect(surface, (255, 100, 100), act_rect)
+            for r, row in enumerate(self.shape):
+                for c, val in enumerate(row):
+                    if val:
+                        pygame.draw.rect(surface, self.color, (ox + (self.px + c) * cw, oy + (self.py + r) * ch, cw - 1, ch - 1))
 
-        # UI
-        score_surf = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
-        surface.blit(score_surf, (10, 10))
-        if self.game_over:
-            go_surf = self.font.render("GAME OVER! Tap/Enter", True, (255, 0, 0))
-            surface.blit(go_surf, (85, 100))
+        # Render Next Preview
+        preview_txt = self.font.render("NEXT", True, (200, 200, 200))
+        surface.blit(preview_txt, (160, 20))
+        next_shape = SHAPES[self.next_shape_idx]
+        next_color = SHAPE_COLORS[self.next_shape_idx]
+        for r, row in enumerate(next_shape):
+            for c, val in enumerate(row):
+                if val:
+                    pygame.draw.rect(surface, next_color, (160 + c * cw, 40 + r * ch, cw - 1, ch - 1))
+
+        self.render_ui(surface)

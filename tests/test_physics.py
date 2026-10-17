@@ -31,13 +31,21 @@ class MockBall:
 
 class TestPhysics(unittest.TestCase):
     def test_paddle_collision_physics(self) -> None:
+        # Paddle von Y: 80 bis 120 (Zentrum bei 100, Höhe 40)
         paddle = MockPaddle(100, 40)
+        # Ball trifft genau das Zentrum des Paddles (Offset = 0.0)
         ball = MockBall(19.0, 100.0, -100.0, 0.0)
+
         initial_speed = (ball.vx**2 + ball.vy**2) ** 0.5
+
         handle_paddle_collision(ball, paddle)
+
+        # Die Richtung auf der X-Achse muss umgekehrt worden sein
         self.assertGreater(ball.vx, 0)
+
         new_speed = (ball.vx**2 + ball.vy**2) ** 0.5
-        self.assertAlmostEqual(new_speed, initial_speed * 1.04, places=2)
+        # Erwartet: 5% Grund-Beschleunigung bei Offset 0 (Faktor 1.05 gemäß Gummiball-Physik)
+        self.assertAlmostEqual(new_speed, initial_speed * 1.05, places=2)
 
 
 if __name__ == "__main__":

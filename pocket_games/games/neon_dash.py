@@ -1,78 +1,72 @@
-from __future__ import annotations
-
+# ==========================================
+# 5. NEON DASH (Per-Obstacle Score & Dynamic Speed)
+# ==========================================
 import random
 
 import pygame
 
+from pocket_games.games.base import BaseGame
 
-class NeonDashGame:
+
+class NeonDashGame(BaseGame):
     def __init__(self, engine) -> None:
-        self.engine = engine
-        self.active = True
-        self.score = 0
-        self.font = pygame.font.SysFont(None, 18)
+        super().__init__(engine, "Neon Dash")
         self.lanes = [80, 160, 240]
         self.player_lane = 1
-        self.obstacles = [{"lane": random.randint(0, 2), "y": -50}]
+        self.obstacles = []
         self.spawn_timer = 0.0
-        self.game_over = False
 
     def handle_input(self) -> None:
-        inp = self.engine.input
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or self.engine.input.is_back_pressed()
-        ):
-            self.active = False
+        super().handle_input()
         if self.game_over:
-            if inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked:
-                self.__init__(self.engine)
             return
-        if inp.is_key_pressed(pygame.K_LEFT) and self.player_lane > 0:
-            self.player_lane -= 1
-        if inp.is_key_pressed(pygame.K_RIGHT) and self.player_lane < 2:
-            self.player_lane += 1
 
-        if inp.mouse_clicked:
-            if inp.mouse_pos[0] < 160 and self.player_lane > 0:
-                self.player_lane -= 1
-            elif inp.mouse_pos[0] >= 160 and self.player_lane < 2:
-                self.player_lane += 1
+        inp = self.engine.input
+        if (inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a)) and self.player_lane > 0:
+            self.player_lane -= 1
+            self.play_sound("bounce")
+        elif (inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d)) and self.player_lane < 2:
+            self.player_lane += 1
+            self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
+        super().update(dt)
         if self.game_over:
             return
-        self.score += int(dt * 50)
-        self.engine.highscores.submit_score("Neon Dash", self.score)
+
+        speed = 160.0 + self.elapsed_time * 8.0
         self.spawn_timer += dt
-        if self.spawn_timer > 1.2:
+        if self.spawn_timer > max(0.4, 1.2 - self.elapsed_time * 0.02):
             self.spawn_timer = 0.0
-            self.obstacles.append({"lane": random.randint(0, 2), "y": -30})
+            self.obstacles.append({"lane": random.randint(0, 2), "y": -30, "passed": False})
 
-        for obs in self.obstacles:
-            obs["y"] += 150 * dt
-            if obs["lane"] == self.player_lane and abs(obs["y"] - 190) < 15:
+        for obs in self.obstacles[:]:
+            obs["y"] += speed * dt
+
+            # Collision Check
+            if obs["lane"] == self.player_lane and abs(obs["y"] - 180) < 18:
                 self.game_over = True
+                self.play_sound("gameover")
 
-        self.obstacles = [o for o in self.obstacles if o["y"] < 260]
+            # Score per passed obstacle
+            if not obs["passed"] and obs["y"] > 200:
+                obs["passed"] = True
+                self.add_score(15)
+                self.play_sound("score")
+
+            if obs["y"] > 250:
+                self.obstacles.remove(obs)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((25, 10, 30))
+        surface.fill((20, 10, 30))
         for l in self.lanes:
             pygame.draw.line(surface, (60, 30, 80), (l, 0), (l, 240), 2)
 
-        # Player
         px = self.lanes[self.player_lane]
-        pygame.draw.rect(surface, (0, 255, 200), (px - 10, 180, 20, 25), border_radius=4)
+        pygame.draw.rect(surface, (0, 255, 200), (px - 10, 170, 20, 25), border_radius=4)
 
-        # Obstacles
         for obs in self.obstacles:
             ox = self.lanes[obs["lane"]]
             pygame.draw.rect(surface, (255, 0, 100), (ox - 12, int(obs["y"]), 24, 15), border_radius=3)
 
-        sc = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
-        surface.blit(sc, (10, 10))
-        if self.game_over:
-            go = self.font.render("CRASH! Tap/Enter to restart", True, (255, 50, 50))
-            surface.blit(go, (70, 110))
+        self.render_ui(surface)

@@ -4,50 +4,70 @@ import random
 
 import pygame
 
+from pocket_games.games.base import BaseGame
 
-class PulseRacerGame:
+
+class PulseRacerGame(BaseGame):
+    """Refactored Pulse Racer using BaseGame frame structure."""
+
     def __init__(self, engine) -> None:
-        self.engine = engine
-        self.active = True
-        self.score = 0
-        self.font = pygame.font.SysFont(None, 18)
-        self.rx = 160
-        self.obstacles = [{"x": random.randint(80, 240), "y": -30}]
-        self.timer = 0.0
+        super().__init__(engine, game_name="Pulse Racer")
+        self.rx = 160.0
+        self.obstacles: list[dict] = []
+        self.spawn_timer = 0.0
+        self.speed = 180.0
 
     def handle_input(self) -> None:
+        super().handle_input()
+        if not self.active:
+            return
+
         inp = self.engine.input
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or self.engine.input.is_back_pressed()
-        ):
-            self.active = False
-        if inp.is_key_down(pygame.K_LEFT): self.rx = max(70, self.rx - 4)
-        if inp.is_key_down(pygame.K_RIGHT): self.rx = min(250, self.rx + 4)
+        dt = 0.016
+        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+            self.rx = max(75.0, self.rx - 150.0 * dt)
+        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+            self.rx = min(245.0, self.rx + 150.0 * dt)
 
     def update(self, dt: float) -> None:
-        self.score += int(dt * 30)
-        self.engine.highscores.submit_score("Pulse Racer", self.score)
-        self.timer += dt
-        if self.timer > 1.0:
-            self.timer = 0.0
-            self.obstacles.append({"x": random.randint(80, 240), "y": -30})
+        super().update(dt)
+        if not self.active or self.paused or self.game_over:
+            return
 
-        for obs in self.obstacles:
-            obs["y"] += 160 * dt
-            if abs(obs["x"] - self.rx) < 15 and abs(obs["y"] - 190) < 15:
-                self.active = False
-        self.obstacles = [o for o in self.obstacles if o["y"] < 250]
+        self.add_score(int(dt * 40))
+        self.spawn_timer += dt
+
+        if self.spawn_timer > 0.8:
+            self.spawn_timer = 0.0
+            self.obstacles.append({"x": float(random.randint(80, 240)), "y": -20.0})
+
+        for obs in self.obstacles[:]:
+            obs["y"] += self.speed * dt
+            if abs(obs["x"] - self.rx) < 16 and abs(obs["y"] - 190.0) < 18:
+                self.game_over = True
+                self.engine.audio.play("hit")
+
+            if obs["y"] > 250:
+                self.obstacles.remove(obs)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((20, 10, 30))
-        pygame.draw.line(surface, (100, 50, 150), (60, 0), (60, 240), 2)
-        pygame.draw.line(surface, (100, 50, 150), (260, 0), (260, 240), 2)
+        surface.fill((15, 10, 25))
 
-        pygame.draw.rect(surface, (0, 255, 200), (self.rx - 10, 180, 20, 25), border_radius=4)
+        # Track Boundaries
+        pygame.draw.line(surface, (120, 50, 180), (65, 0), (65, 240), 3)
+        pygame.draw.line(surface, (120, 50, 180), (255, 0), (255, 240), 3)
+
+        # Player Car
+        px = int(self.rx)
+        pygame.draw.rect(surface, (0, 255, 200), (px - 8, 180, 16, 24), border_radius=3)
+
+        # Obstacles
         for obs in self.obstacles:
-            pygame.draw.rect(surface, (255, 0, 100), (obs["x"] - 12, int(obs["y"]), 24, 12), border_radius=2)
+            ox, oy = int(obs["x"]), int(obs["y"])
+            pygame.draw.rect(surface, (255, 40, 80), (ox - 10, oy, 20, 12), border_radius=2)
 
-        sc = self.font.render(f"Distance: {self.score}", True, (255, 255, 255))
-        surface.blit(sc, (10, 10))
+        if self.game_over:
+            go = self.title_font.render("CRASHED!", True, (255, 50, 50))
+            surface.blit(go, (160 - go.get_width() // 2, 110))
+
+        self.render_ui(surface)

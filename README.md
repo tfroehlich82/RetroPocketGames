@@ -1,4 +1,4 @@
-# 🕹️ Retro Game Collection for Handhelds
+# 🕹️ Retro Game Collection for Raspberry Pi Handhelds
 
 Welcome to the official manual and documentation for the **Retro Game Collection for Handhelds**! Built with Python 3.12 and Pygame-ce, this suite offers **14 arcade and puzzle games** optimized for 3.5" handheld displays ($320 \times 240$ virtual resolution) with full touch and D-Pad controls, high score persistence, and procedural sound synthesis.
 
@@ -240,14 +240,43 @@ The handheld features a unified dual-input scheme:
 
   * **Touch:** Tap falling memory leak blocks directly to patch them.
 
+
+### 15. Orbital Defense
+
+* **Goal:** Rotate a planetary shield to protect your core against meteor showers.
+
+### 16. Chrono Shift 
+
+* **Goal:** Collect temporal fragments while dodging time-rewinding anomaly waves.
+
+### 17. Sonic Pulse 
+
+* **Goal:** Rhythm timing game where you expand energy pulses to hit collapsing target rings.
+
+### 18. Gravity Sling 
+
+* **Goal:** Launch a space probe through planetary gravity wells to harvest telemetry data.
+
+### 19. Glitch Runner 
+
+* **Goal:** Platformer where reality toggles between normal and glitch phase platforms.
+
+### 20. Aether Defender 
+
+* **Goal:** Dual-colored space shooter where matching shield polarity absorbs enemy lasers.
+
 ---
 
-## ⚙️ Settings & Audio Customization
+## ⚙️ Settings & Hall of Fame
 
-Access **Settings & Audio** at the bottom of the main menu to configure system preferences:
+### Hall of Fame (Highscores)
 
-* **Sound Effect Audio:** Toggle sound effects `ENABLED` or `DISABLED`.
+Persistent high score manager accessible directly from the main menu and individual game screens.
 
-* **Master Volume:** Adjust global audio volume ($0\%$ to $100\%$).
+### Audio Options
 
-* **Fullscreen Mode:** Toggle full screen rendering on desktop display output.
+Toggle procedural sound effects on/off and adjust master volume (0% to 100%).
+
+### Exit
+
+Cleanly exit the game suite back to the operating system.

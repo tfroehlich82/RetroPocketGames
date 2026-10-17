@@ -14,49 +14,61 @@ class MainMenu:
         self.engine = engine
         self.active = True
 
-        # Import all games
+        from pocket_games.games.aether_defender import AetherDefenderGame
         from pocket_games.games.bit_blaster import BitBlasterGame
         from pocket_games.games.bug_hunter import BugHunterGame
         from pocket_games.games.byte_hopper import ByteHopperGame
+        from pocket_games.games.chrono_shift import ChronoShiftGame
         from pocket_games.games.circuit_breaker import CircuitBreakerGame
         from pocket_games.games.crypto_decrypt import CryptoDecryptGame
         from pocket_games.games.cyber_snake import CyberSnakeGame
+        from pocket_games.games.glitch_runner import GlitchRunnerGame
+        from pocket_games.games.gravity_sling import GravitySlingGame
         from pocket_games.games.kernel_panic import KernelPanicGame
         from pocket_games.games.matrix_invaders import MatrixInvadersGame
         from pocket_games.games.neon_dash import NeonDashGame
+        from pocket_games.games.orbital_defense import OrbitalDefenseGame
         from pocket_games.games.pixel_drop import PixelDropGame
         from pocket_games.games.pulse_racer import PulseRacerGame
         from pocket_games.games.quantum_maze import QuantumMazeGame
         from pocket_games.games.retro_pong import RetroPongGame
+        from pocket_games.games.sonic_pulse import SonicPulseGame
         from pocket_games.games.sub_zero_miner import SubZeroMinerGame
 
         self.games = [
             ("Pixel Drop", PixelDropGame),
-            ("Cyber Snake", CyberSnakeGame),
             ("Circuit Breaker", CircuitBreakerGame),
-            ("Matrix Invaders", MatrixInvadersGame),
-            ("Pulse Racer", PulseRacerGame),
             ("Neon Dash", NeonDashGame),
             ("Byte Hopper", ByteHopperGame),
             ("Quantum Maze", QuantumMazeGame),
             ("Sub-Zero Miner", SubZeroMinerGame),
             ("Retro Pong 2077", RetroPongGame),
             ("Bug Hunter", BugHunterGame),
-            ("Kernel Panic", KernelPanicGame),
+            ("Cyber Snake", CyberSnakeGame),
+            ("Matrix Invaders", MatrixInvadersGame),
             ("Bit Blaster", BitBlasterGame),
+            ("Pulse Racer", PulseRacerGame),
             ("Crypto Decrypt", CryptoDecryptGame),
+            ("Kernel Panic", KernelPanicGame),
+            ("Orbital Defense", OrbitalDefenseGame),
+            ("Chrono Shift", ChronoShiftGame),
+            ("Sonic Pulse", SonicPulseGame),
+            ("Gravity Sling", GravitySlingGame),
+            ("Glitch Runner", GlitchRunnerGame),
+            ("Aether Defender", AetherDefenderGame),
         ]
 
-        # Append Settings option to launcher list
         self.menu_items = self.games + [
             ("Settings", SettingsScreen),
             ("Highscores", HighScoreScreen),
             ("Exit", None),
         ]
+
         self.selected_index = 0
         self.scroll_offset = 0
         self.font = pygame.font.SysFont(None, 18)
         self.title_font = pygame.font.SysFont(None, 24)
+        self.item_rects: list[pygame.Rect] = []
 
     def handle_input(self) -> None:
         visible_count = 8
@@ -98,7 +110,7 @@ class MainMenu:
         if name.lower() == "exit":
             self.engine.running = False
             sys.exit(0)
-        else:
+        if cls:
             self.engine.run_scene(cls)
 
     def update(self, dt: float) -> None:

@@ -1,8 +1,10 @@
-from __future__ import annotations
-
+# ==========================================
+# 1. BIT BLASTER (Enhanced Brick Breaker)
+# ==========================================
 import pygame
 
 from pocket_games.core.physics import handle_paddle_collision
+from pocket_games.games.base import BaseGame
 
 
 class Paddle:
@@ -17,84 +19,92 @@ class Ball:
         self.radius = radius
         self.vx = vx
         self.vy = vy
-        self.rect = pygame.Rect(
-            int(x - radius), int(y - radius), radius * 2, radius * 2
-        )
+        self.rect = pygame.Rect(int(x - radius), int(y - radius), radius * 2, radius * 2)
 
     def update_rect(self) -> None:
         self.rect.center = (int(self.x), int(self.y))
 
 
-class BitBlasterGame:
+class BitBlasterGame(BaseGame):
     def __init__(self, engine) -> None:
-        self.engine = engine
-        self.active = True
-        self.score = 0
-        self.font = pygame.font.SysFont(None, 18)
+        super().__init__(engine, "Bit Blaster")
         self.px = 160.0
-
         self.paddle = Paddle(int(self.px) - 25, 215, 50, 8)
-        self.ball = Ball(160.0, 120.0, 5, 100.0, -100.0)
+        self.ball = Ball(160.0, 120.0, 5, 120.0, -120.0)
+        self.blocks = []
+        self._init_blocks()
 
-        self.blocks = [
-            {"x": c * 38 + 15, "y": r * 15 + 25, "alive": True}
-            for r in range(3)
-            for c in range(7)
-        ]
+    def _init_blocks(self) -> None:
+        colors = [(255, 80, 80), (255, 180, 0), (0, 220, 255), (180, 100, 255)]
+        for r in range(4):
+            for c in range(7):
+                self.blocks.append({
+                    "rect": pygame.Rect(c * 42 + 13, r * 16 + 30, 38, 12),
+                    "color": colors[r],
+                    "alive": True
+                })
 
     def handle_input(self) -> None:
+        super().handle_input()
+        if self.game_over:
+            return
+
         inp = self.engine.input
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or self.engine.input.is_back_pressed()
-        ):
-            self.active = False
         if inp.is_key_down(pygame.K_LEFT):
-            self.px = max(25, self.px - 5)
+            self.px = max(28, self.px - 6)
         if inp.is_key_down(pygame.K_RIGHT):
-            self.px = min(295, self.px + 5)
+            self.px = min(292, self.px + 6)
         if inp.mouse_clicked:
-            self.px = max(25, min(295, inp.mouse_pos[0]))
+            self.px = max(28, min(292, inp.mouse_pos[0]))
 
         self.paddle.rect.x = int(self.px) - 25
 
     def update(self, dt: float) -> None:
-        self.ball.x += self.ball.vx * dt
-        self.ball.y += self.ball.vy * dt
+        super().update(dt)
+        if self.game_over:
+            return
+
+        speed_mod = min(1.8, 1.0 + (self.elapsed_time * 0.02))
+        self.ball.x += self.ball.vx * dt * speed_mod
+        self.ball.y += self.ball.vy * dt * speed_mod
         self.ball.update_rect()
 
-        if self.ball.rect.left <= 10:
-            self.ball.rect.left = 10
-            self.ball.x = self.ball.rect.centerx
-            self.ball.vx *= -1
-        elif self.ball.rect.right >= 310:
-            self.ball.rect.right = 310
-            self.ball.x = self.ball.rect.centerx
-            self.ball.vx *= -1
+        if self.ball.rect.left <= 5:
+            self.ball.rect.left = 5
+            self.ball.vx = abs(self.ball.vx)
+            self.play_sound("bounce")
+        elif self.ball.rect.right >= 315:
+            self.ball.rect.right = 315
+            self.ball.vx = -abs(self.ball.vx)
+            self.play_sound("bounce")
 
-        if self.ball.rect.top <= 10:
-            self.ball.rect.top = 10
-            self.ball.y = self.ball.rect.centery
-            self.ball.vy *= -1
+        if self.ball.rect.top <= 5:
+            self.ball.rect.top = 5
+            self.ball.vy = abs(self.ball.vy)
+            self.play_sound("bounce")
 
-        # Paddle-Kollision mit Gummiball-Physik
         if self.ball.rect.colliderect(self.paddle.rect):
             handle_paddle_collision(self.ball, self.paddle)
-            self.ball.x, self.ball.y = self.ball.rect.center
+            self.ball.x, self.ball.y = float(self.ball.rect.centerx), float(self.ball.rect.centery)
+            self.play_sound("hit")
 
-        # Block-Kollision
+        all_cleared = True
         for blk in self.blocks:
             if blk["alive"]:
-                blk_rect = pygame.Rect(blk["x"], blk["y"], 34, 12)
-                if self.ball.rect.colliderect(blk_rect):
+                all_cleared = False
+                if self.ball.rect.colliderect(blk["rect"]):
                     blk["alive"] = False
                     self.ball.vy *= -1
-                    self.score += 15
-                    self.engine.highscores.submit_score("Bit Blaster", self.score)
+                    self.add_score(25)
+                    self.play_sound("score")
+                    break
+
+        if all_cleared:
+            self._init_blocks()
 
         if self.ball.rect.top > 240:
-            self.active = False
+            self.game_over = True
+            self.play_sound("gameover")
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((15, 10, 25))
@@ -102,11 +112,5 @@ class BitBlasterGame:
         pygame.draw.circle(surface, (255, 255, 0), self.ball.rect.center, 5)
         for blk in self.blocks:
             if blk["alive"]:
-                pygame.draw.rect(
-                    surface,
-                    (255, 100, 200),
-                    (blk["x"], blk["y"], 34, 12),
-                    border_radius=2,
-                )
-        sc = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
-        surface.blit(sc, (10, 10))
+                pygame.draw.rect(surface, blk["color"], blk["rect"], border_radius=2)
+        self.render_ui(surface)
