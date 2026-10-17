@@ -9,7 +9,7 @@ on:
 jobs:
   build-linux:
     name: Build for Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7

@@ -8,7 +8,7 @@ from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
 class BaseGame:
     """Base class for all Pocket Games with standardized interface, sound, difficulty tracking, and helper methods."""
 
-    def __init__(self, engine, game_name: str) -> None:
+    def __init__(self, engine, game_name: str = "Arcade Game") -> None:
         self.engine = engine
         self.game_name = game_name
         self.active: bool = True
@@ -59,7 +59,18 @@ class BaseGame:
 
         if self.game_over and (
                 inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked or inp.is_key_pressed(pygame.K_SPACE)):
-            self.__init__(self.engine, self.game_name)  # Re-initialize game state
+            # Robuster Neustart, kompatibel mit unterschiedlichen __init__ Signaturen der Spiele
+            try:
+                self.__init__(self.engine, self.game_name)
+            except TypeError:
+                try:
+                    self.__init__(self.engine)
+                except Exception:  # noqa: BLE001
+                    self.score = 0
+                    self.elapsed_time = 0.0
+                    self.difficulty_factor = 1.0
+                    self.game_over = False
+                    self.paused = False
 
     def update(self, dt: float) -> None:
         """Update difficulty scaling and game time if not paused or game over."""
