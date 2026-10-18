@@ -1,5 +1,5 @@
 # ==========================================
-# PIXEL DROP (Full Tetris Engine)
+# PIXEL DROP (Full Tetris Engine with Lock Delay)
 # ==========================================
 from __future__ import annotations
 
@@ -37,6 +37,8 @@ class PixelDropGame(BaseGame):
         self.next_shape_idx = random.randint(0, len(SHAPES) - 1)
         self._spawn_piece()
         self.drop_timer = 0.0
+        self.lock_timer = 0.0
+        self.is_locking = False
 
     def _spawn_piece(self) -> None:
         self.current_shape_idx = self.next_shape_idx
@@ -45,6 +47,8 @@ class PixelDropGame(BaseGame):
         self.color = SHAPE_COLORS[self.current_shape_idx]
         self.px = self.cols // 2 - len(self.shape[0]) // 2
         self.py = 0
+        self.lock_timer = 0.0
+        self.is_locking = False
 
         if self._check_collision(self.px, self.py, self.shape):
             self.game_over = True
@@ -75,40 +79,58 @@ class PixelDropGame(BaseGame):
             self.px - 1, self.py, self.shape
         ):
             self.px -= 1
+            if self.is_locking:
+                self.lock_timer = 0.0  # Reset Lock Delay bei Bewegung
         elif inp.is_key_just_pressed(pygame.K_RIGHT) and not self._check_collision(
             self.px + 1, self.py, self.shape
         ):
             self.px += 1
+            if self.is_locking:
+                self.lock_timer = 0.0
 
         if inp.is_key_just_pressed(pygame.K_UP):
             rotated = self._rotate_shape()
             if not self._check_collision(self.px, self.py, rotated):
                 self.shape = rotated
                 self.play_sound("bounce")
+                if self.is_locking:
+                    self.lock_timer = 0.0
 
         if inp.is_key_down(pygame.K_DOWN) and not self._check_collision(
             self.px, self.py + 1, self.shape
         ):
             self.py += 1
+            self.drop_timer = 0.0
 
     def update(self, dt: float) -> None:
         super().update(dt)
         if self.game_over:
             return
 
-        drop_speed = max(0.1, 0.6 - (self.elapsed_time * 0.015))
+        drop_speed = max(0.12, 0.6 - (self.elapsed_time * 0.015))
         self.drop_timer += dt
-        if self.drop_timer >= drop_speed:
-            self.drop_timer = 0.0
-            if not self._check_collision(self.px, self.py + 1, self.shape):
+
+        touching_ground = self._check_collision(self.px, self.py + 1, self.shape)
+
+        if touching_ground:
+            self.is_locking = True
+            self.lock_timer += dt
+            if self.lock_timer >= 0.45:  # Lock Delay Karenzzeit
+                self._lock_piece()
+        else:
+            self.is_locking = False
+            self.lock_timer = 0.0
+            if self.drop_timer >= drop_speed:
+                self.drop_timer = 0.0
                 self.py += 1
-            else:
-                for r, row in enumerate(self.shape):
-                    for c, val in enumerate(row):
-                        if val:
-                            self.grid[self.py + r][self.px + c] = self.color
-                self._clear_lines()
-                self._spawn_piece()
+
+    def _lock_piece(self) -> None:
+        for r, row in enumerate(self.shape):
+            for c, val in enumerate(row):
+                if val and self.py + r >= 0:
+                    self.grid[self.py + r][self.px + c] = self.color
+        self._clear_lines()
+        self._spawn_piece()
 
     def _clear_lines(self) -> None:
         new_grid = [row for row in self.grid if any(cell is None for cell in row)]

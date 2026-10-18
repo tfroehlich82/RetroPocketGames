@@ -26,8 +26,9 @@ class GlitchRunnerGame(BaseGame):
             inp.is_key_just_pressed(pygame.K_SPACE)
             or inp.mouse_clicked
             or inp.is_key_just_pressed(pygame.K_UP)
-        ) and self.py >= 150:
-            self.vy = -190  # Sanfterer Sprung
+            or inp.is_key_just_pressed(pygame.K_w)
+        ) and self.py >= 148:
+            self.vy = -230  # Höherer Sprung für mehr Hang Time
             self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
@@ -36,11 +37,12 @@ class GlitchRunnerGame(BaseGame):
             return
 
         self.timer += dt
-        if self.timer > 2.2:
+        if self.timer > 2.5:  # Entspannteres Intervall
             self.timer = 0.0
             self.glitch_phase = not self.glitch_phase
 
-        self.vy += 400 * dt
+        # Reduzierte Schwerkraft für längere Flugphase
+        self.vy += 320 * dt
         self.py += self.vy * dt
 
         if self.py > 150:
@@ -55,12 +57,20 @@ class GlitchRunnerGame(BaseGame):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((15, 15, 20))
 
+        warning = self.timer > 1.9
         floor_color = (
-            (255, 80, 80)
-            if (self.timer > 1.7) and int(self.timer * 10) % 2 == 0
+            (255, 200, 50)
+            if warning and int(self.timer * 12) % 2 == 0
             else ((255, 50, 100) if self.glitch_phase else (0, 255, 150))
         )
 
-        pygame.draw.rect(surface, floor_color, (0, 162, 320, 20))
-        pygame.draw.rect(surface, (255, 200, 0), (int(self.px), int(self.py), 12, 12))
+        pygame.draw.rect(surface, floor_color, (0, 162, 320, 20), border_radius=3)
+        pygame.draw.rect(
+            surface, (255, 200, 0), (int(self.px), int(self.py), 12, 12), border_radius=2
+        )
+
+        if warning:
+            warn_txt = self.font.render("GLITCH WARNING!", True, (255, 200, 0))
+            surface.blit(warn_txt, (160 - warn_txt.get_width() // 2, 20))
+
         self.render_ui(surface)
