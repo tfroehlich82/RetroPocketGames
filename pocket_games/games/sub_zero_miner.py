@@ -20,14 +20,32 @@ class SubZeroMinerGame(BaseGame):
         self.reset_level()
 
     def reset_level(self) -> None:
-        self.gems = [
-            {"x": random.randint(40, 280), "y": random.randint(40, 200), "val": 30}
-            for _ in range(4)
-        ]
+        # Generate hazards first
         self.hazards = [
             {"x": random.randint(50, 270), "y": random.randint(50, 190), "r": 16}
             for _ in range(3)
         ]
+
+        # Generate gems ensuring they DO NOT spawn inside or overlapping hazards
+        self.gems = []
+        gem_radius = 6
+        for _ in range(4):
+            while True:
+                gx = random.randint(40, 280)
+                gy = random.randint(40, 200)
+
+                # Check overlap with hazards (hazard radius + gem radius + buffer)
+                valid = True
+                for h in self.hazards:
+                    dist_sq = (gx - h["x"]) ** 2 + (gy - h["y"]) ** 2
+                    min_dist = h["r"] + gem_radius + 4
+                    if dist_sq < min_dist ** 2:
+                        valid = False
+                        break
+
+                if valid:
+                    self.gems.append({"x": gx, "y": gy, "val": 30})
+                    break
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -90,7 +108,7 @@ class SubZeroMinerGame(BaseGame):
             pygame.draw.circle(surface, (120, 200, 255), (int(h["x"]), int(h["y"])), h["r"])
             pygame.draw.circle(surface, (200, 240, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1)
 
-        # Gems
+        # Gems (O2 Bubbles)
         for g in self.gems:
             pygame.draw.circle(surface, (0, 255, 255), (int(g["x"]), int(g["y"])), 6)
 
