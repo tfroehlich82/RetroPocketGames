@@ -4,7 +4,7 @@ import sys
 
 import pygame
 
-from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
+from pocket_games.core.engine import VIRTUAL_WIDTH
 from pocket_games.ui.highscore_screen import HighScoreScreen
 from pocket_games.ui.settings_screen import SettingsScreen
 
@@ -73,7 +73,8 @@ class MainMenu:
     def handle_input(self) -> None:
         visible_count = 8
         inp = self.engine.input
-        if inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w):
+
+        if inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.engine.audio.play("select")
             self.selected_index -= 1
             if self.selected_index < 0:
@@ -81,7 +82,10 @@ class MainMenu:
                 self.scroll_offset = max(0, len(self.menu_items) - visible_count)
             elif self.selected_index < self.scroll_offset:
                 self.scroll_offset = self.selected_index
-        elif inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s):
+
+        elif inp.is_key_just_pressed(pygame.K_DOWN) or inp.is_key_just_pressed(
+            pygame.K_s
+        ):
             self.engine.audio.play("select")
             self.selected_index += 1
             if self.selected_index >= len(self.menu_items):
@@ -89,21 +93,12 @@ class MainMenu:
                 self.scroll_offset = 0
             elif self.selected_index >= self.scroll_offset + visible_count:
                 self.scroll_offset = self.selected_index - visible_count + 1
-        elif inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):
+
+        elif inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(
+            pygame.K_SPACE
+        ):
             self.engine.audio.play("confirm")
             self.launch_selected()
-
-        if inp.mouse_clicked:
-            mw, mh = self.engine.screen.get_size()
-            vx = int(inp.mouse_pos[0] * (VIRTUAL_WIDTH / mw))
-            vy = int(inp.mouse_pos[1] * (VIRTUAL_HEIGHT / mh))
-            for i, rect in enumerate(self.item_rects):
-                if rect.collidepoint(vx, vy):
-                    actual_idx = i + self.scroll_offset
-                    if actual_idx < len(self.menu_items):
-                        self.selected_index = actual_idx
-                        self.engine.audio.play("confirm")
-                        self.launch_selected()
 
     def launch_selected(self) -> None:
         name, cls = self.menu_items[self.selected_index]
