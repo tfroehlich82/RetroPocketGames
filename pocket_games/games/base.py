@@ -45,19 +45,15 @@ class BaseGame:
         """Base input handling for exit, pause, and game over restart."""
         inp = self.engine.input
 
-        if (
-            inp.is_key_pressed(pygame.K_ESCAPE)
-            or inp.is_key_pressed(pygame.K_BACKSPACE)
-            or (hasattr(inp, "is_back_pressed") and inp.is_back_pressed())
-        ):
+        if inp.is_back_pressed():
             self.active = False
             return
 
-        if inp.is_key_pressed(pygame.K_p):
+        if inp.is_key_just_pressed(pygame.K_p):
             self.paused = not self.paused
 
         if self.game_over and (
-                inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked or inp.is_key_pressed(pygame.K_SPACE)):
+                inp.is_key_just_pressed(pygame.K_RETURN) or inp.mouse_clicked or inp.is_key_just_pressed(pygame.K_SPACE)):
             try:
                 self.__init__(self.engine, self.game_name)
             except TypeError:
