@@ -21,7 +21,7 @@ class GravitySlingGame(BaseGame):
             return
 
         inp = self.engine.input
-        if inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked:
+        if inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked:
             # Thrust Pulse
             self.vy -= 60
             self.play_sound("bounce")

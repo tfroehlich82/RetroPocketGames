@@ -42,7 +42,7 @@ class MatrixInvadersGame(BaseGame):
         if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
             self.px = min(305.0, self.px + speed * dt)
 
-        if inp.is_key_pressed(pygame.K_SPACE) or inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked:
+        if inp.is_key_just_pressed(pygame.K_SPACE) or inp.is_key_just_pressed(pygame.K_RETURN) or inp.mouse_clicked:
             self.bullets.append({"x": self.px, "y": 210.0})
             self.engine.audio.play("select")
 

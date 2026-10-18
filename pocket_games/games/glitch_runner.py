@@ -20,7 +20,7 @@ class GlitchRunnerGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked) and self.py >= 150:
+        if (inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked) and self.py >= 150:
             self.vy = -220
             self.play_sound("bounce")
 

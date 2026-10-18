@@ -21,7 +21,7 @@ class SonicPulseGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked) and not self.expanding:
+        if (inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked) and not self.expanding:
             self.expanding = True
 
     def update(self, dt: float) -> None:

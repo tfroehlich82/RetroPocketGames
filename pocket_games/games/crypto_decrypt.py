@@ -72,23 +72,23 @@ class CryptoDecryptGame(BaseGame):
 
         inp = self.engine.input
         if self.game_over:
-            if inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked:
+            if inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked:
                 self.reset_game()
             return
 
-        if inp.is_key_pressed(pygame.K_LEFT) or inp.is_key_pressed(pygame.K_a):
+        if inp.is_key_just_pressed(pygame.K_LEFT) or inp.is_key_just_pressed(pygame.K_a):
             self.cursor = (self.cursor - 1) % self.code_length
             self.engine.audio.play("select")
-        elif inp.is_key_pressed(pygame.K_RIGHT) or inp.is_key_pressed(pygame.K_d):
+        elif inp.is_key_just_pressed(pygame.K_RIGHT) or inp.is_key_just_pressed(pygame.K_d):
             self.cursor = (self.cursor + 1) % self.code_length
             self.engine.audio.play("select")
-        elif inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w):
+        elif inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.current_guess[self.cursor] = (self.current_guess[self.cursor] + 1) % 10
             self.engine.audio.play("select")
-        elif inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s):
+        elif inp.is_key_just_pressed(pygame.K_DOWN) or inp.is_key_just_pressed(pygame.K_s):
             self.current_guess[self.cursor] = (self.current_guess[self.cursor] - 1) % 10
             self.engine.audio.play("select")
-        elif inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):
+        elif inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(pygame.K_SPACE):
             self.submit_guess()
 
         if inp.mouse_clicked:

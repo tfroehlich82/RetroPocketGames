@@ -26,7 +26,7 @@ class AetherDefenderGame(BaseGame):
             self.px = max(20, self.px - 140 * 0.016)
         if inp.is_key_down(pygame.K_RIGHT):
             self.px = min(300, self.px + 140 * 0.016)
-        if inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked:
+        if inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked:
             self.color_state = 1 - self.color_state
             self.play_sound("bounce")
 

@@ -26,21 +26,21 @@ class SettingsScreen:
         inp = self.engine.input
 
         # Navigation
-        if inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w):
+        if inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.selected_index = (self.selected_index - 1) % len(self.options)
             self.engine.audio.play("select")
-        elif inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s):
+        elif inp.is_key_just_pressed(pygame.K_DOWN) or inp.is_key_just_pressed(pygame.K_s):
             self.selected_index = (self.selected_index + 1) % len(self.options)
             self.engine.audio.play("select")
 
         # Value adjustments or selection
         _current_label, action = self.options[self.selected_index]
 
-        if inp.is_key_pressed(pygame.K_LEFT) or inp.is_key_pressed(pygame.K_a):
+        if inp.is_key_just_pressed(pygame.K_LEFT) or inp.is_key_just_pressed(pygame.K_a):
             self.adjust_value(action, -1)
-        elif inp.is_key_pressed(pygame.K_RIGHT) or inp.is_key_pressed(pygame.K_d):
+        elif inp.is_key_just_pressed(pygame.K_RIGHT) or inp.is_key_just_pressed(pygame.K_d):
             self.adjust_value(action, 1)
-        elif inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE):
+        elif inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(pygame.K_SPACE):
             self.execute_action(action)
 
         # Touchscreen clicks

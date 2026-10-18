@@ -40,17 +40,17 @@ class CyberSnakeGame(BaseGame):
 
         inp = self.engine.input
         if self.game_over:
-            if inp.is_key_pressed(pygame.K_RETURN) or inp.is_key_pressed(pygame.K_SPACE) or inp.mouse_clicked:
+            if inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked:
                 self.reset_snake()
             return
 
-        if (inp.is_key_pressed(pygame.K_UP) or inp.is_key_pressed(pygame.K_w)) and self.dir != (0, 1):
+        if (inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w)) and self.dir != (0, 1):
             self.next_dir = (0, -1)
-        elif (inp.is_key_pressed(pygame.K_DOWN) or inp.is_key_pressed(pygame.K_s)) and self.dir != (0, -1):
+        elif (inp.is_key_just_pressed(pygame.K_DOWN) or inp.is_key_just_pressed(pygame.K_s)) and self.dir != (0, -1):
             self.next_dir = (0, 1)
-        elif (inp.is_key_pressed(pygame.K_LEFT) or inp.is_key_pressed(pygame.K_a)) and self.dir != (1, 0):
+        elif (inp.is_key_just_pressed(pygame.K_LEFT) or inp.is_key_just_pressed(pygame.K_a)) and self.dir != (1, 0):
             self.next_dir = (-1, 0)
-        elif (inp.is_key_pressed(pygame.K_RIGHT) or inp.is_key_pressed(pygame.K_d)) and self.dir != (-1, 0):
+        elif (inp.is_key_just_pressed(pygame.K_RIGHT) or inp.is_key_just_pressed(pygame.K_d)) and self.dir != (-1, 0):
             self.next_dir = (1, 0)
 
     def update(self, dt: float) -> None:
