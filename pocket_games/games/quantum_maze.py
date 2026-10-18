@@ -36,10 +36,10 @@ class QuantumMazeGame(BaseGame):
         cell_w = bounds.width / cols
         cell_h = bounds.height / rows
 
-        # Grid for maze generation (visited array)
-        visited = [[False * cols for _ in range(rows)] for _ in range(cols)]
-        horiz_walls = [[True * cols for _ in range(rows + 1)] for _ in range(cols)]
-        vert_walls = [[True * (cols + 1) for _ in range(rows)] for _ in range(cols)]
+        # Correct grid and wall array dimensions using proper list multiplication
+        visited = [[False] * rows for _ in range(cols)]
+        horiz_walls = [[True] * (rows + 1) for _ in range(cols)]
+        vert_walls = [[True] * rows for _ in range(cols + 1)]
 
         # Recursive Backtracker
         stack = [(0, 0)]
