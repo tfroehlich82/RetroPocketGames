@@ -1,6 +1,6 @@
 # 🕹️ Retro Game Collection for Raspberry Pi Handhelds
 
-Welcome to the official manual and documentation for the **Retro Game Collection for Handhelds**! Built with Python 3.12 and Pygame-ce, this suite offers **14 arcade and puzzle games** optimized for 3.5" handheld displays ($320 \times 240$ virtual resolution) with full touch and D-Pad controls, high score persistence, and procedural sound synthesis.
+Welcome to the official manual and documentation for the **Retro Game Collection for Handhelds**! Built with Python 3.12 and Pygame-ce, this suite offers **20 arcade and puzzle games** optimized for 3.5" handheld displays ($320 \times 240$ virtual resolution) with full touch and D-Pad controls, high score persistence, and procedural sound synthesis.
 
 ---
 
@@ -240,31 +240,77 @@ The handheld features a unified dual-input scheme:
 
   * **Touch:** Tap falling memory leak blocks directly to patch them.
 
-
 ### 15. Orbital Defense
 
 * **Goal:** Rotate a planetary shield to protect your core against meteor showers.
 
-### 16. Chrono Shift 
+* **Gameplay:** Fast-paced defense arcade game where meteors rain down from all directions. Rotate your protective shield dynamically to intercept incoming space debris and safeguard the central core.
+
+* **Controls:**
+
+  * **D-Pad Left/Right:** Rotate shield angle.
+
+  * **Touch:** Tap or drag around screen to position shield.
+
+### 16. Chrono Shift
 
 * **Goal:** Collect temporal fragments while dodging time-rewinding anomaly waves.
 
-### 17. Sonic Pulse 
+* **Gameplay:** Reflex avoidance game set in an unstable timeline. Gather glowing temporal shards while evading sweeping time-distortion ripples that reverse space conditions.
+
+* **Controls:**
+
+  * **D-Pad (All Directions):** Navigate temporal craft.
+
+  * **Touch:** Drag to pilot the vessel.
+
+### 17. Sonic Pulse
 
 * **Goal:** Rhythm timing game where you expand energy pulses to hit collapsing target rings.
 
-### 18. Gravity Sling 
+* **Gameplay:** Audio-visual precision timing challenge. Release sonic pulses to sync perfectly as incoming energy rings collapse onto the target zone.
+
+* **Controls:**
+
+  * **Button A / Space / Enter:** Trigger sonic pulse.
+
+  * **Touch:** Tap screen to fire pulse.
+
+### 18. Gravity Sling
 
 * **Goal:** Launch a space probe through planetary gravity wells to harvest telemetry data.
 
-### 19. Glitch Runner 
+* **Gameplay:** Physics trajectory puzzle. Slingshot your space probe utilizing orbital gravity pulls to sweep past planets and harvest scientific data beacons.
+
+* **Controls:**
+
+  * **D-Pad / Touch:** Aim trajectory angle and press action to launch probe.
+
+### 19. Glitch Runner
 
 * **Goal:** Platformer where reality toggles between normal and glitch phase platforms.
 
-### 20. Aether Defender 
+* **Gameplay:** Dynamic platforming challenge where floor stability alternates between solid reality and unstable glitch phases. Time your jumps to avoid dropping into the digital void.
+
+* **Controls:**
+
+  * **D-Pad Up / Space:** Jump.
+
+  * **Touch:** Tap screen to trigger a jump.
+
+### 20. Aether Defender
 
 * **Goal:** Dual-colored space shooter where matching shield polarity absorbs enemy lasers.
 
+* **Gameplay:** Tactical shoot 'em up. Switch your ship's energy polarity to match incoming laser streams, absorbing hostile fire to power up counterattacks.
+
+* **Controls:**
+
+  * **D-Pad Left/Right:** Move ship position.
+
+  * **Button A / Space:** Switch shield polarity / Fire.
+
+  * **Touch:** Tap screen controls to move and switch polarity.
 ---
 
 ## ⚙️ Settings & Hall of Fame
