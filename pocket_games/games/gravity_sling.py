@@ -1,5 +1,5 @@
 # ==========================================
-# 18: GRAVITY SLING (Planetary Gravity Wells)
+# GRAVITY SLING (Planetary Gravity Wells)
 # ==========================================
 import math
 

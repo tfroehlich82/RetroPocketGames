@@ -10,7 +10,7 @@ from pocket_games.core.logger import logger
 
 
 class AudioManager:
-    def __init__(self, enabled: bool = True, volume: float = 0.8) -> None:
+    def __init__(self, enabled: bool = True, volume: float = 0.6) -> None:
         self.enabled = enabled
         self.volume = volume
         try:
@@ -50,7 +50,7 @@ class AudioManager:
         if sound_type not in self._cache:
             match sound_type:
                 case "select":
-                    self._cache[sound_type] = self._create_tone(440, 0.05, "square")
+                    self._cache[sound_type] = self._create_tone(440, 0.08, "square")
                 case "confirm":
                     self._cache[sound_type] = self._create_tone(880, 0.1, "square")
                 case "jump":

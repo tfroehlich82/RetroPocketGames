@@ -1,5 +1,5 @@
 # ==========================================
-# 3. BYTE HOPPER (Vertical Endlessly Generated Platforms)
+# BYTE HOPPER (Vertical Endlessly Generated Platforms)
 # ==========================================
 import random
 

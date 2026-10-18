@@ -1,5 +1,5 @@
 # ==========================================
-# 4. CIRCUIT BREAKER (Dynamic Logic Flow Puzzle)
+# CIRCUIT BREAKER (Dynamic Logic Flow Puzzle)
 # ==========================================
 import random
 

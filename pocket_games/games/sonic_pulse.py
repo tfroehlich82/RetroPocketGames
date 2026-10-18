@@ -1,5 +1,5 @@
 # ==========================================
-# 17: SONIC PULSE (Rhythm Collapsing Ring)
+# SONIC PULSE (Rhythm Collapsing Ring)
 # ==========================================
 import random
 

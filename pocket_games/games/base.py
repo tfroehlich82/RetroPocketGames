@@ -45,15 +45,19 @@ class BaseGame:
         """Base input handling for exit, pause, and game over restart."""
         inp = self.engine.input
 
-        if inp.is_back_pressed():
+        if (
+            inp.is_key_pressed(pygame.K_ESCAPE)
+            or inp.is_key_pressed(pygame.K_BACKSPACE)
+            or (hasattr(inp, "is_back_pressed") and inp.is_back_pressed())
+        ):
             self.active = False
             return
 
-        if inp.is_key_just_pressed(pygame.K_p):
+        if inp.is_key_pressed(pygame.K_p):
             self.paused = not self.paused
 
         if self.game_over and (
-                inp.is_key_just_pressed(pygame.K_RETURN) or inp.mouse_clicked or inp.is_key_just_pressed(pygame.K_SPACE)):
+                inp.is_key_pressed(pygame.K_RETURN) or inp.mouse_clicked or inp.is_key_pressed(pygame.K_SPACE)):
             try:
                 self.__init__(self.engine, self.game_name)
             except TypeError:
@@ -70,10 +74,10 @@ class BaseGame:
         """Update difficulty scaling and game time if not paused or game over."""
         if not self.game_over and not self.paused:
             self.elapsed_time += dt
-            self.difficulty_factor = 1.0 + (self.elapsed_time / 30.0)  # Escalates every 30s
+            self.difficulty_factor = 1.0 + (self.elapsed_time / 30.0)
 
     def render_ui(self, surface: pygame.Surface) -> None:
-        """Draw score, pause screen, and overlay game over screens."""
+        """Draw score, pause screen, and overlay game over screens with highscore display."""
         score_surf = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
         surface.blit(score_surf, (10, 8))
 
@@ -91,10 +95,16 @@ class BaseGame:
             surface.blit(overlay, (0, 0))
 
             go_txt = self.title_font.render("GAME OVER", True, (255, 60, 60))
-            surface.blit(go_txt, (VIRTUAL_WIDTH // 2 - go_txt.get_width() // 2, 90))
+            surface.blit(go_txt, (VIRTUAL_WIDTH // 2 - go_txt.get_width() // 2, 75))
 
             sub_txt = self.font.render("Press Enter / Click to Restart", True, (200, 200, 200))
-            surface.blit(sub_txt, (VIRTUAL_WIDTH // 2 - sub_txt.get_width() // 2, 125))
+            surface.blit(sub_txt, (VIRTUAL_WIDTH // 2 - sub_txt.get_width() // 2, 105))
 
             final_txt = self.font.render(f"Final Score: {self.score}", True, (255, 215, 0))
-            surface.blit(final_txt, (VIRTUAL_WIDTH // 2 - final_txt.get_width() // 2, 150))
+            surface.blit(final_txt, (VIRTUAL_WIDTH // 2 - final_txt.get_width() // 2, 130))
+
+            best_score = self.score
+            if hasattr(self.engine, "highscores") and self.engine.highscores:
+                best_score = max(self.score, self.engine.highscores.scores.get(self.game_name, self.score))
+            high_txt = self.font.render(f"High Score: {best_score}", True, (0, 255, 200))
+            surface.blit(high_txt, (VIRTUAL_WIDTH // 2 - high_txt.get_width() // 2, 155))

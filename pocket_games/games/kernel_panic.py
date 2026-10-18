@@ -1,3 +1,6 @@
+# ==========================================
+# KERNEL PANIC
+# ==========================================
 from __future__ import annotations
 
 import random

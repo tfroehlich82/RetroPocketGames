@@ -1,5 +1,5 @@
 # ==========================================
-# 6. QUANTUM MAZE (Wall Collision Validated Spawns)
+# QUANTUM MAZE (Wall Collision Validated Spawns)
 # ==========================================
 import random
 

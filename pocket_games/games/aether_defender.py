@@ -1,5 +1,5 @@
 # ==========================================
-# 20: AETHER DEFENDER (Color-matching Shoot 'em up)
+# AETHER DEFENDER (Color-matching Shoot 'em up)
 # ==========================================
 import random
 

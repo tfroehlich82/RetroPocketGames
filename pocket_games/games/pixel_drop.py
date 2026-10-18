@@ -1,6 +1,8 @@
 # ==========================================
-# 2. PIXEL DROP (Full Tetris Engine)
+# PIXEL DROP (Full Tetris Engine)
 # ==========================================
+from __future__ import annotations
+
 import random
 
 import pygame
@@ -8,15 +10,23 @@ import pygame
 from pocket_games.games.base import BaseGame
 
 SHAPES = [
-    [[1, 1, 1, 1]],  # I
-    [[1, 1], [1, 1]],  # O
+    [[1, 1, 1, 1]],          # I
+    [[1, 1], [1, 1]],        # O
     [[0, 1, 0], [1, 1, 1]],  # T
     [[1, 0, 0], [1, 1, 1]],  # L
     [[0, 0, 1], [1, 1, 1]],  # J
     [[0, 1, 1], [1, 0, 0]],  # S
-    [[1, 1, 0], [0, 1, 1]]   # Z
+    [[1, 1, 0], [0, 1, 1]],  # Z
 ]
-SHAPE_COLORS = [(0, 240, 240), (240, 240, 0), (160, 0, 240), (240, 160, 0), (0, 0, 240), (0, 240, 0), (240, 0, 0)]
+SHAPE_COLORS = [
+    (0, 240, 240),
+    (240, 240, 0),
+    (160, 0, 240),
+    (240, 160, 0),
+    (0, 0, 240),
+    (0, 240, 0),
+    (240, 0, 0),
+]
 
 
 class PixelDropGame(BaseGame):
@@ -60,18 +70,25 @@ class PixelDropGame(BaseGame):
             return
 
         inp = self.engine.input
-        if inp.is_key_down(pygame.K_LEFT) and not self._check_collision(self.px - 1, self.py, self.shape):
+
+        if inp.is_key_just_pressed(pygame.K_LEFT) and not self._check_collision(
+            self.px - 1, self.py, self.shape
+        ):
             self.px -= 1
-        elif inp.is_key_down(pygame.K_RIGHT) and not self._check_collision(self.px + 1, self.py, self.shape):
+        elif inp.is_key_just_pressed(pygame.K_RIGHT) and not self._check_collision(
+            self.px + 1, self.py, self.shape
+        ):
             self.px += 1
 
-        if inp.is_key_down(pygame.K_UP):
+        if inp.is_key_just_pressed(pygame.K_UP):
             rotated = self._rotate_shape()
             if not self._check_collision(self.px, self.py, rotated):
                 self.shape = rotated
                 self.play_sound("bounce")
 
-        if inp.is_key_down(pygame.K_DOWN) and not self._check_collision(self.px, self.py + 1, self.shape):
+        if inp.is_key_down(pygame.K_DOWN) and not self._check_collision(
+            self.px, self.py + 1, self.shape
+        ):
             self.py += 1
 
     def update(self, dt: float) -> None:
@@ -94,7 +111,6 @@ class PixelDropGame(BaseGame):
                 self._spawn_piece()
 
     def _clear_lines(self) -> None:
-        cleared = 0
         new_grid = [row for row in self.grid if any(cell is None for cell in row)]
         cleared = self.rows - len(new_grid)
         for _ in range(cleared):
@@ -109,18 +125,34 @@ class PixelDropGame(BaseGame):
         ox, oy, cw, ch = 30, 20, 11, 11
 
         # Render Grid
-        pygame.draw.rect(surface, (40, 40, 60), (ox - 2, oy - 2, self.cols * cw + 4, self.rows * ch + 4), 2)
+        pygame.draw.rect(
+            surface,
+            (40, 40, 60),
+            (ox - 2, oy - 2, self.cols * cw + 4, self.rows * ch + 4),
+            2,
+        )
         for r in range(self.rows):
             for c in range(self.cols):
                 color = self.grid[r][c] or (25, 25, 35)
-                pygame.draw.rect(surface, color, (ox + c * cw, oy + r * ch, cw - 1, ch - 1))
+                pygame.draw.rect(
+                    surface, color, (ox + c * cw, oy + r * ch, cw - 1, ch - 1)
+                )
 
         # Render Active Block
         if not self.game_over:
             for r, row in enumerate(self.shape):
                 for c, val in enumerate(row):
                     if val:
-                        pygame.draw.rect(surface, self.color, (ox + (self.px + c) * cw, oy + (self.py + r) * ch, cw - 1, ch - 1))
+                        pygame.draw.rect(
+                            surface,
+                            self.color,
+                            (
+                                ox + (self.px + c) * cw,
+                                oy + (self.py + r) * ch,
+                                cw - 1,
+                                ch - 1,
+                            ),
+                        )
 
         # Render Next Preview
         preview_txt = self.font.render("NEXT", True, (200, 200, 200))
@@ -130,6 +162,8 @@ class PixelDropGame(BaseGame):
         for r, row in enumerate(next_shape):
             for c, val in enumerate(row):
                 if val:
-                    pygame.draw.rect(surface, next_color, (160 + c * cw, 40 + r * ch, cw - 1, ch - 1))
+                    pygame.draw.rect(
+                        surface, next_color, (160 + c * cw, 40 + r * ch, cw - 1, ch - 1)
+                    )
 
         self.render_ui(surface)

@@ -17,7 +17,7 @@ class TestSettings(unittest.TestCase):
     def test_default_settings(self) -> None:
         settings = Settings()
         self.assertTrue(settings.sound_enabled)
-        self.assertEqual(settings.master_volume, 0.8)
+        self.assertEqual(settings.master_volume, 0.6)
         self.assertTrue(settings.fullscreen)
 
     def test_save_and_load(self) -> None:

@@ -1,6 +1,8 @@
 # ==========================================
-# 19: GLITCH RUNNER (Phase-shifting Platforms)
+# GLITCH RUNNER (Phase-shifting Platforms)
 # ==========================================
+from __future__ import annotations
+
 import pygame
 
 from pocket_games.games.base import BaseGame
@@ -20,8 +22,12 @@ class GlitchRunnerGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked) and self.py >= 150:
-            self.vy = -220
+        if (
+            inp.is_key_just_pressed(pygame.K_SPACE)
+            or inp.mouse_clicked
+            or inp.is_key_just_pressed(pygame.K_UP)
+        ) and self.py >= 150:
+            self.vy = -190  # Sanfterer Sprung
             self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
@@ -30,25 +36,31 @@ class GlitchRunnerGame(BaseGame):
             return
 
         self.timer += dt
-        if self.timer > 1.2:
+        if self.timer > 2.2:
             self.timer = 0.0
             self.glitch_phase = not self.glitch_phase
 
-        self.vy += 500 * dt
+        self.vy += 400 * dt
         self.py += self.vy * dt
 
         if self.py > 150:
             if self.glitch_phase:
-                self.game_over = True  # Fell through glitched floor
+                self.game_over = True
                 self.play_sound("gameover")
             else:
                 self.py = 150
                 self.vy = 0
-                self.add_score(2)
+                self.add_score(1)
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((15, 15, 20))
-        floor_color = (255, 50, 100) if self.glitch_phase else (0, 255, 150)
+
+        floor_color = (
+            (255, 80, 80)
+            if (self.timer > 1.7) and int(self.timer * 10) % 2 == 0
+            else ((255, 50, 100) if self.glitch_phase else (0, 255, 150))
+        )
+
         pygame.draw.rect(surface, floor_color, (0, 162, 320, 20))
         pygame.draw.rect(surface, (255, 200, 0), (int(self.px), int(self.py), 12, 12))
         self.render_ui(surface)

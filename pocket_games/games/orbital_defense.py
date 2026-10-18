@@ -1,5 +1,5 @@
 # ==========================================
-# 15: ORBITAL DEFENSE (Rotating Shield)
+# ORBITAL DEFENSE (Rotating Shield)
 # ==========================================
 import math
 import random

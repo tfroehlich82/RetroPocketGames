@@ -10,7 +10,7 @@ SETTINGS_FILE = Path("settings.json")
 class Settings:
     def __init__(self) -> None:
         self.sound_enabled: bool = True
-        self.master_volume: float = 0.8
+        self.master_volume: float = 0.6
         self.fullscreen: bool = True
         self.load()
 

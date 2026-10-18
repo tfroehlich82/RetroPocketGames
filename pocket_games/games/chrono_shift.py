@@ -1,5 +1,5 @@
 # ==========================================
-# 16: CHRONO SHIFT (Time Anomaly Field)
+# CHRONO SHIFT (Time Anomaly Field)
 # ==========================================
 import math
 import random

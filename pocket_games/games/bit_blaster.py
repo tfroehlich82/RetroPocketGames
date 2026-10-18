@@ -1,5 +1,5 @@
 # ==========================================
-# 1. BIT BLASTER (Enhanced Brick Breaker)
+# BIT BLASTER (Enhanced Brick Breaker)
 # ==========================================
 import pygame
 

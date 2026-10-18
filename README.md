@@ -62,7 +62,7 @@ The handheld features a unified dual-input scheme:
 
 ---
 
-## 🎮 Complete Game Guide (14 Titles)
+## 🎮 Game Guide
 
 ### 1. Pixel Drop
 
