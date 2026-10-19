@@ -13,11 +13,35 @@ from pocket_games.games.base import BaseGame
 class NeonDashGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Neon Dash")
-        self.lanes = [110, 160, 210]
-        self.player_lane = 1
-        self.obstacles = []
+        self.player_y = 180.0
+        self.player_vy = 0.0
+        self.is_grounded = True
+        self.gravity = 980.0
+        self.jump_speed = -360.0
+
+        # Dynamics
+        self.base_speed = 140.0
+        self.obstacles: list[dict] = []
         self.spawn_timer = 0.0
-        self.road_scroll = 0.0
+
+        self._spawn_obstacle()
+
+    def _spawn_obstacle(self) -> None:
+        obs_type = random.choice(["spike", "block", "tall_block"])
+        if obs_type == "spike":
+            w, h = 18, 22
+        elif obs_type == "block":
+            w, h = 22, 22
+        else:  # tall_block
+            w, h = 20, 38
+
+        self.obstacles.append({
+            "x": 330.0,
+            "y": 200.0 - h,
+            "w": w,
+            "h": h,
+            "type": obs_type
+        })
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -25,86 +49,66 @@ class NeonDashGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (
-            inp.is_key_just_pressed(pygame.K_LEFT)
-            or inp.is_key_just_pressed(pygame.K_a)
-        ) and self.player_lane > 0:
-            self.player_lane -= 1
-            self.play_sound("bounce")
-        elif (
-            inp.is_key_just_pressed(pygame.K_RIGHT)
-            or inp.is_key_just_pressed(pygame.K_d)
-        ) and self.player_lane < 2:
-            self.player_lane += 1
-            self.play_sound("bounce")
+        if (inp.is_key_just_pressed(pygame.K_SPACE) or inp.is_key_just_pressed(
+                pygame.K_UP) or inp.mouse_clicked) and self.is_grounded:
+            self.player_vy = self.jump_speed
+            self.is_grounded = False
+            self.play_sound("jump")
 
     def update(self, dt: float) -> None:
         super().update(dt)
-        if self.game_over:
+        if self.game_over or self.paused:
             return
 
-        speed = 170.0 + self.elapsed_time * 6.0
-        self.road_scroll = (self.road_scroll + speed * dt) % 40
+        current_speed = self.base_speed + (self.elapsed_time * 8.5)
+
+        self.player_vy += self.gravity * dt
+        self.player_y += self.player_vy * dt
+
+        if self.player_y >= 180.0:
+            self.player_y = 180.0
+            self.player_vy = 0.0
+            self.is_grounded = True
 
         self.spawn_timer += dt
-        if self.spawn_timer > max(0.5, 1.3 - self.elapsed_time * 0.015):
+        spawn_delay = max(0.85, 2.0 - (self.elapsed_time * 0.02) + random.uniform(-0.2, 0.3))
+        if self.spawn_timer >= spawn_delay:
             self.spawn_timer = 0.0
-            self.obstacles.append(
-                {"lane": random.randint(0, 2), "y": -40, "passed": False}
-            )
+            self._spawn_obstacle()
+
+        player_rect = pygame.Rect(40, int(self.player_y), 20, 20)
 
         for obs in self.obstacles[:]:
-            obs["y"] += speed * dt
+            obs["x"] -= current_speed * dt
 
-            if obs["lane"] == self.player_lane and abs(obs["y"] - 175) < 18:
-                self.game_over = True
-                self.play_sound("gameover")
-
-            if not obs["passed"] and obs["y"] > 200:
-                obs["passed"] = True
+            obs_rect = pygame.Rect(int(obs["x"]), int(obs["y"]), obs["w"], obs["h"])
+            if obs_rect.right < 0:
+                self.obstacles.remove(obs)
                 self.add_score(15)
                 self.play_sound("score")
 
-            if obs["y"] > 260:
-                self.obstacles.remove(obs)
+            if player_rect.colliderect(obs_rect):
+                self.game_over = True
+                self.play_sound("crash")
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((15, 10, 25))
+        surface.fill((10, 10, 20))
 
-        road_rect = pygame.Rect(70, 0, 180, 240)
-        pygame.draw.rect(surface, (25, 20, 35), road_rect)
+        pygame.draw.line(surface, (0, 255, 200), (0, 200), (320, 200), 2)
+        for i in range(0, 320, 30):
+            offset = int((self.elapsed_time * (self.base_speed + self.elapsed_time * 8.5)) % 30)
+            x_pos = i - offset
+            if x_pos >= 0:
+                pygame.draw.line(surface, (20, 40, 60), (x_pos, 200), (x_pos, 240), 1)
 
-        pygame.draw.line(surface, (0, 255, 200), (70, 0), (70, 240), 3)
-        pygame.draw.line(surface, (0, 255, 200), (250, 0), (250, 240), 3)
-
-        for lx in [135, 185]:
-            for y_pos in range(int(-40 + self.road_scroll), 240, 40):
-                pygame.draw.line(surface, (80, 50, 120), (lx, y_pos), (lx, y_pos + 20), 2)
-
-        px = self.lanes[self.player_lane]
-        py = 175
-        pygame.draw.rect(surface, (10, 10, 10), (px - 10, py - 10, 4, 8))
-        pygame.draw.rect(surface, (10, 10, 10), (px + 6, py - 10, 4, 8))
-        pygame.draw.rect(surface, (10, 10, 10), (px - 10, py + 6, 4, 8))
-        pygame.draw.rect(surface, (10, 10, 10), (px + 6, py + 6, 4, 8))
-        pygame.draw.rect(
-            surface, (0, 255, 200), (px - 8, py - 14, 16, 28), border_radius=4
-        )
-        pygame.draw.rect(
-            surface, (200, 255, 255), (px - 5, py - 6, 10, 10), border_radius=2
-        )
-        pygame.draw.circle(surface, (255, 255, 255), (px - 5, py - 14), 2)
-        pygame.draw.circle(surface, (255, 255, 255), (px + 5, py - 14), 2)
+        pygame.draw.rect(surface, (255, 0, 128), (40, int(self.player_y), 20, 20), border_radius=3)
+        pygame.draw.rect(surface, (255, 255, 255), (42, int(self.player_y) + 2, 16, 16), 1, border_radius=2)
 
         for obs in self.obstacles:
-            ox = self.lanes[obs["lane"]]
-            oy = int(obs["y"])
-            pygame.draw.rect(
-                surface,
-                (255, 0, 100),
-                (ox - 12, oy - 10, 24, 20),
-                border_radius=3,
-            )
-            pygame.draw.rect(surface, (255, 255, 0), (ox - 8, oy - 2, 16, 4))
+            ox, oy, ow, oh = int(obs["x"]), int(obs["y"]), obs["w"], obs["h"]
+            if obs["type"] == "spike":
+                pygame.draw.polygon(surface, (255, 50, 50), [(ox, oy + oh), (ox + ow // 2, oy), (ox + ow, oy + oh)])
+            else:
+                pygame.draw.rect(surface, (255, 200, 0), (ox, oy, ow, oh), border_radius=2)
 
         self.render_ui(surface)

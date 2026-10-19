@@ -23,9 +23,8 @@ class Engine:
         self.settings = Settings()
         self.highscores = HighScoreManager()
         self.input = InputManager()
-        self.audio = AudioManager(
-            enabled=self.settings.sound_enabled, volume=self.settings.master_volume
-        )
+        self.audio = AudioManager(enabled=self.settings.sound_enabled)
+        self.audio.set_volume(self.settings.master_volume)
 
         is_windows = sys.platform == "win32"
         if is_windows:

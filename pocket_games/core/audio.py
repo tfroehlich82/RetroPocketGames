@@ -20,6 +20,10 @@ class AudioManager:
             logger.error(e)
         self._cache: dict[str, pygame.mixer.Sound] = {}
 
+    def set_volume(self, volume: float) -> None:
+        self.volume = max(0.0, min(1.0, volume))
+        self._cache.clear()
+
     def _create_tone(self, freq: float, duration: float, wave_type: str = "square") -> pygame.mixer.Sound:
         sample_rate = 22050
         num_samples = int(sample_rate * duration)
@@ -36,7 +40,6 @@ class AudioManager:
             else:
                 val = 0
 
-            # Apply slight volume decay envelope
             envelope = 1.0 - (i / num_samples) * 0.3
             sample = int(32767 * self.volume * val * envelope)
             buffer.extend(struct.pack('<h', max(-32768, min(32767, sample))))
@@ -44,7 +47,7 @@ class AudioManager:
         return pygame.mixer.Sound(buffer=bytes(buffer))
 
     def play(self, sound_type: str) -> None:
-        if not self.enabled:
+        if not self.enabled or self.volume <= 0.0:
             return
 
         if sound_type not in self._cache:
@@ -53,16 +56,16 @@ class AudioManager:
                     self._cache[sound_type] = self._create_tone(440, 0.08, "square")
                 case "confirm":
                     self._cache[sound_type] = self._create_tone(880, 0.1, "square")
-                case "jump":
+                case "jump" | "bounce":
                     self._cache[sound_type] = self._create_tone(587.33, 0.08, "square")
-                case "coin":
+                case "coin" | "score":
                     self._cache[sound_type] = self._create_tone(1046.5, 0.12, "sine")
-                case "crash":
+                case "crash" | "hit":
                     self._cache[sound_type] = self._create_tone(150, 0.25, "noise")
                 case "laser":
                     self._cache[sound_type] = self._create_tone(750, 0.06, "sine")
-                case "score":
-                    self._cache[sound_type] = self._create_tone(659.25, 0.1, "sine")
+                case "gameover":
+                    self._cache[sound_type] = self._create_tone(220, 0.4, "square")
                 case _:
                     self._cache[sound_type] = self._create_tone(440, 0.05, "square")
 

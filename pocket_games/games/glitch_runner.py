@@ -29,7 +29,7 @@ class GlitchRunnerGame(BaseGame):
             or inp.is_key_just_pressed(pygame.K_UP)
             or inp.is_key_just_pressed(pygame.K_w)
         ) and self.py >= 148:
-            self.vy = -160  # Sehr kurzer, schneller Sprung (minimale Air-Time)
+            self.vy = -200
             self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
@@ -39,15 +39,13 @@ class GlitchRunnerGame(BaseGame):
 
         self.timer += dt
 
-        # Sanft ansteigende Schwierigkeit
         interval = max(1.4, 4.5 - (self.score_count * 0.1))
 
         if self.timer > interval:
             self.timer = 0.0
             self.glitch_phase = not self.glitch_phase
 
-        # Hohe Schwerkraft für extrem schnelles Landen
-        self.vy += 650 * dt
+        self.vy += 420 * dt
         self.py += self.vy * dt
 
         if self.py > 150:

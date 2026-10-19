@@ -33,7 +33,7 @@ class CircuitBreakerGame(BaseGame):
 
         inp = self.engine.input
         if inp.mouse_clicked:
-            mx, my = inp.mouse_pos
+            mx, my = self.get_virtual_mouse_pos()
             for r in range(self.grid_h):
                 for c in range(self.grid_w):
                     rx, ry = 40 + c * 50, 45 + r * 42

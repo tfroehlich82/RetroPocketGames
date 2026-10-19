@@ -68,7 +68,7 @@ class SettingsScreen:
                 self.engine.audio.play("confirm")
             case "slider_volume":
                 settings.master_volume = max(0.0, min(1.0, settings.master_volume + (direction * 0.1)))
-                self.engine.audio.volume = settings.master_volume
+                self.engine.audio.set_volume(settings.master_volume)
                 settings.save()
                 self.engine.audio.play("select")
             case "toggle_fullscreen":

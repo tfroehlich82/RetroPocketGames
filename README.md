@@ -66,9 +66,9 @@ The handheld features a unified dual-input scheme:
 
 ### 1. Pixel Drop
 
-* **Goal:** Stack falling pixel blocks cleanly to score points without letting the grid overflow.
+* **Goal:** Stack falling blocks cleanly to clear lines and increase your level without letting the grid overflow.
 
-* **Gameplay:** Fast-paced falling block puzzle where blocks drop continuously. Move blocks horizontally to place them safely before they lock into place.
+* **Gameplay:** Fast-paced falling block puzzle where blocks drop continuously. Game speed increases strictly every 20 completed lines, ensuring a balanced, long-lasting challenge.
 
 * **Controls:**
 
@@ -80,9 +80,9 @@ The handheld features a unified dual-input scheme:
 
 ### 2. Circuit Breaker
 
-* **Goal:** Route electrical current across all circuit nodes to restore system power.
+* **Goal:** Route electrical current across all circuit nodes to restore system power before time runs out.
 
-* **Gameplay:** Select nodes in sequence to establish a closed, active circuit. Complete connections earn high scores.
+* **Gameplay:** Select nodes in sequence to establish a closed, active circuit. Complete connections earn high scores. Active connected nodes glow cyan. Energy bar refills upon successful circuit completion.
 
 * **Controls:**
 
@@ -120,9 +120,17 @@ The handheld features a unified dual-input scheme:
 
 ### 5. Quantum Maze
 
-* **Goal:** Navigate through shifting walls to reach green quantum cores.
+* **Goal:** Navigate shifting labyrinth walls to collect quantum cores and advance maze complexity.
 
-* **Gameplay:** Top-down labyrinth. Touching walls resets your position back to the starting point, requiring precise path planning.
+* **Entities:**
+
+  * **Quantum Cores (Cyan):** +100 pts, counts towards the 10-core reset progress.
+
+  * **Data Fragments (Yellow):** +50 bonus points.
+
+  * **Glitch Traps (Red):** -50 penalty points.
+
+  * **Progress Bar:** Displays progress towards the next procedural maze generation.
 
 * **Controls:**
 
@@ -132,9 +140,17 @@ The handheld features a unified dual-input scheme:
 
 ### 6. Sub-Zero Miner
 
-* **Goal:** Mine rare ice crystals while managing a declining oxygen reserve.
+* **Goal:** Mine ice crystals and O2 bubbles while managing a declining oxygen reserve in deep ice caves.
 
-* **Gameplay:** Collect gems before the oxygen meter runs out. Each collected crystal grants points and replenishes $20\%$ oxygen.
+* **Entities:** 
+
+  * **Ice Hazards:** Circular cold zones that drain O2 on proximity/collision.
+
+  * **Toxic Spores:** Pulsing purple hazards that cause heavy O2 depletion.
+
+  * **O2 Bubbles / Gems:** Replenish oxygen (+20%) and award points.
+
+  * **Progressive Difficulty:** O2 consumption rate scales up with each depth level.
 
 * **Controls:**
 
@@ -180,9 +196,15 @@ The handheld features a unified dual-input scheme:
 
 ### 10. Matrix Invaders
 
-* **Goal:** Destroy incoming rogue process waves before they reach the bottom screen border.
+* **Goal:** Destroy incoming rogue waves of cyber invaders before they breach the system border.
 
-* **Gameplay:** Vertical fixed space shooter. Dodge enemy drops while firing plasma rounds.
+* **Entities:**
+
+  * **Invader Types:** Drones (Standard), Speeders (Fast & erratic wobble), Tanks (Armored, require multiple hits).
+
+  * **Power-Ups:** Weapon upgrades (Dual/Triple lasers and energy beams) and temporary Energy Shields.
+
+  * **Particles:** Neon explosion effects.
 
 * **Controls:**
 
@@ -254,9 +276,9 @@ The handheld features a unified dual-input scheme:
 
 ### 16. Chrono Shift
 
-* **Goal:** Collect temporal fragments while dodging time-rewinding anomaly waves.
+* **Goal:** Collect temporal fragments while evading your own time-rewinding echo trail.
 
-* **Gameplay:** Reflex avoidance game set in an unstable timeline. Gather glowing temporal shards while evading sweeping time-distortion ripples that reverse space conditions.
+* **Gameplay:** Ghost-trail reproducing your exact past movements; collision results in a paradox game over.
 
 * **Controls:**
 

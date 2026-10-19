@@ -19,6 +19,7 @@ class ChronoShiftGame(BaseGame):
         self.fragments: list[dict] = []
         self.trail: list[tuple[float, float]] = []
         self.trail_timer = 0.0
+        self.spawn_protection = 1.0
         self._spawn_fragment()
 
     def _spawn_fragment(self) -> None:
@@ -55,6 +56,9 @@ class ChronoShiftGame(BaseGame):
         if self.game_over or self.paused:
             return
 
+        if self.spawn_protection > 0:
+            self.spawn_protection -= dt
+
         self.px += self.vx * dt
         self.py += self.vy * dt
 
@@ -70,11 +74,12 @@ class ChronoShiftGame(BaseGame):
             if len(self.trail) > 42:
                 self.trail.pop()
 
-        for i, pos in enumerate(self.trail[4:]):
-            if math.hypot(self.px - pos[0], self.py - pos[1]) < 9:
-                self.game_over = True
-                self.play_sound("gameover")
-                return
+        if self.spawn_protection <= 0:
+            for i, pos in enumerate(self.trail[6:]):
+                if math.hypot(self.px - pos[0], self.py - pos[1]) < 9:
+                    self.game_over = True
+                    self.play_sound("gameover")
+                    return
 
         for f in self.fragments[:]:
             if math.hypot(self.px - f["x"], self.py - f["y"]) < f["r"] + 6:
