@@ -17,14 +17,14 @@ GAME_METADATA = {
     },
     "Neon Dash": {
         "desc": "Rasanter Cyberpunk-Endless-Runner.",
-        "goal": "Weiche Hindernissen aus.",
+        "goal": "Weiche Hindernissen und 2er/3er/4er-Blöcken aus.",
         "gameplay": "Springe über Spikes und Blockaden. Steigende Geschwindigkeit.",
         "controls": "Leertaste / D-Pad Oben / Touch (Springen)"
     },
     "Byte Hopper": {
         "desc": "Vertikale Jump-and-Run-Plattform-Action.",
         "goal": "Springe über Speicherregister so hoch wie möglich.",
-        "gameplay": "Nutze präzise Sprünge und sammle Datenmünzen ein.",
+        "gameplay": "Nutze statische, horizontal und vertikal schwingende Plattformen.",
         "controls": "D-Pad: Bewegen / Oben: Springen"
     },
     "Quantum Maze": {
@@ -54,7 +54,7 @@ GAME_METADATA = {
     "Cyber Snake": {
         "desc": "Klassisches Schlangen-Spiel im Cyber-Design.",
         "goal": "Sammle Datenpakete, ohne Wände zu treffen.",
-        "gameplay": "Steuri die Cyber-Schlange geschickt über das Raster.",
+        "gameplay": "Steuere die Cyber-Schlange geschickt über das Raster.",
         "controls": "D-Pad / WASD (Richtung ändern)"
     },
     "Matrix Invaders": {
@@ -130,34 +130,34 @@ class BaseGame:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Automatische Umschreibung von handle_input für Subklassen
         if "handle_input" in cls.__dict__:
             orig_handle = cls.__dict__["handle_input"]
             def wrapped_handle(self, *args, **kwargs):
                 BaseGame.handle_input(self)
-                if self.showing_intro:
+                if self.showing_intro or self.game_over:
                     return
                 return orig_handle(self, *args, **kwargs)
             cls.handle_input = wrapped_handle
 
-        # Automatische Umschreibung von update für Subklassen
         if "update" in cls.__dict__:
             orig_update = cls.__dict__["update"]
             def wrapped_update(self, dt, *args, **kwargs):
                 BaseGame.update(self, dt)
-                if self.showing_intro:
+                if self.showing_intro or self.game_over:
                     return
                 return orig_update(self, dt, *args, **kwargs)
             cls.update = wrapped_update
 
-        # Automatische Umschreibung von render für Subklassen
         if "render" in cls.__dict__:
             orig_render = cls.__dict__["render"]
             def wrapped_render(self, surface, *args, **kwargs):
                 if self.showing_intro:
                     self.render_intro(surface)
                     return
-                return orig_render(self, surface, *args, **kwargs)
+                orig_render(self, surface, *args, **kwargs)
+                if self.game_over:
+                    self.render_game_over(surface)
+                return
             cls.render = wrapped_render
 
     def __init__(self, engine, game_name: str) -> None:
@@ -209,25 +209,34 @@ class BaseGame:
         surface.blit(score_txt, (10, 5))
 
     def handle_input(self) -> None:
+        inp = getattr(self.engine, "input", None)
+        if not inp:
+            return
         if self.showing_intro:
-            inp = getattr(self.engine, "input", None)
-            if inp and (getattr(inp, "is_key_just_pressed", lambda k: False)(pygame.K_SPACE) or
-                        getattr(inp, "is_key_just_pressed", lambda k: False)(pygame.K_RETURN) or
-                        getattr(inp, "is_key_just_pressed", lambda k: False)(pygame.K_z) or
-                        getattr(inp, "is_key_just_pressed", lambda k: False)(pygame.K_UP) or
-                        getattr(inp, "mouse_clicked", False)):
+            if (inp.is_key_just_pressed(pygame.K_SPACE) or 
+                inp.is_key_just_pressed(pygame.K_RETURN) or 
+                inp.is_key_just_pressed(pygame.K_z) or
+                inp.is_key_just_pressed(pygame.K_UP) or
+                inp.mouse_clicked):
                 self.showing_intro = False
                 self.play_sound("confirm")
+        elif self.game_over and (inp.is_key_just_pressed(pygame.K_ESCAPE) or
+            inp.is_key_just_pressed(pygame.K_RETURN) or
+            inp.is_key_just_pressed(pygame.K_SPACE) or
+            inp.mouse_clicked):
+            self.active = False  # Spiel beenden / zurück zum Menü
 
     def update(self, dt: float) -> None:
-        if self.showing_intro:
+        if self.showing_intro or self.game_over:
             return
-        if not self.paused and not self.game_over:
+        if not self.paused:
             self.elapsed_time += dt
 
     def render(self, surface: pygame.Surface) -> None:
         if self.showing_intro:
             self.render_intro(surface)
+        elif self.game_over:
+            self.render_game_over(surface)
 
     def render_intro(self, surface: pygame.Surface) -> None:
         surface.fill((8, 12, 22))
@@ -268,3 +277,21 @@ class BaseGame:
         if int(pygame.time.get_ticks() / 250) % 2 == 0:
             prompt_txt = self.font.render("-> DRÜCKE SPACE / A ZUM STARTEN <-", True, (255, 255, 255))
             surface.blit(prompt_txt, (160 - prompt_txt.get_width() // 2, 205))
+
+    def render_game_over(self, surface: pygame.Surface) -> None:
+        overlay = pygame.Surface((320, 240), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 190))
+        surface.blit(overlay, (0, 0))
+
+        pygame.draw.rect(surface, (255, 50, 80), (35, 45, 250, 150), 2, border_radius=8)
+        pygame.draw.rect(surface, (20, 10, 15), (37, 47, 246, 146), border_radius=7)
+
+        go_surf = self.title_font.render("GAME OVER", True, (255, 50, 80))
+        surface.blit(go_surf, (160 - go_surf.get_width() // 2, 60))
+
+        score_surf = self.font.render(f"FINAL SCORE: {self.score}", True, (255, 255, 255))
+        surface.blit(score_surf, (160 - score_surf.get_width() // 2, 105))
+
+        if int(pygame.time.get_ticks() / 300) % 2 == 0:
+            exit_surf = self.font.render("DRÜCKE ESC / ENTER ZUM MENÜ", True, (0, 255, 200))
+            surface.blit(exit_surf, (160 - exit_surf.get_width() // 2, 145))

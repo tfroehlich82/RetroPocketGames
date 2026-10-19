@@ -3,6 +3,7 @@
 # ==========================================
 from __future__ import annotations
 
+import math
 import random
 
 import pygame
@@ -20,23 +21,50 @@ class ByteHopperGame(BaseGame):
         self._generate_initial_platforms()
 
     def _generate_initial_platforms(self) -> None:
-        self.platforms = [{"rect": pygame.Rect(100, 200, 100, 8), "has_coin": False, "vx": 0.0, "min_x": 20, "max_x": 280}]
+        self.platforms = [
+            {
+                "rect": pygame.Rect(100, 200, 100, 8),
+                "has_coin": False,
+                "motion": "static",
+                "base_x": 100.0,
+                "base_y": 200.0,
+                "offset": 0.0,
+                "speed": 0.0,
+                "range": 0.0,
+            }
+        ]
         y = 150
         while y > -1000:
-            w = random.randint(50, 70)
+            w = random.randint(55, 75)
             x = random.randint(30, 290 - w)
-            is_moving = random.random() < 0.35
-            mv_speed = random.choice([-35, 35, -50, 50]) if is_moving else 0.0
+
+            r = random.random()
+            if r < 0.5:
+                motion = "static"
+                speed = 0.0
+                rng = 0.0
+            elif r < 0.75:
+                motion = "horizontal"
+                speed = random.uniform(2.5, 4.5)
+                rng = random.randint(35, 65)
+            else:
+                motion = "vertical"
+                speed = random.uniform(2.0, 4.0)
+                rng = random.randint(18, 35)
+
             self.platforms.append(
                 {
                     "rect": pygame.Rect(x, y, w, 8),
                     "has_coin": random.random() < 0.3,
-                    "vx": mv_speed,
-                    "min_x": 20,
-                    "max_x": 300 - w
+                    "motion": motion,
+                    "base_x": float(x),
+                    "base_y": float(y),
+                    "offset": random.uniform(0, math.pi * 2),
+                    "speed": speed,
+                    "range": float(rng),
                 }
             )
-            y -= random.randint(38, 52)
+            y -= random.randint(42, 56)
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -65,14 +93,15 @@ class ByteHopperGame(BaseGame):
             self.px = 0
 
         for p in self.platforms:
-            if p["vx"] != 0:
-                p["rect"].x += int(p["vx"] * dt)
-                if p["rect"].x <= p["min_x"]:
-                    p["rect"].x = p["min_x"]
-                    p["vx"] = -p["vx"]
-                elif p["rect"].x >= p["max_x"]:
-                    p["rect"].x = p["max_x"]
-                    p["vx"] = -p["vx"]
+            if p["motion"] != "static":
+                p["offset"] += p["speed"] * dt
+                oscillation = math.sin(p["offset"]) * p["range"]
+                if p["motion"] == "horizontal":
+                    new_x = p["base_x"] + oscillation
+                    p["rect"].x = int(max(10, min(320 - p["rect"].w, new_x)))
+                elif p["motion"] == "vertical":
+                    new_y = p["base_y"] + oscillation
+                    p["rect"].y = int(new_y)
 
         player_rect = pygame.Rect(int(self.px) - 6, int(self.py) - 12, 12, 12)
         if self.vy > 0:
@@ -83,8 +112,6 @@ class ByteHopperGame(BaseGame):
                 ):
                     self.vy = -290
                     self.play_sound("bounce")
-                    if p["vx"] != 0:
-                        self.px += p["vx"] * 0.06
 
                 if p["has_coin"] and player_rect.colliderect(p["rect"]):
                     p["has_coin"] = False
@@ -98,19 +125,34 @@ class ByteHopperGame(BaseGame):
 
         highest_p = min(p["rect"].y for p in self.platforms)
         if highest_p - self.camera_y > -100:
-            w = random.randint(50, 70)
+            w = random.randint(55, 75)
             x = random.randint(30, 290 - w)
-            is_moving = random.random() < 0.35
-            mv_speed = random.choice([-35, 35, -50, 50]) if is_moving else 0.0
+            gen_y = highest_p - random.randint(42, 56)
+
+            r = random.random()
+            if r < 0.5:
+                motion = "static"
+                speed = 0.0
+                rng = 0.0
+            elif r < 0.75:
+                motion = "horizontal"
+                speed = random.uniform(2.5, 4.5)
+                rng = random.randint(35, 65)
+            else:
+                motion = "vertical"
+                speed = random.uniform(2.0, 4.0)
+                rng = random.randint(18, 35)
+
             self.platforms.append(
                 {
-                    "rect": pygame.Rect(
-                        x, highest_p - random.randint(38, 52), w, 8
-                    ),
+                    "rect": pygame.Rect(x, gen_y, w, 8),
                     "has_coin": random.random() < 0.35,
-                    "vx": mv_speed,
-                    "min_x": 20,
-                    "max_x": 300 - w
+                    "motion": motion,
+                    "base_x": float(x),
+                    "base_y": float(gen_y),
+                    "offset": random.uniform(0, math.pi * 2),
+                    "speed": speed,
+                    "range": float(rng),
                 }
             )
 
@@ -127,7 +169,13 @@ class ByteHopperGame(BaseGame):
         for p in self.platforms:
             ry = p["rect"].y - int(self.camera_y)
             if -20 < ry < 260:
-                col = (0, 200, 255) if p["vx"] == 0 else (255, 100, 200)
+                if p["motion"] == "horizontal":
+                    col = (255, 100, 200)
+                elif p["motion"] == "vertical":
+                    col = (50, 255, 150)
+                else:
+                    col = (0, 200, 255)
+
                 pygame.draw.rect(
                     surface,
                     col,
