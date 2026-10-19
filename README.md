@@ -6,37 +6,70 @@ Welcome to the official manual and documentation for the **Retro Game Collection
 
 ## 🚀 Quick Start & Installation for Linux / Raspberry Pi OS
 
-You can use the automated shell script to install dependencies and run the game instantly:
+You can use the automated shell scripts to install dependencies, update games or run the game:
+
+### 1. Installation Script (`install.sh`)
+Initializes system dependencies, creates the virtual environment, and builds the application package:
 
 ```bash
-chmod +x install_and_run.sh
-./install_and_run.sh
+chmod +x install.sh
+./install.sh
 ```
 
-### Manual Installation Steps:
-1. **Install SDL2 System Dependencies:**
+### 2. Update Script (`update.sh`)
+Pulls the latest changes from the repository, updates dependencies inside the virtual environment, and refreshes the package installation:
+
+```bash
+chmod +x update.sh
+./update.sh
+```
+
+### 3. Run Script (`run.sh` / `pocket-games`)
+Launches the game collection directly:
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+---
+
+## 🛠️ Manual Installation Steps
+
+If you prefer installing manually without automated scripts:
+
+1. **Install System Dependencies:**
+
    ```bash
    sudo apt update && sudo apt upgrade -y
    sudo apt install -y python3-pip python3-venv python3-dev git \
        libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
        libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev
    ```
+
 2. **Clone the Repository:**
+
    ```bash
    git clone https://github.com/tfroehlich82/RetroPocketGames.git
    cd RetroPocketGames
    ```
+
 3. **Set up Virtual Environment:**
+
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
    ```
+
 4. **Install Package:**
+
    ```bash
    pip install --upgrade pip
    pip install .
    ```
-5. **Launch:**
+
+5. **Launch Suite:**
+
    ```bash
    pocket-games
    ```
@@ -348,3 +381,15 @@ Toggle procedural sound effects on/off and adjust master volume (0% to 100%).
 ### Exit
 
 Cleanly exit the game suite back to the operating system.
+
+---
+
+## 🧪 Running Unit Tests
+
+Run all unit tests (including `BaseGame` lifecycle and physics engine checks):
+
+```bash
+python -m unittest discover tests/
+```
+
+---
