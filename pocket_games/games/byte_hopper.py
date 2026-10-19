@@ -16,19 +16,19 @@ class ByteHopperGame(BaseGame):
         self.px, self.py = 160.0, 180.0
         self.vx, self.vy = 0.0, 0.0
         self.camera_y = 0.0
-        self.platforms = [{"rect": pygame.Rect(100, 200, 120, 8), "has_coin": False}]
+        self.platforms = []
         self._generate_initial_platforms()
 
     def _generate_initial_platforms(self) -> None:
-        y = 160
+        self.platforms = [{"rect": pygame.Rect(100, 200, 100, 8), "has_coin": False}]
+        y = 150
         while y > -1000:
-            w = random.randint(55, 80)
-            x = random.randint(20, 300 - w)
+            w = random.randint(50, 75)
+            x = random.randint(30, 290 - w)
             self.platforms.append(
-                {"rect": pygame.Rect(x, y, w, 8), "has_coin": random.random() < 0.3}
+                {"rect": pygame.Rect(x, y, w, 8), "has_coin": random.random() < 0.35}
             )
-            # Garantierter maximaler Sprungabstand (max 42 Pixel vertikal, damit immer erreichbar)
-            y -= random.randint(25, 42)
+            y -= random.randint(32, 45)
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -38,26 +38,24 @@ class ByteHopperGame(BaseGame):
         inp = self.engine.input
         self.vx = 0
         if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
-            self.vx = -150
+            self.vx = -160
         if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
-            self.vx = 150
+            self.vx = 160
 
     def update(self, dt: float) -> None:
         super().update(dt)
         if self.game_over:
             return
 
-        self.vy += 500 * dt  # Gravity
+        self.vy += 520 * dt
         self.px += self.vx * dt
         self.py += self.vy * dt
 
-        # Screen Wrap
         if self.px < 0:
             self.px = 320
         elif self.px > 320:
             self.px = 0
 
-        # Jump on Platform
         player_rect = pygame.Rect(int(self.px) - 6, int(self.py) - 12, 12, 12)
         if self.vy > 0:
             for p in self.platforms:
@@ -65,7 +63,7 @@ class ByteHopperGame(BaseGame):
                     player_rect.colliderect(p["rect"])
                     and abs(player_rect.bottom - p["rect"].top) < 10
                 ):
-                    self.vy = -270
+                    self.vy = -290
                     self.play_sound("bounce")
 
                 if p["has_coin"] and player_rect.colliderect(p["rect"]):
@@ -73,53 +71,61 @@ class ByteHopperGame(BaseGame):
                     self.add_score(50)
                     self.play_sound("score")
 
-        # Scroll Camera
         if self.py - self.camera_y < 100:
             diff = 100 - (self.py - self.camera_y)
             self.camera_y -= diff
             self.add_score(int(diff))
 
-        # Generate new platforms mit strenger vertikaler Begrenzung
         highest_p = min(p["rect"].y for p in self.platforms)
         if highest_p - self.camera_y > -100:
-            w = random.randint(55, 80)
-            x = random.randint(20, 300 - w)
+            w = random.randint(50, 75)
+            x = random.randint(30, 290 - w)
             self.platforms.append(
                 {
                     "rect": pygame.Rect(
-                        x, highest_p - random.randint(25, 42), w, 8
+                        x, highest_p - random.randint(32, 45), w, 8
                     ),
                     "has_coin": random.random() < 0.4,
                 }
             )
 
-        # Game Over condition
         if self.py - self.camera_y > 250:
             self.game_over = True
             self.play_sound("gameover")
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((10, 20, 35))
+        surface.fill((8, 12, 22))
+
+        for x in range(0, 320, 40):
+            pygame.draw.line(surface, (14, 20, 35), (x, 0), (x, 240), 1)
 
         for p in self.platforms:
             ry = p["rect"].y - int(self.camera_y)
             if -20 < ry < 260:
                 pygame.draw.rect(
                     surface,
-                    (0, 180, 255),
+                    (0, 200, 255),
                     (p["rect"].x, ry, p["rect"].w, p["rect"].h),
                     border_radius=3,
                 )
+                pygame.draw.rect(
+                    surface,
+                    (150, 240, 255),
+                    (p["rect"].x + 2, ry + 1, p["rect"].w - 4, 2),
+                )
                 if p["has_coin"]:
                     pygame.draw.circle(
-                        surface, (255, 215, 0), (p["rect"].centerx, ry - 6), 4
+                        surface, (255, 215, 0), (p["rect"].centerx, ry - 6), 5
+                    )
+                    pygame.draw.circle(
+                        surface, (255, 255, 255), (p["rect"].centerx, ry - 6), 2
                     )
 
         py_screen = int(self.py - self.camera_y)
         pygame.draw.rect(
             surface,
-            (255, 200, 0),
+            (255, 180, 0),
             (int(self.px) - 6, py_screen - 12, 12, 12),
-            border_radius=2,
+            border_radius=3,
         )
         self.render_ui(surface)

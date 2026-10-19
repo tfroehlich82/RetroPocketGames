@@ -1,8 +1,9 @@
 # ==========================================
-# SUB ZERO MINER
+# SUB ZERO MINER (Deep Ice Core Edition)
 # ==========================================
 from __future__ import annotations
 
+import math
 import random
 
 import pygame
@@ -15,15 +16,16 @@ class SubZeroMinerGame(BaseGame):
         super().__init__(engine, game_name="Sub-Zero Miner")
         self.rx, self.ry = 160.0, 120.0
         self.oxygen = 100.0
+        self.level = 1
         self.gems: list[dict] = []
         self.hazards: list[dict] = []
+        self.toxic_spores: list[dict] = []
         self.reset_level()
 
     def reset_level(self) -> None:
-        # Reset player position to safe center
         self.rx, self.ry = 160.0, 120.0
 
-        # Generate hazards ensuring they NEVER spawn near the player start (160, 120)
+        # Ice Hazards
         self.hazards = []
         while len(self.hazards) < 3:
             hx = random.randint(50, 270)
@@ -32,7 +34,16 @@ class SubZeroMinerGame(BaseGame):
             if (hx - 160) ** 2 + (hy - 120) ** 2 > (hr + 40) ** 2:
                 self.hazards.append({"x": hx, "y": hy, "r": hr})
 
-        # Generate gems ensuring they DO NOT spawn inside or overlapping hazards
+        # New Toxic Spores Hazards (heavy O2 drain on touch)
+        self.toxic_spores = []
+        while len(self.toxic_spores) < 2 + min(self.level, 3):
+            tx = random.randint(40, 280)
+            ty = random.randint(40, 200)
+            tr = 12
+            if (tx - 160) ** 2 + (ty - 120) ** 2 > (tr + 35) ** 2:
+                self.toxic_spores.append({"x": tx, "y": ty, "r": tr, "pulse": random.uniform(0, math.pi)})
+
+        # Gems / O2 Bubbles
         self.gems = []
         gem_radius = 6
         for _ in range(4):
@@ -41,7 +52,7 @@ class SubZeroMinerGame(BaseGame):
                 gy = random.randint(40, 200)
 
                 valid = True
-                for h in self.hazards:
+                for h in self.hazards + self.toxic_spores:
                     dist_sq = (gx - h["x"]) ** 2 + (gy - h["y"]) ** 2
                     min_dist = h["r"] + gem_radius + 4
                     if dist_sq < min_dist ** 2:
@@ -58,7 +69,7 @@ class SubZeroMinerGame(BaseGame):
             return
 
         inp = self.engine.input
-        speed = 100.0
+        speed = 110.0
         dt = 0.016
 
         dx, dy = 0.0, 0.0
@@ -78,7 +89,13 @@ class SubZeroMinerGame(BaseGame):
         for h in self.hazards:
             if abs(new_x - h["x"]) < h["r"] + 8 and abs(new_y - h["y"]) < h["r"] + 8:
                 collides = True
-                self.oxygen -= dt * 15.0
+                self.oxygen -= dt * 12.0
+                break
+
+        for ts in self.toxic_spores:
+            if abs(new_x - ts["x"]) < ts["r"] + 8 and abs(new_y - ts["y"]) < ts["r"] + 8:
+                collides = True
+                self.oxygen -= dt * 35.0  # Schwerer O2-Abzug!
                 break
 
         if not collides:
@@ -89,40 +106,58 @@ class SubZeroMinerGame(BaseGame):
         if not self.active or self.paused or self.game_over:
             return
 
-        self.oxygen -= dt * 6.0
+        # Progressiver O2-Verbrauch basierend auf dem Level
+        drain_rate = 5.0 + (self.level * 1.8)
+        self.oxygen -= dt * drain_rate
+
         if self.oxygen <= 0:
             self.game_over = True
             self.play_sound("gameover")
             return
 
+        for ts in self.toxic_spores:
+            ts["pulse"] += dt * 5
+
         for g in self.gems[:]:
             if abs(self.rx - g["x"]) < 14 and abs(self.ry - g["y"]) < 14:
                 self.gems.remove(g)
                 self.add_score(g["val"])
-                self.oxygen = min(100.0, self.oxygen + 20.0)
+                self.oxygen = min(100.0, self.oxygen + 22.0)
                 self.play_sound("score")
 
         if not self.gems:
+            self.level += 1
             self.reset_level()
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((10, 20, 32))
+        surface.fill((10, 18, 30))
 
         for h in self.hazards:
-            pygame.draw.circle(surface, (120, 200, 255), (int(h["x"]), int(h["y"])), h["r"])
-            pygame.draw.circle(surface, (200, 240, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1)
+            pygame.draw.circle(surface, (100, 190, 255), (int(h["x"]), int(h["y"])), h["r"])
+            pygame.draw.circle(surface, (180, 230, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1)
+
+        for ts in self.toxic_spores:
+            tx, ty = int(ts["x"]), int(ts["y"])
+            glow = int(4 + math.sin(ts["pulse"]) * 3)
+            pygame.draw.circle(surface, (160, 30, 200), (tx, ty), ts["r"] + glow)
+            pygame.draw.circle(surface, (220, 100, 255), (tx, ty), ts["r"])
+            pygame.draw.circle(surface, (255, 255, 255), (tx, ty), 3)
 
         for g in self.gems:
             pygame.draw.circle(surface, (0, 255, 255), (int(g["x"]), int(g["y"])), 6)
+            pygame.draw.circle(surface, (255, 255, 255), (int(g["x"]) - 2, int(g["y"]) - 2), 2)
 
         mx, my = int(self.rx), int(self.ry)
-        pygame.draw.rect(surface, (255, 120, 0), (mx - 8, my - 8, 16, 16), border_radius=3)
+        pygame.draw.rect(surface, (255, 130, 0), (mx - 8, my - 8, 16, 16), border_radius=3)
         pygame.draw.rect(surface, (255, 255, 255), (mx - 3, my - 3, 6, 6))
 
-        pygame.draw.rect(surface, (30, 40, 50), (10, 225, 100, 8), border_radius=2)
-        o2_w = int(100 * (min(100.0, max(0.0, self.oxygen)) / 100.0))
+        pygame.draw.rect(surface, (30, 40, 50), (10, 225, 120, 8), border_radius=2)
+        o2_w = int(120 * (min(100.0, max(0.0, self.oxygen)) / 100.0))
         o2_col = (0, 220, 255) if self.oxygen > 30 else (255, 50, 50)
         if o2_w > 0:
             pygame.draw.rect(surface, o2_col, (10, 225, o2_w, 8), border_radius=2)
+
+        lvl_txt = self.font.render(f"DEPTH LVL {self.level}", True, (200, 220, 255))
+        surface.blit(lvl_txt, (220, 222))
 
         self.render_ui(surface)
