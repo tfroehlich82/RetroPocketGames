@@ -90,8 +90,6 @@ jobs:
           merge-multiple: true
 
       - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-artifact@v7
         with:
-          files: artifacts/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/*
