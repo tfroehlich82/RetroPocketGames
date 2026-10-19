@@ -1,7 +1,8 @@
 # ==========================================
-# GRAVITY SLING (Planetary Gravity Wells)
+# GRAVITY SLING (Stellar Navigation Edition)
 # ==========================================
 import math
+import random
 
 import pygame
 
@@ -12,8 +13,31 @@ class GravitySlingGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Gravity Sling")
         self.px, self.py = 50.0, 120.0
-        self.vx, self.vy = 80.0, -40.0
-        self.planet = (160, 120, 25)
+        self.vx, self.vy = 60.0, -30.0
+
+        # Multiple planets with gravity wells
+        self.planets = [
+            {"x": 160, "y": 120, "r": 22, "color": (80, 140, 255)},
+            {"x": 80, "y": 60, "r": 16, "color": (255, 120, 80)},
+            {"x": 240, "y": 180, "r": 18, "color": (160, 80, 255)},
+        ]
+
+        self.crystals = []
+        self._spawn_crystal()
+
+    def _spawn_crystal(self) -> None:
+        while True:
+            cx = random.randint(30, 290)
+            cy = random.randint(40, 200)
+            # Ensure not inside planets
+            valid = True
+            for p in self.planets:
+                if math.hypot(cx - p["x"], cy - p["y"]) < p["r"] + 20:
+                    valid = False
+                    break
+            if valid:
+                self.crystals.append({"x": cx, "y": cy})
+                break
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -21,9 +45,18 @@ class GravitySlingGame(BaseGame):
             return
 
         inp = self.engine.input
-        if inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked:
-            # Thrust Pulse
-            self.vy -= 60
+        if (
+            inp.is_key_just_pressed(pygame.K_SPACE)
+            or inp.mouse_clicked
+            or inp.is_key_just_pressed(pygame.K_UP)
+        ):
+            # Thruster Pulse in direction of velocity or forward
+            mag = math.hypot(self.vx, self.vy)
+            if mag > 0:
+                self.vx += (self.vx / mag) * 45.0
+                self.vy += (self.vy / mag) * 45.0
+            else:
+                self.vy -= 45.0
             self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
@@ -31,32 +64,55 @@ class GravitySlingGame(BaseGame):
         if self.game_over:
             return
 
-        # Gravity pull toward planet
-        dx = self.planet[0] - self.px
-        dy = self.planet[1] - self.py
-        dist = math.hypot(dx, dy)
+        # Apply gravity from all planets
+        for p in self.planets:
+            dx = p["x"] - self.px
+            dy = p["y"] - self.py
+            dist = math.hypot(dx, dy)
 
-        if dist < self.planet[2]:
-            self.game_over = True
-            self.play_sound("gameover")
-            return
+            if dist < p["r"]:
+                self.game_over = True
+                self.play_sound("gameover")
+                return
 
-        force = 15000.0 / (dist ** 2)
-        self.vx += (dx / dist) * force * dt
-        self.vy += (dy / dist) * force * dt
+            if dist > 5:
+                force = 18000.0 / (dist**2)
+                self.vx += (dx / dist) * force * dt
+                self.vy += (dy / dist) * force * dt
 
         self.px += self.vx * dt
         self.py += self.vy * dt
 
-        if 0 <= self.px <= 320 and 0 <= self.py <= 240:
-            self.add_score(1)
+        # Crystal collection
+        for c in self.crystals[:]:
+            if math.hypot(self.px - c["x"], self.py - c["y"]) < 14:
+                self.crystals.remove(c)
+                self.add_score(50)
+                self.play_sound("score")
+                self._spawn_crystal()
 
-        if self.px < 0 or self.px > 320 or self.py < 0 or self.py > 240:
+        # Bounds check
+        if self.px < 10 or self.px > 310 or self.py < 30 or self.py > 230:
             self.game_over = True
             self.play_sound("gameover")
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((5, 10, 20))
-        pygame.draw.circle(surface, (100, 150, 255), (self.planet[0], self.planet[1]), self.planet[2])
-        pygame.draw.circle(surface, (255, 215, 0), (int(self.px), int(self.py)), 4)
+        surface.fill((5, 8, 18))
+
+        # Render Planets with gravitational field rings
+        for p in self.planets:
+            pygame.draw.circle(surface, (30, 45, 70), (p["x"], p["y"]), p["r"] + 12, 1)
+            pygame.draw.circle(surface, (30, 45, 70), (p["x"], p["y"]), p["r"] + 24, 1)
+            pygame.draw.circle(surface, p["color"], (p["x"], p["y"]), p["r"])
+            pygame.draw.circle(surface, (255, 255, 255), (p["x"] - 4, p["y"] - 4), 3)
+
+        # Render Crystals
+        for c in self.crystals:
+            pygame.draw.circle(surface, (0, 255, 200), (int(c["x"]), int(c["y"])), 6)
+            pygame.draw.circle(surface, (255, 255, 255), (int(c["x"]), int(c["y"])), 2)
+
+        # Render Spacecraft
+        pygame.draw.circle(surface, (255, 215, 0), (int(self.px), int(self.py)), 5)
+        pygame.draw.circle(surface, (255, 255, 255), (int(self.px), int(self.py)), 2)
+
         self.render_ui(surface)

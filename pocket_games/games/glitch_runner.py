@@ -1,5 +1,5 @@
 # ==========================================
-# GLITCH RUNNER (Phase-shifting Platforms)
+# GLITCH RUNNER (Progressive Difficulty)
 # ==========================================
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ class GlitchRunnerGame(BaseGame):
         self.vy = 0.0
         self.glitch_phase = False
         self.timer = 0.0
+        self.score_count = 0
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -28,7 +29,7 @@ class GlitchRunnerGame(BaseGame):
             or inp.is_key_just_pressed(pygame.K_UP)
             or inp.is_key_just_pressed(pygame.K_w)
         ) and self.py >= 148:
-            self.vy = -230  # Höherer Sprung für mehr Hang Time
+            self.vy = -240
             self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
@@ -37,12 +38,15 @@ class GlitchRunnerGame(BaseGame):
             return
 
         self.timer += dt
-        if self.timer > 2.5:  # Entspannteres Intervall
+
+        # Progressive difficulty: Interval shrinks as score increases
+        interval = max(1.2, 4.0 - (self.score_count * 0.15))
+
+        if self.timer > interval:
             self.timer = 0.0
             self.glitch_phase = not self.glitch_phase
 
-        # Reduzierte Schwerkraft für längere Flugphase
-        self.vy += 320 * dt
+        self.vy += 340 * dt
         self.py += self.vy * dt
 
         if self.py > 150:
@@ -52,25 +56,26 @@ class GlitchRunnerGame(BaseGame):
             else:
                 self.py = 150
                 self.vy = 0
+                self.score_count += 1
                 self.add_score(1)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((15, 15, 20))
+        surface.fill((12, 15, 22))
 
-        warning = self.timer > 1.9
+        interval = max(1.2, 4.0 - (self.score_count * 0.15))
+        warning = self.timer > (interval - 0.7)
+
         floor_color = (
             (255, 200, 50)
-            if warning and int(self.timer * 12) % 2 == 0
-            else ((255, 50, 100) if self.glitch_phase else (0, 255, 150))
+            if warning and int(self.timer * 15) % 2 == 0
+            else ((255, 40, 100) if self.glitch_phase else (0, 255, 160))
         )
 
-        pygame.draw.rect(surface, floor_color, (0, 162, 320, 20), border_radius=3)
-        pygame.draw.rect(
-            surface, (255, 200, 0), (int(self.px), int(self.py), 12, 12), border_radius=2
-        )
+        pygame.draw.rect(surface, floor_color, (0, 162, 320, 20), border_radius=4)
+        pygame.draw.rect(surface, (255, 220, 0), (int(self.px), int(self.py), 14, 14), border_radius=3)
 
         if warning:
             warn_txt = self.font.render("GLITCH WARNING!", True, (255, 200, 0))
-            surface.blit(warn_txt, (160 - warn_txt.get_width() // 2, 20))
+            surface.blit(warn_txt, (160 - warn_txt.get_width() // 2, 25))
 
         self.render_ui(surface)
