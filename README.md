@@ -6,7 +6,14 @@ Welcome to the official manual and documentation for the **Retro Game Collection
 
 ## 🚀 Quick Start & Installation for Linux / Raspberry Pi OS
 
-You can use the automated shell scripts to install dependencies, update games or run the game:
+### Clone the Repository first**
+
+   ```bash
+   git clone https://github.com/tfroehlich82/RetroPocketGames.git
+   cd RetroPocketGames
+   ```
+
+You can then use the automated shell scripts to install dependencies, update games or run the game:
 
 ### 1. Installation Script (`install.sh`)
 Initializes system dependencies, creates the virtual environment, and builds the application package:
