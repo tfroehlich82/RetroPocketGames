@@ -9,7 +9,7 @@ on:
 jobs:
   build-linux:
     name: Build for Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -79,7 +79,7 @@ jobs:
   release:
     name: Create GitHub Release
     needs: [build-linux, build-windows]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -89,7 +89,13 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create Release and Upload Assets
-        uses: actions/upload-artifact@v7
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          path: artifacts/*
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
