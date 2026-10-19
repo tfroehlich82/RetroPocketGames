@@ -1,6 +1,8 @@
 # ==========================================
-# CHRONO SHIFT (Time Anomaly Field)
+# CHRONO SHIFT (Temporal Echo Paradox)
 # ==========================================
+from __future__ import annotations
+
 import math
 import random
 
@@ -13,9 +15,18 @@ class ChronoShiftGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Chrono Shift")
         self.px, self.py = 160.0, 120.0
-        self.fragments = []
-        self.anomalies = []
-        self.spawn_timer = 0.0
+        self.vx, self.vy = 0.0, 0.0
+        self.fragments: list[dict] = []
+        self.trail: list[tuple[float, float]] = []
+        self.trail_timer = 0.0
+        self._spawn_fragment()
+
+    def _spawn_fragment(self) -> None:
+        self.fragments = [{
+            "x": float(random.randint(40, 280)),
+            "y": float(random.randint(50, 200)),
+            "r": 8
+        }]
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -23,46 +34,73 @@ class ChronoShiftGame(BaseGame):
             return
 
         inp = self.engine.input
-        spd = 120.0
-        if inp.is_key_down(pygame.K_LEFT):
-            self.px = max(10, self.px - spd * 0.016)
-        if inp.is_key_down(pygame.K_RIGHT):
-            self.px = min(310, self.px + spd * 0.016)
-        if inp.is_key_down(pygame.K_UP):
-            self.py = max(10, self.py - spd * 0.016)
-        if inp.is_key_down(pygame.K_DOWN):
-            self.py = min(230, self.py + spd * 0.016)
+        accel = 220.0
+        dt = 0.016
+
+        dx, dy = 0.0, 0.0
+        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+            dx -= accel * dt
+        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+            dx += accel * dt
+        if inp.is_key_down(pygame.K_UP) or inp.is_key_down(pygame.K_w):
+            dy -= accel * dt
+        if inp.is_key_down(pygame.K_DOWN) or inp.is_key_down(pygame.K_s):
+            dy += accel * dt
+
+        self.vx = self.vx * 0.92 + dx
+        self.vy = self.vy * 0.92 + dy
 
     def update(self, dt: float) -> None:
         super().update(dt)
-        if self.game_over:
+        if self.game_over or self.paused:
             return
 
-        self.spawn_timer += dt
-        if self.spawn_timer > 1.0:
-            self.spawn_timer = 0.0
-            self.fragments.append(pygame.Rect(random.randint(20, 300), random.randint(20, 220), 10, 10))
-            if len(self.anomalies) < 5:
-                self.anomalies.append({"x": random.randint(30, 290), "y": random.randint(30, 210), "r": 15})
+        self.px += self.vx * dt
+        self.py += self.vy * dt
 
-        player_rect = pygame.Rect(int(self.px), int(self.py), 12, 12)
-        for f in self.fragments[:]:
-            if player_rect.colliderect(f):
-                self.fragments.remove(f)
-                self.add_score(35)
-                self.play_sound("score")
+        if self.px < 20 or self.px > 300 or self.py < 40 or self.py > 220:
+            self.game_over = True
+            self.play_sound("gameover")
+            return
 
-        for a in self.anomalies:
-            if math.hypot(self.px - a["x"], self.py - a["y"]) < a["r"]:
+        self.trail_timer += dt
+        if self.trail_timer > 0.15:
+            self.trail_timer = 0.0
+            self.trail.insert(0, (self.px, self.py))
+            if len(self.trail) > 35:
+                self.trail.pop()
+
+        for i, pos in enumerate(self.trail[5:]):
+            if math.hypot(self.px - pos[0], self.py - pos[1]) < 8:
                 self.game_over = True
                 self.play_sound("gameover")
+                return
+
+        for f in self.fragments[:]:
+            if math.hypot(self.px - f["x"], self.py - f["y"]) < f["r"] + 6:
+                self.fragments.remove(f)
+                self.add_score(50)
+                self.play_sound("score")
+                self._spawn_fragment()
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((20, 15, 30))
-        for a in self.anomalies:
-            pygame.draw.circle(surface, (180, 0, 255), (a["x"], a["y"]), a["r"], 2)
-        for f in self.fragments:
-            pygame.draw.rect(surface, (255, 215, 0), f)
+        surface.fill((18, 10, 28))
 
-        pygame.draw.rect(surface, (0, 255, 150), (int(self.px), int(self.py), 12, 12))
+        for x in range(0, 320, 32):
+            pygame.draw.line(surface, (28, 16, 45), (x, 0), (x, 240), 1)
+        for y in range(0, 240, 32):
+            pygame.draw.line(surface, (28, 16, 45), (0, y), (320, y), 1)
+
+        for i, pos in enumerate(self.trail):
+            alpha_radius = max(2, 6 - int(i / 6))
+            pygame.draw.circle(surface, (140, 60, 220), (int(pos[0]), int(pos[1])), alpha_radius)
+
+        for f in self.fragments:
+            pygame.draw.circle(surface, (255, 215, 0), (int(f["x"]), int(f["y"])), f["r"])
+            pygame.draw.circle(surface, (255, 255, 255), (int(f["x"]), int(f["y"])), 3)
+
+        px, py = int(self.px), int(self.py)
+        pygame.draw.circle(surface, (0, 255, 180), (px, py), 9)
+        pygame.draw.circle(surface, (255, 255, 255), (px, py), 4)
+
         self.render_ui(surface)
