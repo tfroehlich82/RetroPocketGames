@@ -28,9 +28,32 @@ class NeonDashGame(BaseGame):
         self._spawn_obstacle()
 
     def _spawn_obstacle(self) -> None:
-        if self.elapsed_time > 15.0 and random.random() < 0.35:
+        t = self.elapsed_time
+        r = random.random()
+
+        if t >= 35.0 and r < 0.25:
+            group_x = 330.0
+            for i in range(4):
+                self.obstacles.append({
+                    "x": group_x + (i * 24),
+                    "y": 178,
+                    "w": 20,
+                    "h": 22,
+                    "type": "block"
+                })
+        elif t >= 20.0 and r < 0.35:
             group_x = 330.0
             for i in range(3):
+                self.obstacles.append({
+                    "x": group_x + (i * 24),
+                    "y": 178,
+                    "w": 20,
+                    "h": 22,
+                    "type": "block"
+                })
+        elif t >= 10.0 and r < 0.45:
+            group_x = 330.0
+            for i in range(2):
                 self.obstacles.append({
                     "x": group_x + (i * 24),
                     "y": 178,
