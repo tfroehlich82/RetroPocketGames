@@ -1,5 +1,5 @@
 # ==========================================
-# GLITCH RUNNER (Progressive Difficulty)
+# GLITCH RUNNER (Fast-Paced Snappy Edition)
 # ==========================================
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ class GlitchRunnerGame(BaseGame):
             or inp.is_key_just_pressed(pygame.K_UP)
             or inp.is_key_just_pressed(pygame.K_w)
         ) and self.py >= 148:
-            self.vy = -240
+            self.vy = -160  # Sehr kurzer, schneller Sprung (minimale Air-Time)
             self.play_sound("bounce")
 
     def update(self, dt: float) -> None:
@@ -39,14 +39,15 @@ class GlitchRunnerGame(BaseGame):
 
         self.timer += dt
 
-        # Progressive difficulty: Interval shrinks as score increases
-        interval = max(1.2, 4.0 - (self.score_count * 0.15))
+        # Sanft ansteigende Schwierigkeit
+        interval = max(1.4, 4.5 - (self.score_count * 0.1))
 
         if self.timer > interval:
             self.timer = 0.0
             self.glitch_phase = not self.glitch_phase
 
-        self.vy += 340 * dt
+        # Hohe Schwerkraft für extrem schnelles Landen
+        self.vy += 650 * dt
         self.py += self.vy * dt
 
         if self.py > 150:
@@ -62,12 +63,12 @@ class GlitchRunnerGame(BaseGame):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((12, 15, 22))
 
-        interval = max(1.2, 4.0 - (self.score_count * 0.15))
-        warning = self.timer > (interval - 0.7)
+        interval = max(1.4, 4.5 - (self.score_count * 0.1))
+        warning = self.timer > (interval - 0.6)
 
         floor_color = (
             (255, 200, 50)
-            if warning and int(self.timer * 15) % 2 == 0
+            if warning and int(self.timer * 18) % 2 == 0
             else ((255, 40, 100) if self.glitch_phase else (0, 255, 160))
         )
 

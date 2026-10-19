@@ -20,11 +20,17 @@ class SubZeroMinerGame(BaseGame):
         self.reset_level()
 
     def reset_level(self) -> None:
-        # Generate hazards first
-        self.hazards = [
-            {"x": random.randint(50, 270), "y": random.randint(50, 190), "r": 16}
-            for _ in range(3)
-        ]
+        # Reset player position to safe center
+        self.rx, self.ry = 160.0, 120.0
+
+        # Generate hazards ensuring they NEVER spawn near the player start (160, 120)
+        self.hazards = []
+        while len(self.hazards) < 3:
+            hx = random.randint(50, 270)
+            hy = random.randint(50, 190)
+            hr = 16
+            if (hx - 160) ** 2 + (hy - 120) ** 2 > (hr + 40) ** 2:
+                self.hazards.append({"x": hx, "y": hy, "r": hr})
 
         # Generate gems ensuring they DO NOT spawn inside or overlapping hazards
         self.gems = []
@@ -34,7 +40,6 @@ class SubZeroMinerGame(BaseGame):
                 gx = random.randint(40, 280)
                 gy = random.randint(40, 200)
 
-                # Check overlap with hazards (hazard radius + gem radius + buffer)
                 valid = True
                 for h in self.hazards:
                     dist_sq = (gx - h["x"]) ** 2 + (gy - h["y"]) ** 2
@@ -103,21 +108,17 @@ class SubZeroMinerGame(BaseGame):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((10, 20, 32))
 
-        # Ice Hazards
         for h in self.hazards:
             pygame.draw.circle(surface, (120, 200, 255), (int(h["x"]), int(h["y"])), h["r"])
             pygame.draw.circle(surface, (200, 240, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1)
 
-        # Gems (O2 Bubbles)
         for g in self.gems:
             pygame.draw.circle(surface, (0, 255, 255), (int(g["x"]), int(g["y"])), 6)
 
-        # Miner Rig
         mx, my = int(self.rx), int(self.ry)
         pygame.draw.rect(surface, (255, 120, 0), (mx - 8, my - 8, 16, 16), border_radius=3)
         pygame.draw.rect(surface, (255, 255, 255), (mx - 3, my - 3, 6, 6))
 
-        # O2 Bar
         pygame.draw.rect(surface, (30, 40, 50), (10, 225, 100, 8), border_radius=2)
         o2_w = int(100 * (min(100.0, max(0.0, self.oxygen)) / 100.0))
         o2_col = (0, 220, 255) if self.oxygen > 30 else (255, 50, 50)
