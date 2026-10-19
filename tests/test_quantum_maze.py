@@ -40,9 +40,9 @@ class TestQuantumMaze(unittest.TestCase):
                     f"IndexError raised during maze generation with grid {game.grid_cols}x{game.grid_rows}: {e}"
                 )
 
-            # Ensure walls and cores are populated correctly
+            # Ensure walls and items are populated correctly
             self.assertGreater(len(game.walls), 0)
-            self.assertEqual(len(game.cores), 1)
+            self.assertGreater(len(game.items), 0)
 
 
 if __name__ == "__main__":
