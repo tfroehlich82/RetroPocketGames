@@ -75,7 +75,7 @@ class ChronoShiftGame(BaseGame):
                 self.trail.pop()
 
         if self.spawn_protection <= 0:
-            for i, pos in enumerate(self.trail[6:]):
+            for i, pos in enumerate(self.trail[8:]):
                 if math.hypot(self.px - pos[0], self.py - pos[1]) < 9:
                     self.game_over = True
                     self.play_sound("gameover")

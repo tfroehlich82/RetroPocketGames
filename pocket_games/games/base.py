@@ -395,12 +395,18 @@ class BaseGame:
         lang_key = "de" if lang == "Deutsch" else "en"
 
         game_data = GAME_METADATA.get(game_name, {})
-        meta = game_data.get(lang_key, game_data.get("en", {
-            "desc": "An exciting retro game.",
-            "goal": "Achieve the highest score.",
-            "gameplay": "Play skillfully.",
-            "controls": "D-Pad & A"
-        }))
+        meta = game_data.get(
+            lang_key,
+            game_data.get(
+                "en",
+                {
+                    "desc": "An exciting retro game.",
+                    "goal": "Achieve the highest score.",
+                    "gameplay": "Play skillfully.",
+                    "controls": "D-Pad & A",
+                },
+            ),
+        )
         self.description = meta["desc"]
         self.goal = meta["goal"]
         self.gameplay = meta["gameplay"]
@@ -415,12 +421,25 @@ class BaseGame:
 
     @property
     def difficulty_factor(self) -> float:
-        return 1.0 + self.elapsed_time * 0.05
+        return 1.0 + self.elapsed_time * 0.03
 
     def get_virtual_mouse_pos(self) -> tuple[int, int]:
-        if hasattr(self.engine, "get_virtual_mouse_pos"):
-            return self.engine.get_virtual_mouse_pos()
-        return pygame.mouse.get_pos()
+        inp = getattr(self.engine, "input", None)
+        raw_pos = (
+            inp.mouse_pos
+            if inp and hasattr(inp, "mouse_pos")
+            else pygame.mouse.get_pos()
+        )
+
+        if hasattr(self.engine, "screen") and self.engine.screen:
+            mw, mh = self.engine.screen.get_size()
+        else:
+            surf = pygame.display.get_surface()
+            mw, mh = surf.get_size() if surf else (320, 240)
+
+        vx = int(raw_pos[0] * (320 / max(1, mw)))
+        vy = int(raw_pos[1] * (240 / max(1, mh)))
+        return (vx, vy)
 
     def add_score(self, amount: int) -> None:
         self.score += amount
@@ -442,36 +461,41 @@ class BaseGame:
         if hasattr(inp, "is_back_pressed") and callable(inp.is_back_pressed):
             back_pressed = inp.is_back_pressed()
         elif hasattr(inp, "is_key_just_pressed"):
-            back_pressed = (
-                inp.is_key_just_pressed(pygame.K_ESCAPE)
-                or inp.is_key_just_pressed(pygame.K_BACKSPACE)
-            )
+            back_pressed = inp.is_key_just_pressed(
+                pygame.K_ESCAPE
+            ) or inp.is_key_just_pressed(pygame.K_BACKSPACE)
 
-        if back_pressed or (hasattr(inp, "is_key_just_pressed") and inp.is_key_just_pressed(pygame.K_ESCAPE)):
+        if back_pressed or (
+                hasattr(inp, "is_key_just_pressed")
+                and inp.is_key_just_pressed(pygame.K_ESCAPE)
+        ):
             self.active = False
             return
 
         if self.showing_intro:
             if (
-                (hasattr(inp, "is_key_just_pressed") and (
-                    inp.is_key_just_pressed(pygame.K_SPACE) or
-                    inp.is_key_just_pressed(pygame.K_RETURN) or
-                    inp.is_key_just_pressed(pygame.K_z) or
-                    inp.is_key_just_pressed(pygame.K_UP)
-                )) or
-                getattr(inp, "mouse_clicked", False)
-            ):
+                    hasattr(inp, "is_key_just_pressed")
+                    and (
+                            inp.is_key_just_pressed(pygame.K_SPACE)
+                            or inp.is_key_just_pressed(pygame.K_RETURN)
+                            or inp.is_key_just_pressed(pygame.K_z)
+                            or inp.is_key_just_pressed(pygame.K_UP)
+                    )
+            ) or getattr(inp, "mouse_clicked", False):
                 self.showing_intro = False
                 self.play_sound("confirm")
                 if hasattr(inp, "mouse_clicked"):
                     inp.mouse_clicked = False
         elif self.game_over and (
-            (hasattr(inp, "is_key_just_pressed") and (
-                inp.is_key_just_pressed(pygame.K_ESCAPE) or
-                inp.is_key_just_pressed(pygame.K_RETURN) or
-                inp.is_key_just_pressed(pygame.K_SPACE)
-            )) or
-            getattr(inp, "mouse_clicked", False)
+                (
+                        hasattr(inp, "is_key_just_pressed")
+                        and (
+                                inp.is_key_just_pressed(pygame.K_ESCAPE)
+                                or inp.is_key_just_pressed(pygame.K_RETURN)
+                                or inp.is_key_just_pressed(pygame.K_SPACE)
+                        )
+                )
+                or getattr(inp, "mouse_clicked", False)
         ):
             self.active = False
 

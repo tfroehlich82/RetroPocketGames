@@ -1,6 +1,8 @@
 # ==========================================
 # BIT BLASTER (Enhanced Brick Breaker)
 # ==========================================
+from __future__ import annotations
+
 import pygame
 
 from pocket_games.core.physics import handle_paddle_collision
@@ -50,12 +52,13 @@ class BitBlasterGame(BaseGame):
             return
 
         inp = self.engine.input
-        if inp.is_key_down(pygame.K_LEFT):
+        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
             self.px = max(28, self.px - 6)
-        if inp.is_key_down(pygame.K_RIGHT):
+        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
             self.px = min(292, self.px + 6)
         if inp.mouse_clicked:
-            self.px = max(28, min(292, inp.mouse_pos[0]))
+            vx, _vy = self.get_virtual_mouse_pos()
+            self.px = max(28, min(292, vx))
 
         self.paddle.rect.x = int(self.px) - 25
 
@@ -64,7 +67,7 @@ class BitBlasterGame(BaseGame):
         if self.game_over:
             return
 
-        speed_mod = min(1.8, 1.0 + (self.elapsed_time * 0.02))
+        speed_mod = min(1.5, 1.0 + (self.elapsed_time * 0.005))
         self.ball.x += self.ball.vx * dt * speed_mod
         self.ball.y += self.ball.vy * dt * speed_mod
         self.ball.update_rect()

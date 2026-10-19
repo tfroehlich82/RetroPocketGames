@@ -12,7 +12,7 @@ from pocket_games.games.base import BaseGame
 
 class PulseRacerGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, game_name="Pulse Racer")
+        super().__init__(engine, "Pulse Racer")
         self.rx = 160.0
         self.traffic: list[dict] = []
         self.spawn_timer = 0.0
@@ -60,83 +60,64 @@ class PulseRacerGame(BaseGame):
             lane_x = self.lanes[lane_idx]
 
             if v_type == "fast_oncoming":
-                self.traffic.append(
-                    {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "y": -30.0,
-                        "speed": 130.0 + self.elapsed_time * 2.5,
-                        "type": "oncoming",
-                        "color": (255, 50, 50),
-                    }
-                )
+                self.traffic.append({
+                    "lane": lane_idx,
+                    "x": lane_x,
+                    "target_x": lane_x,
+                    "y": -30.0,
+                    "speed": 130.0 + self.elapsed_time * 2.5,
+                    "type": "oncoming",
+                    "color": (255, 50, 50),
+                })
             elif v_type == "blocker":
-                self.traffic.append(
-                    {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "y": -40.0,
-                        "speed": 35.0,
-                        "type": "blocker",
-                        "color": (255, 180, 0),
-                    }
-                )
+                self.traffic.append({
+                    "lane": lane_idx,
+                    "x": lane_x,
+                    "target_x": lane_x,
+                    "y": -40.0,
+                    "speed": 35.0,
+                    "type": "blocker",
+                    "color": (255, 180, 0),
+                })
             elif v_type == "speedy":
-                self.traffic.append(
-                    {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "y": -40.0,
-                        "speed": 110.0 + self.elapsed_time * 3.0,
-                        "type": "cruiser",
-                        "color": (50, 255, 120),
-                    }
-                )
+                self.traffic.append({
+                    "lane": lane_idx,
+                    "x": lane_x,
+                    "target_x": lane_x,
+                    "y": -40.0,
+                    "speed": 110.0 + self.elapsed_time * 3.0,
+                    "type": "cruiser",
+                    "color": (50, 255, 120),
+                })
             else:
-                self.traffic.append(
-                    {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "y": -40.0,
-                        "speed": 75.0,
-                        "type": "cruiser",
-                        "color": (0, 200, 255),
-                    }
-                )
+                self.traffic.append({
+                    "lane": lane_idx,
+                    "x": lane_x,
+                    "target_x": lane_x,
+                    "y": -40.0,
+                    "speed": 75.0,
+                    "type": "cruiser",
+                    "color": (0, 200, 255),
+                })
 
-        # Update traffic and overtaking logic
         for veh in self.traffic[:]:
-            # Überhol- und Fahrspurwechsel-Logik für Fahrzeuge in Fahrtrichtung
             if veh["type"] != "oncoming":
                 for other in self.traffic:
-                    if other != veh and other["lane"] == veh["lane"] and other["type"] != "oncoming":
+                    if other != veh and other["type"] != "oncoming":
                         dist = other["y"] - veh["y"]
-                        if 0 < dist < 65 and veh["speed"] > other["speed"]:
-                            current_lane = veh["lane"]
-                            possible_lanes = []
-                            if current_lane > 0:
-                                possible_lanes.append(current_lane - 1)
-                            if current_lane < 2:
-                                possible_lanes.append(current_lane + 1)
+                        # Frühzeitigerer Überholbeginn (Distanz < 90)
+                        if 0 < dist < 90 and abs(other["x"] - veh["x"]) < 25:
+                            # Erlaubt auch Zwischenpositionen (Lane-Splitting) zwischen Spuren
+                            offset_shift = random.choice([-25.0, 25.0, -45.0, 45.0])
+                            veh["target_x"] = max(80.0, min(240.0, veh["x"] + offset_shift))
 
-                            free_lanes = []
-                            for l_idx in possible_lanes:
-                                lane_blocked = False
-                                for t_check in self.traffic:
-                                    if t_check["lane"] == l_idx and abs(t_check["y"] - veh["y"]) < 55:
-                                        lane_blocked = True
-                                        break
-                                if not lane_blocked:
-                                    free_lanes.append(l_idx)
+            if "target_x" not in veh:
+                veh["target_x"] = veh["x"]
 
-                            if free_lanes:
-                                veh["lane"] = random.choice(free_lanes)
-
-            target_x = self.lanes[veh["lane"]]
-            if veh["x"] < target_x:
-                veh["x"] = min(target_x, veh["x"] + 180.0 * dt)
-            elif veh["x"] > target_x:
-                veh["x"] = max(target_x, veh["x"] - 180.0 * dt)
+            if veh["x"] < veh["target_x"]:
+                veh["x"] = min(veh["target_x"], veh["x"] + 120.0 * dt)
+            elif veh["x"] > veh["target_x"]:
+                veh["x"] = max(veh["target_x"], veh["x"] - 120.0 * dt)
 
             if veh["type"] == "oncoming":
                 veh["y"] += (current_base_speed + veh["speed"]) * dt
@@ -164,22 +145,15 @@ class PulseRacerGame(BaseGame):
 
         # Player Car
         px, py = int(self.rx), 185
-        pygame.draw.rect(
-            surface, (0, 255, 180), (px - 10, py - 14, 20, 28), border_radius=5
-        )
-        pygame.draw.rect(
-            surface, (255, 255, 255), (px - 6, py - 6, 12, 10), border_radius=2
-        )
-        # Tail lights
+        pygame.draw.rect(surface, (0, 255, 180), (px - 10, py - 14, 20, 28), border_radius=5)
+        pygame.draw.rect(surface, (255, 255, 255), (px - 6, py - 6, 12, 10), border_radius=2)
         pygame.draw.circle(surface, (255, 0, 0), (px - 7, py + 12), 2)
         pygame.draw.circle(surface, (255, 0, 0), (px + 7, py + 12), 2)
 
         # Traffic Vehicles
         for veh in self.traffic:
             vx, vy = int(veh["x"]), int(veh["y"])
-            pygame.draw.rect(
-                surface, veh["color"], (vx - 10, vy - 14, 20, 28), border_radius=5
-            )
+            pygame.draw.rect(surface, veh["color"], (vx - 10, vy - 14, 20, 28), border_radius=5)
             pygame.draw.rect(surface, (50, 50, 50), (vx - 6, vy - 4, 12, 8))
 
         self.render_ui(surface)

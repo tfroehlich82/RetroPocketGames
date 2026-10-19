@@ -16,11 +16,10 @@ class NeonDashGame(BaseGame):
         self.player_y = 180.0
         self.player_vy = 0.0
         self.is_grounded = True
-        self.gravity = 980.0
-        self.jump_speed = -360.0
+        self.gravity = 1050.0
+        self.jump_speed = -370.0
 
-        # Dynamics
-        self.base_speed = 150.0
+        self.base_speed = 140.0
         self.obstacles: list[dict] = []
         self.spawn_timer = 0.0
         self.stars = [{"x": random.randint(0, 320), "y": random.randint(0, 160), "speed": random.randint(10, 30)} for _ in range(20)]
@@ -67,7 +66,7 @@ class NeonDashGame(BaseGame):
                 w, h = 18, 22
             elif obs_type == "block":
                 w, h = 22, 22
-            else:  # tall_block
+            else:
                 w, h = 20, 38
 
             self.obstacles.append({
@@ -95,7 +94,7 @@ class NeonDashGame(BaseGame):
         if self.game_over or self.paused:
             return
 
-        current_speed = self.base_speed + (self.elapsed_time * 9.0)
+        current_speed = self.base_speed + (self.elapsed_time * 3.0)
 
         for star in self.stars:
             star["x"] -= star["speed"] * dt
@@ -112,7 +111,7 @@ class NeonDashGame(BaseGame):
             self.is_grounded = True
 
         self.spawn_timer += dt
-        spawn_delay = max(0.75, 1.8 - (self.elapsed_time * 0.02) + random.uniform(-0.15, 0.25))
+        spawn_delay = max(0.8, 1.9 - (self.elapsed_time * 0.01) + random.uniform(-0.15, 0.25))
         if self.spawn_timer >= spawn_delay:
             self.spawn_timer = 0.0
             self._spawn_obstacle()

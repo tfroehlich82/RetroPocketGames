@@ -13,7 +13,7 @@ from pocket_games.games.base import BaseGame
 
 class MatrixInvadersGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, game_name="Matrix Invaders")
+        super().__init__(engine, "Matrix Invaders")
         self.px = 160.0
         self.bullets: list[dict] = []
         self.bugs: list[dict] = []
@@ -21,6 +21,7 @@ class MatrixInvadersGame(BaseGame):
         self.collectibles: list[dict] = []
         self.weapon_level = 1
         self.shield_timer = 0.0
+        self.spawn_timer = 0.0
         self.matrix_chars = [
             {
                 "x": random.randint(10, 310),
@@ -29,31 +30,25 @@ class MatrixInvadersGame(BaseGame):
             }
             for _ in range(18)
         ]
-        self.spawn_bugs()
+        self._spawn_initial_bugs()
 
-    def spawn_bugs(self) -> None:
-        for _ in range(8):
-            b_type = random.choices(["drone", "speeder", "tank"], weights=[55, 30, 15])[
-                0
-            ]
-            hp = 2 if b_type == "tank" else 1
-            speed = (
-                float(random.randint(35, 55))
-                if b_type == "speeder"
-                else float(random.randint(18, 32))
-            )
+    def _spawn_initial_bugs(self) -> None:
+        for _ in range(4):
+            self._add_bug()
 
-            self.bugs.append(
-                {
-                    "x": float(random.randint(30, 290)),
-                    "y": float(random.randint(20, 70)),
-                    "speed": speed,
-                    "type": b_type,
-                    "hp": hp,
-                    "max_hp": hp,
-                    "wobble": random.uniform(0, math.pi * 2),
-                }
-            )
+    def _add_bug(self) -> None:
+        b_type = random.choices(["drone", "speeder", "tank"], weights=[65, 25, 10])[0]
+        hp = 2 if b_type == "tank" else 1
+        speed = float(random.randint(25, 45)) if b_type == "speeder" else float(random.randint(12, 25))
+        self.bugs.append({
+            "x": float(random.randint(30, 290)),
+            "y": float(random.randint(10, 40)),
+            "speed": speed,
+            "type": b_type,
+            "hp": hp,
+            "max_hp": hp,
+            "wobble": random.uniform(0, math.pi * 2),
+        })
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -93,6 +88,13 @@ class MatrixInvadersGame(BaseGame):
         if self.shield_timer > 0:
             self.shield_timer -= dt
 
+        self.spawn_timer += dt
+        max_bugs = min(12, 4 + int(self.elapsed_time / 15.0))
+        spawn_interval = max(1.2, 3.0 - (self.elapsed_time * 0.03))
+        if self.spawn_timer >= spawn_interval and len(self.bugs) < max_bugs:
+            self.spawn_timer = 0.0
+            self._add_bug()
+
         for c in self.matrix_chars:
             c["y"] += c["speed"] * dt
             if c["y"] > 240:
@@ -129,9 +131,9 @@ class MatrixInvadersGame(BaseGame):
             bug["wobble"] += dt * 5
             bug["y"] += bug["speed"] * dt
             if bug["type"] == "speeder":
-                bug["x"] += math.sin(bug["wobble"]) * 45.0 * dt
+                bug["x"] += math.sin(bug["wobble"]) * 35.0 * dt
             else:
-                bug["x"] += math.cos(bug["wobble"]) * 20.0 * dt
+                bug["x"] += math.cos(bug["wobble"]) * 15.0 * dt
 
             if bug["y"] >= 210:
                 if self.shield_timer > 0:
@@ -178,27 +180,6 @@ class MatrixInvadersGame(BaseGame):
                                     else (255, 100, 255),
                                 }
                             )
-
-                        b_type = random.choices(
-                            ["drone", "speeder", "tank"], weights=[55, 30, 15]
-                        )[0]
-                        hp = 2 if b_type == "tank" else 1
-                        speed = (
-                            float(random.randint(35, 55))
-                            if b_type == "speeder"
-                            else float(random.randint(18, 32))
-                        )
-                        self.bugs.append(
-                            {
-                                "x": float(random.randint(30, 290)),
-                                "y": float(random.randint(20, 50)),
-                                "speed": speed,
-                                "type": b_type,
-                                "hp": hp,
-                                "max_hp": hp,
-                                "wobble": random.uniform(0, math.pi * 2),
-                            }
-                        )
                     break
 
     def render(self, surface: pygame.Surface) -> None:

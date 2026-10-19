@@ -28,8 +28,10 @@ class SonicPulseGame(BaseGame):
         inp = self.engine.input
         if inp.is_key_just_pressed(pygame.K_SPACE) or inp.mouse_clicked or inp.is_key_just_pressed(pygame.K_UP):
             hit_success = False
+            tolerance = max(6.0, 16.0 - (self.elapsed_time * 0.15))
+            target_r = 40.0
             for r in self.rings[:]:
-                if 32.0 <= r["radius"] <= 48.0:
+                if abs(r["radius"] - target_r) <= tolerance:
                     self.rings.remove(r)
                     self.combo += 1
                     self.add_score(25 * min(self.combo, 5))
@@ -104,5 +106,9 @@ class SonicPulseGame(BaseGame):
 
         combo_txt = self.font.render(f"COMBO: x{self.combo}", True, (255, 220, 0))
         surface.blit(combo_txt, (20, 15))
+
+        tolerance = max(6.0, 16.0 - (self.elapsed_time * 0.15))
+        tol_txt = self.font.render(f"TOL: ±{tolerance:.1f}", True, (150, 150, 200))
+        surface.blit(tol_txt, (220, 15))
 
         self.render_ui(surface)
