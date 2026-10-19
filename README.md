@@ -16,7 +16,15 @@ chmod +x install.sh
 ./install.sh
 ```
 
-### 2. Update Script (`update.sh`)
+### 2. Desktop & Application Shortcut Setup (`setup_shortcut.sh`)
+Creates and registers system desktop shortcuts (`.desktop` entry) and bin symlinks for easy launching from your application menu or desktop environment:
+
+```bash
+chmod +x setup_shortcut.sh
+./setup_shortcut.sh
+```
+
+### 3. Update Script (`update.sh`)
 Pulls the latest changes from the repository, updates dependencies inside the virtual environment, and refreshes the package installation:
 
 ```bash
@@ -24,7 +32,7 @@ chmod +x update.sh
 ./update.sh
 ```
 
-### 3. Run Script (`run.sh` / `pocket-games`)
+### 4. Run Script (`run.sh`)
 Launches the game collection directly:
 
 ```bash
