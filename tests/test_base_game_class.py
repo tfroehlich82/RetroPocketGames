@@ -12,7 +12,10 @@ from pocket_games.games.base import BaseGame
 class MockEngine:
     def __init__(self) -> None:
         self.screen = pygame.Surface((320, 240))
-        self.input = type("MockInput", (), {"mouse_clicked": False})()
+        self.input = type("MockInput", (), {
+            "mouse_clicked": False,
+            "is_key_just_pressed": lambda self, key: False
+        })()
         self.highscores = type(
             "MockHighScores", (), {"submit_score": lambda self, name, score: None}
         )()
@@ -26,15 +29,19 @@ class TestBaseGame(unittest.TestCase):
 
     def test_base_game_initialization(self) -> None:
         engine = MockEngine()
-        game = BaseGame(engine, "TestGame")
+        game = BaseGame(engine, "Pixel Drop")
         self.assertEqual(game.score, 0)
         self.assertFalse(game.paused)
         self.assertFalse(game.game_over)
         self.assertTrue(game.active)
+        self.assertTrue(game.showing_intro)
+        self.assertEqual(game.game_name, "Pixel Drop")
+        self.assertTrue(len(game.description) > 0)
 
     def test_score_and_difficulty(self) -> None:
         engine = MockEngine()
-        game = BaseGame(engine, "TestGame")
+        game = BaseGame(engine, "Pixel Drop")
+        game.showing_intro = False
         game.add_score(10)
         self.assertEqual(game.score, 10)
 
@@ -44,7 +51,8 @@ class TestBaseGame(unittest.TestCase):
 
     def test_pause_state(self) -> None:
         engine = MockEngine()
-        game = BaseGame(engine, "TestGame")
+        game = BaseGame(engine, "Pixel Drop")
+        game.showing_intro = False
         initial_time = game.elapsed_time
 
         game.paused = True
@@ -55,10 +63,24 @@ class TestBaseGame(unittest.TestCase):
 
     def test_virtual_mouse_mapping(self) -> None:
         engine = MockEngine()
-        game = BaseGame(engine, "TestGame")
+        game = BaseGame(engine, "Pixel Drop")
         vx, vy = game.get_virtual_mouse_pos()
         self.assertIsInstance(vx, int)
         self.assertIsInstance(vy, int)
+
+    def test_intro_dismissal(self) -> None:
+        engine = MockEngine()
+        class PressInput:
+            def __init__(self):
+                self.mouse_clicked = False
+            def is_key_just_pressed(self, key):
+                return key == pygame.K_SPACE
+
+        engine.input = PressInput()
+        game = BaseGame(engine, "Pixel Drop")
+        self.assertTrue(game.showing_intro)
+        game.handle_input()
+        self.assertFalse(game.showing_intro)
 
 
 if __name__ == "__main__":
