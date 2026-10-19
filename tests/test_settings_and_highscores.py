@@ -14,7 +14,12 @@ from pocket_games.ui.highscore_screen import HighScoreScreen
 class MockEngine:
     def __init__(self) -> None:
         self.screen = pygame.Surface((320, 240))
-        self.input = type("MockInput", (), {"mouse_clicked": False})()
+        self.input = type("MockInput", (), {
+            "mouse_clicked": False,
+            "is_back_pressed": False,
+            "is_key_just_pressed": lambda self, key: False,
+            "is_key_down": lambda self, key: False,
+        })()
         self.settings = Settings()
 
         class MockHighScores:

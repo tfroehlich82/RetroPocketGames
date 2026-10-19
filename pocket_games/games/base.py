@@ -437,18 +437,42 @@ class BaseGame:
         inp = getattr(self.engine, "input", None)
         if not inp:
             return
+
+        back_pressed = False
+        if hasattr(inp, "is_back_pressed") and callable(inp.is_back_pressed):
+            back_pressed = inp.is_back_pressed()
+        elif hasattr(inp, "is_key_just_pressed"):
+            back_pressed = (
+                inp.is_key_just_pressed(pygame.K_ESCAPE)
+                or inp.is_key_just_pressed(pygame.K_BACKSPACE)
+            )
+
+        if back_pressed or (hasattr(inp, "is_key_just_pressed") and inp.is_key_just_pressed(pygame.K_ESCAPE)):
+            self.active = False
+            return
+
         if self.showing_intro:
-            if (inp.is_key_just_pressed(pygame.K_SPACE) or 
-                inp.is_key_just_pressed(pygame.K_RETURN) or 
-                inp.is_key_just_pressed(pygame.K_z) or
-                inp.is_key_just_pressed(pygame.K_UP) or
-                inp.mouse_clicked):
+            if (
+                (hasattr(inp, "is_key_just_pressed") and (
+                    inp.is_key_just_pressed(pygame.K_SPACE) or
+                    inp.is_key_just_pressed(pygame.K_RETURN) or
+                    inp.is_key_just_pressed(pygame.K_z) or
+                    inp.is_key_just_pressed(pygame.K_UP)
+                )) or
+                getattr(inp, "mouse_clicked", False)
+            ):
                 self.showing_intro = False
                 self.play_sound("confirm")
-        elif self.game_over and (inp.is_key_just_pressed(pygame.K_ESCAPE) or
-            inp.is_key_just_pressed(pygame.K_RETURN) or
-            inp.is_key_just_pressed(pygame.K_SPACE) or
-            inp.mouse_clicked):
+                if hasattr(inp, "mouse_clicked"):
+                    inp.mouse_clicked = False
+        elif self.game_over and (
+            (hasattr(inp, "is_key_just_pressed") and (
+                inp.is_key_just_pressed(pygame.K_ESCAPE) or
+                inp.is_key_just_pressed(pygame.K_RETURN) or
+                inp.is_key_just_pressed(pygame.K_SPACE)
+            )) or
+            getattr(inp, "mouse_clicked", False)
+        ):
             self.active = False
 
     def update(self, dt: float) -> None:

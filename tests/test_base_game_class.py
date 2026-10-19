@@ -14,7 +14,9 @@ class MockEngine:
         self.screen = pygame.Surface((320, 240))
         self.input = type("MockInput", (), {
             "mouse_clicked": False,
-            "is_key_just_pressed": lambda self, key: False
+            "is_back_pressed": False,
+            "is_key_just_pressed": lambda self, key: False,
+            "is_key_down": lambda self, key: False,
         })()
         self.highscores = type(
             "MockHighScores", (), {"submit_score": lambda self, name, score: None}

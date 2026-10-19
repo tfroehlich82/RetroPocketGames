@@ -19,20 +19,25 @@ class InputManager:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.mouse_clicked = True
                 self.mouse_pos = event.pos
+            elif event.type == pygame.FINGERDOWN:
+                self.mouse_clicked = True
+                surf = pygame.display.get_surface()
+                if surf:
+                    sw, sh = surf.get_size()
+                    self.mouse_pos = (int(event.x * sw), int(event.y * sh))
+                else:
+                    self.mouse_pos = (0, 0)
             elif event.type == pygame.KEYDOWN:
                 self.keys_just_pressed.add(event.key)
 
     def is_key_just_pressed(self, key: int) -> bool:
-        """Löst NUR EINMAL im Frame aus, in dem die Taste gedrückt wurde (für Menüs)."""
         return key in self.keys_just_pressed
 
     def is_key_down(self, key: int) -> bool:
-        """Liefert True, SOLANGE die Taste gehalten wird (für flüssige Bewegung in Spielen)."""
         pressed = pygame.key.get_pressed()
         return bool(pressed[key])
 
     def is_back_pressed(self) -> bool:
-        """Prüft, ob Escape oder Backspace in diesem Frame neu gedrückt wurde."""
         return (
             self.is_key_just_pressed(pygame.K_ESCAPE)
             or self.is_key_just_pressed(pygame.K_BACKSPACE)
