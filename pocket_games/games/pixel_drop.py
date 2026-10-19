@@ -1,5 +1,5 @@
 # ==========================================
-# PIXEL DROP (Full Tetris Engine with Lock Delay)
+# PIXEL DROP (Full Tetris Engine)
 # ==========================================
 from __future__ import annotations
 
@@ -35,6 +35,8 @@ class PixelDropGame(BaseGame):
         self.cols, self.rows = 10, 18
         self.grid = [[None for _ in range(self.cols)] for _ in range(self.rows)]
         self.next_shape_idx = random.randint(0, len(SHAPES) - 1)
+        self.total_cleared_lines = 0
+        self.level = 1
         self._spawn_piece()
         self.drop_timer = 0.0
         self.lock_timer = 0.0
@@ -80,7 +82,7 @@ class PixelDropGame(BaseGame):
         ):
             self.px -= 1
             if self.is_locking:
-                self.lock_timer = 0.0  # Reset Lock Delay bei Bewegung
+                self.lock_timer = 0.0
         elif inp.is_key_just_pressed(pygame.K_RIGHT) and not self._check_collision(
             self.px + 1, self.py, self.shape
         ):
@@ -107,7 +109,8 @@ class PixelDropGame(BaseGame):
         if self.game_over:
             return
 
-        drop_speed = max(0.12, 0.6 - (self.elapsed_time * 0.015))
+        # Geschwindigkeit sinkt erst alle 20 vervollständigten Reihen (Level-basiert)
+        drop_speed = max(0.08, 0.65 - ((self.level - 1) * 0.08))
         self.drop_timer += dt
 
         touching_ground = self._check_collision(self.px, self.py + 1, self.shape)
@@ -115,7 +118,7 @@ class PixelDropGame(BaseGame):
         if touching_ground:
             self.is_locking = True
             self.lock_timer += dt
-            if self.lock_timer >= 0.45:  # Lock Delay Karenzzeit
+            if self.lock_timer >= 0.45:
                 self._lock_piece()
         else:
             self.is_locking = False
@@ -138,13 +141,16 @@ class PixelDropGame(BaseGame):
         for _ in range(cleared):
             new_grid.insert(0, [None for _ in range(self.cols)])
         self.grid = new_grid
+
         if cleared > 0:
-            self.add_score(cleared * 100)
+            self.total_cleared_lines += cleared
+            self.level = (self.total_cleared_lines // 20) + 1
+            self.add_score(cleared * 100 * self.level)
             self.play_sound("score")
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((15, 15, 25))
-        ox, oy, cw, ch = 30, 20, 11, 11
+        ox, oy, cw, ch = 25, 20, 11, 11
 
         # Render Grid
         pygame.draw.rect(
@@ -176,16 +182,20 @@ class PixelDropGame(BaseGame):
                             ),
                         )
 
+        # Render Level Info
+        level_txt = self.font.render(f"LEVEL: {self.level}", True, (255, 220, 0))
+        surface.blit(level_txt, (150, 20))
+
         # Render Next Preview
         preview_txt = self.font.render("NEXT", True, (200, 200, 200))
-        surface.blit(preview_txt, (160, 20))
+        surface.blit(preview_txt, (150, 50))
         next_shape = SHAPES[self.next_shape_idx]
         next_color = SHAPE_COLORS[self.next_shape_idx]
         for r, row in enumerate(next_shape):
             for c, val in enumerate(row):
                 if val:
                     pygame.draw.rect(
-                        surface, next_color, (160 + c * cw, 40 + r * ch, cw - 1, ch - 1)
+                        surface, next_color, (150 + c * cw, 70 + r * ch, cw - 1, ch - 1)
                     )
 
         self.render_ui(surface)
