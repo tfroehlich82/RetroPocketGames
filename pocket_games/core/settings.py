@@ -7,11 +7,13 @@ from pocket_games.core.logger import logger
 
 SETTINGS_FILE = Path("settings.json")
 
+
 class Settings:
     def __init__(self) -> None:
         self.sound_enabled: bool = True
         self.master_volume: float = 0.6
         self.fullscreen: bool = True
+        self.language: str = "English"  # Default: English
         self.load()
 
     def load(self) -> None:
@@ -21,6 +23,7 @@ class Settings:
                 self.sound_enabled = data.get("sound_enabled", True)
                 self.master_volume = data.get("master_volume", 0.8)
                 self.fullscreen = data.get("fullscreen", True)
+                self.language = data.get("language", "English")
             except Exception as e:  # noqa: BLE001
                 logger.error(e)
 
@@ -28,7 +31,8 @@ class Settings:
         data = {
             "sound_enabled": self.sound_enabled,
             "master_volume": self.master_volume,
-            "fullscreen": self.fullscreen
+            "fullscreen": self.fullscreen,
+            "language": self.language
         }
         try:
             SETTINGS_FILE.write_text(json.dumps(data, indent=2))

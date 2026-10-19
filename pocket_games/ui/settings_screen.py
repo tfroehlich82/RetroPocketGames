@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 
 from pocket_games.core.engine import VIRTUAL_HEIGHT, VIRTUAL_WIDTH
+from pocket_games.games.base import t
 
 
 class SettingsScreen:
@@ -13,19 +14,19 @@ class SettingsScreen:
         self.font = pygame.font.SysFont(None, 18)
         self.title_font = pygame.font.SysFont(None, 24)
 
-        # Options list: (Label, Type)
+        # Options list: (Translation Key, Action)
         self.options = [
-            ("Sound Effect Audio", "toggle_sound"),
-            ("Master Volume", "slider_volume"),
-            ("Fullscreen Mode", "toggle_fullscreen"),
-            ("Back to Main Menu", "back")
+            ("sound_effects", "toggle_sound"),
+            ("master_volume", "slider_volume"),
+            ("fullscreen_mode", "toggle_fullscreen"),
+            ("language", "toggle_language"),
+            ("back_menu", "back")
         ]
         self.item_rects: list[pygame.Rect] = []
 
     def handle_input(self) -> None:
         inp = self.engine.input
 
-        # Navigation
         if inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.selected_index = (self.selected_index - 1) % len(self.options)
             self.engine.audio.play("select")
@@ -33,8 +34,7 @@ class SettingsScreen:
             self.selected_index = (self.selected_index + 1) % len(self.options)
             self.engine.audio.play("select")
 
-        # Value adjustments or selection
-        _current_label, action = self.options[self.selected_index]
+        _key, action = self.options[self.selected_index]
 
         if inp.is_key_just_pressed(pygame.K_LEFT) or inp.is_key_just_pressed(pygame.K_a):
             self.adjust_value(action, -1)
@@ -43,7 +43,6 @@ class SettingsScreen:
         elif inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(pygame.K_SPACE):
             self.execute_action(action)
 
-        # Touchscreen clicks
         if inp.mouse_clicked:
             mw, mh = self.engine.screen.get_size()
             vx = int(inp.mouse_pos[0] * (VIRTUAL_WIDTH / mw))
@@ -52,10 +51,9 @@ class SettingsScreen:
                 if rect.collidepoint(vx, vy):
                     self.selected_index = i
                     _, act = self.options[i]
-                    if act in ("back", "toggle_sound", "toggle_fullscreen"):
+                    if act in ("back", "toggle_sound", "toggle_fullscreen", "toggle_language"):
                         self.execute_action(act)
                     else:
-                        # Toggle / Cycle value on click
                         self.adjust_value(act, 1)
 
     def adjust_value(self, action: str, direction: int) -> None:
@@ -77,10 +75,14 @@ class SettingsScreen:
                 flags = pygame.FULLSCREEN if settings.fullscreen else 0
                 self.engine.screen = pygame.display.set_mode((480, 320), flags)
                 self.engine.audio.play("confirm")
+            case "toggle_language":
+                settings.language = "English" if settings.language == "Deutsch" else "Deutsch"
+                settings.save()
+                self.engine.audio.play("confirm")
 
     def execute_action(self, action: str) -> None:
         match action:
-            case "toggle_sound" | "toggle_fullscreen" | "slider_volume":
+            case "toggle_sound" | "toggle_fullscreen" | "toggle_language" | "slider_volume":
                 self.adjust_value(action, 1)
             case "back":
                 self.engine.audio.play("confirm")
@@ -91,16 +93,18 @@ class SettingsScreen:
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((15, 15, 25))
-        title_surf = self.title_font.render("SYSTEM SETTINGS", True, (0, 255, 200))
-        surface.blit(title_surf, (VIRTUAL_WIDTH // 2 - title_surf.get_width() // 2, 15))
+        title_text = t(self.engine, "settings_title")
+        title_surf = self.title_font.render(title_text, True, (0, 255, 200))
+        surface.blit(title_surf, (VIRTUAL_WIDTH // 2 - title_surf.get_width() // 2, 12))
 
         self.item_rects = []
-        start_y = 65
-        item_h = 35
+        start_y = 50
+        item_h = 32
         settings = self.engine.settings
 
-        for i, (label, action) in enumerate(self.options):
-            rect = pygame.Rect(20, start_y + i * item_h, VIRTUAL_WIDTH - 40, 28)
+        for i, (key, action) in enumerate(self.options):
+            label = t(self.engine, key)
+            rect = pygame.Rect(20, start_y + i * item_h, VIRTUAL_WIDTH - 40, 26)
             self.item_rects.append(rect)
 
             is_sel = (i == self.selected_index)
@@ -110,17 +114,18 @@ class SettingsScreen:
             pygame.draw.rect(surface, bg_color, rect, border_radius=6)
             pygame.draw.rect(surface, border_color, rect, 1, border_radius=6)
 
-            # Format value display string
             val_str = ""
             match action:
                 case "toggle_sound":
-                    val_str = "ENABLED" if settings.sound_enabled else "DISABLED"
+                    val_str = t(self.engine, "enabled") if settings.sound_enabled else t(self.engine, "disabled")
                 case "slider_volume":
                     val_str = f"{int(settings.master_volume * 100)}%"
                 case "toggle_fullscreen":
-                    val_str = "ON" if settings.fullscreen else "OFF"
+                    val_str = t(self.engine, "on") if settings.fullscreen else t(self.engine, "off")
+                case "toggle_language":
+                    val_str = settings.language
                 case "back":
                     val_str = "-->"
 
             text_surf = self.font.render(f"{label}: {val_str}", True, (255, 255, 255) if is_sel else (180, 180, 180))
-            surface.blit(text_surf, (rect.x + 12, rect.y + 7))
+            surface.blit(text_surf, (rect.x + 12, rect.y + 5))

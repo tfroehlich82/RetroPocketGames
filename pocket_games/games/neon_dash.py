@@ -141,7 +141,7 @@ class NeonDashGame(BaseGame):
         pygame.draw.line(surface, (0, 240, 255), (0, 200), (320, 200), 2)
         pygame.draw.line(surface, (100, 50, 200), (0, 201), (320, 201), 1)
 
-        current_speed = self.base_speed + (self.elapsed_time * 9.0)
+        current_speed = self.base_speed + (self.elapsed_time * 6.0)
         for i in range(0, 320, 35):
             offset = int((self.elapsed_time * current_speed) % 35)
             x_pos = i - offset
