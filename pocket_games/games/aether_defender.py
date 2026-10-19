@@ -55,13 +55,15 @@ class AetherDefenderGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
-        if self.spawn_timer > 0.7:
+        dynamic_spawn_interval = max(0.3, 0.7 - (self.elapsed_time * 0.012))
+        if self.spawn_timer > dynamic_spawn_interval:
             self.spawn_timer = 0.0
+            speed_boost = min(60.0, self.elapsed_time * 1.5)
             self.enemies.append({
                 "x": random.randint(30, 290),
                 "y": -15,
                 "color": random.choice([0, 1]),
-                "speed": random.uniform(80, 120)
+                "speed": random.uniform(80, 120) + speed_boost
             })
 
         p_rect = pygame.Rect(int(self.px) - 14, 195, 28, 20)
