@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pocket_games.core.logger import logger
 
-SETTINGS_FILE = Path("settings.json")
+SETTINGS_FILE = Path("data/settings.json")
 
 
 class Settings:

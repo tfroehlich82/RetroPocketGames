@@ -4,13 +4,14 @@ import logging
 from pathlib import Path
 
 
-def get_logger(name: str = "RetroPocketGames", log_filename: str = "pocket_games.log") -> logging.Logger:
+def get_logger(name: str = "RetroPocketGames", log_filename: str = "data/pocket_games.log") -> logging.Logger:
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     log_path = Path(log_filename)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     file_handler = logging.FileHandler(log_path, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
