@@ -3,11 +3,14 @@
 # ==========================================
 from __future__ import annotations
 
-import math
 import random
 
 import pygame
 
+from pocket_games.core.physics import (
+    check_circle_collision,
+    update_velocity_damping,
+)
 from pocket_games.games.base import BaseGame
 
 
@@ -39,17 +42,16 @@ class ChronoShiftGame(BaseGame):
         dt = 0.016
 
         dx, dy = 0.0, 0.0
-        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+        if inp.is_left_pressed():
             dx -= accel * dt
-        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+        if inp.is_right_pressed():
             dx += accel * dt
-        if inp.is_key_down(pygame.K_UP) or inp.is_key_down(pygame.K_w):
+        if inp.is_up_pressed():
             dy -= accel * dt
-        if inp.is_key_down(pygame.K_DOWN) or inp.is_key_down(pygame.K_s):
+        if inp.is_down_pressed():
             dy += accel * dt
 
-        self.vx = self.vx * 0.94 + dx
-        self.vy = self.vy * 0.94 + dy
+        self.vx, self.vy = update_velocity_damping(self.vx + dx, self.vy + dy, 0.94)
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -75,14 +77,14 @@ class ChronoShiftGame(BaseGame):
                 self.trail.pop()
 
         if self.spawn_protection <= 0:
-            for i, pos in enumerate(self.trail[8:]):
-                if math.hypot(self.px - pos[0], self.py - pos[1]) < 9:
+            for pos in self.trail[8:]:
+                if check_circle_collision(self.px, self.py, 4.0, pos[0], pos[1], 5.0):
                     self.game_over = True
                     self.play_sound("gameover")
                     return
 
         for f in self.fragments[:]:
-            if math.hypot(self.px - f["x"], self.py - f["y"]) < f["r"] + 6:
+            if check_circle_collision(self.px, self.py, 6.0, f["x"], f["y"], float(f["r"])):
                 self.fragments.remove(f)
                 self.add_score(60)
                 self.play_sound("score")

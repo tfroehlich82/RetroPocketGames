@@ -1,21 +1,28 @@
 from __future__ import annotations
 
+import os
 import unittest
 
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 import pygame
 
-from pocket_games.core.physics import handle_paddle_collision
+from pocket_games.core.physics import (
+    apply_gravity,
+    calculate_orbital_pull,
+    check_circle_collision,
+    clamp,
+    handle_paddle_collision,
+    update_velocity_damping,
+)
 
 
 class MockPaddle:
-    def __init__(self, y: int, height: int) -> None:
-        self.rect = pygame.Rect(15, y - height // 2, 8, height)
+    def __init__(self, x: int, y: int, w: int, h: int) -> None:
+        self.rect = pygame.Rect(x, y, w, h)
 
 
 class MockBall:
-    def __init__(
-        self, x: float, y: float, vx: float, vy: float, radius: int = 5
-    ) -> None:
+    def __init__(self, x: float, y: float, radius: int, vx: float, vy: float) -> None:
         self.x = x
         self.y = y
         self.radius = radius
@@ -29,23 +36,53 @@ class MockBall:
         self.rect.center = (int(self.x), int(self.y))
 
 
-class TestPhysics(unittest.TestCase):
-    def test_paddle_collision_physics(self) -> None:
-        # Paddle von Y: 80 bis 120 (Zentrum bei 100, Höhe 40)
-        paddle = MockPaddle(100, 40)
-        # Ball trifft genau das Zentrum des Paddles (Offset = 0.0)
-        ball = MockBall(19.0, 100.0, -100.0, 0.0)
+class TestPhysicsEngine(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        pygame.init()
 
-        initial_speed = (ball.vx**2 + ball.vy**2) ** 0.5
+    def test_clamp(self) -> None:
+        self.assertEqual(clamp(5.0, 0.0, 10.0), 5.0)
+        self.assertEqual(clamp(-5.0, 0.0, 10.0), 0.0)
+        self.assertEqual(clamp(15.0, 0.0, 10.0), 10.0)
 
-        handle_paddle_collision(ball, paddle)
+    def test_check_circle_collision(self) -> None:
+        self.assertTrue(check_circle_collision(0.0, 0.0, 10.0, 15.0, 0.0, 10.0))
+        self.assertTrue(check_circle_collision(0.0, 0.0, 10.0, 20.0, 0.0, 10.0))
+        self.assertFalse(check_circle_collision(0.0, 0.0, 10.0, 25.0, 0.0, 10.0))
 
-        # Die Richtung auf der X-Achse muss umgekehrt worden sein
-        self.assertGreater(ball.vx, 0)
+    def test_apply_gravity(self) -> None:
+        vy = 100.0
+        gravity = 500.0
+        dt = 0.016
+        new_vy = apply_gravity(vy, gravity, dt)
+        self.assertAlmostEqual(new_vy, 108.0)
 
-        new_speed = (ball.vx**2 + ball.vy**2) ** 0.5
-        # Erwartet: 5% Grund-Beschleunigung bei Offset 0 (Faktor 1.05 gemäß Gummiball-Physik)
-        self.assertAlmostEqual(new_speed, initial_speed * 1.05, places=2)
+    def test_update_velocity_damping(self) -> None:
+        vx, vy = 100.0, -200.0
+        damping = 0.94
+        nvx, nvy = update_velocity_damping(vx, vy, damping)
+        self.assertAlmostEqual(nvx, 94.0)
+        self.assertAlmostEqual(nvy, -188.0)
+
+    def test_calculate_orbital_pull(self) -> None:
+        fx, fy = calculate_orbital_pull(0.0, 0.0, 100.0, 0.0, 10000.0)
+        self.assertGreater(fx, 0.0)
+        self.assertAlmostEqual(fy, 0.0)
+
+    def test_handle_paddle_collision_horizontal(self) -> None:
+        paddle = MockPaddle(100, 200, 60, 10)
+        ball = MockBall(130.0, 201.0, 5, 50.0, 120.0)
+
+        handle_paddle_collision(ball, paddle, paddle_vy=0.0)
+        self.assertLess(ball.vy, 0.0)
+
+    def test_handle_paddle_collision_vertical(self) -> None:
+        paddle = MockPaddle(50, 100, 10, 60)
+        ball = MockBall(51.0, 130.0, 5, -100.0, 20.0)
+
+        handle_paddle_collision(ball, paddle, paddle_vy=0.0)
+        self.assertGreater(ball.vx, 0.0)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import random
 
 import pygame
 
+from pocket_games.core.physics import check_circle_collision, clamp
 from pocket_games.games.base import BaseGame
 
 
@@ -25,7 +26,6 @@ class SubZeroMinerGame(BaseGame):
     def reset_level(self) -> None:
         self.rx, self.ry = 160.0, 120.0
 
-        # Ice Hazards
         self.hazards = []
         while len(self.hazards) < 3:
             hx = random.randint(50, 270)
@@ -34,7 +34,6 @@ class SubZeroMinerGame(BaseGame):
             if (hx - 160) ** 2 + (hy - 120) ** 2 > (hr + 40) ** 2:
                 self.hazards.append({"x": hx, "y": hy, "r": hr})
 
-        # New Toxic Spores Hazards (heavy O2 drain on touch)
         self.toxic_spores = []
         while len(self.toxic_spores) < 2 + min(self.level, 3):
             tx = random.randint(40, 280)
@@ -43,7 +42,6 @@ class SubZeroMinerGame(BaseGame):
             if (tx - 160) ** 2 + (ty - 120) ** 2 > (tr + 35) ** 2:
                 self.toxic_spores.append({"x": tx, "y": ty, "r": tr, "pulse": random.uniform(0, math.pi)})
 
-        # Gems / O2 Bubbles
         self.gems = []
         gem_radius = 6
         for _ in range(4):
@@ -53,9 +51,7 @@ class SubZeroMinerGame(BaseGame):
 
                 valid = True
                 for h in self.hazards + self.toxic_spores:
-                    dist_sq = (gx - h["x"]) ** 2 + (gy - h["y"]) ** 2
-                    min_dist = h["r"] + gem_radius + 4
-                    if dist_sq < min_dist ** 2:
+                    if check_circle_collision(float(gx), float(gy), float(gem_radius), float(h["x"]), float(h["y"]), float(h["r"] + 4)):
                         valid = False
                         break
 
@@ -73,29 +69,29 @@ class SubZeroMinerGame(BaseGame):
         dt = 0.016
 
         dx, dy = 0.0, 0.0
-        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+        if inp.is_left_pressed():
             dx -= speed * dt
-        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+        if inp.is_right_pressed():
             dx += speed * dt
-        if inp.is_key_down(pygame.K_UP) or inp.is_key_down(pygame.K_w):
+        if inp.is_up_pressed():
             dy -= speed * dt
-        if inp.is_key_down(pygame.K_DOWN) or inp.is_key_down(pygame.K_s):
+        if inp.is_down_pressed():
             dy += speed * dt
 
-        new_x = max(20.0, min(300.0, self.rx + dx))
-        new_y = max(35.0, min(220.0, self.ry + dy))
+        new_x = clamp(self.rx + dx, 20.0, 300.0)
+        new_y = clamp(self.ry + dy, 35.0, 220.0)
 
         collides = False
         for h in self.hazards:
-            if abs(new_x - h["x"]) < h["r"] + 8 and abs(new_y - h["y"]) < h["r"] + 8:
+            if check_circle_collision(new_x, new_y, 8.0, float(h["x"]), float(h["y"]), float(h["r"])):
                 collides = True
                 self.oxygen -= dt * 12.0
                 break
 
         for ts in self.toxic_spores:
-            if abs(new_x - ts["x"]) < ts["r"] + 8 and abs(new_y - ts["y"]) < ts["r"] + 8:
+            if check_circle_collision(new_x, new_y, 8.0, float(ts["x"]), float(ts["y"]), float(ts["r"])):
                 collides = True
-                self.oxygen -= dt * 35.0  # Schwerer O2-Abzug!
+                self.oxygen -= dt * 35.0
                 break
 
         if not collides:
@@ -106,7 +102,6 @@ class SubZeroMinerGame(BaseGame):
         if not self.active or self.paused or self.game_over:
             return
 
-        # Progressiver O2-Verbrauch basierend auf dem Level
         drain_rate = 5.0 + (self.level * 1.8)
         self.oxygen -= dt * drain_rate
 
@@ -119,7 +114,7 @@ class SubZeroMinerGame(BaseGame):
             ts["pulse"] += dt * 5
 
         for g in self.gems[:]:
-            if abs(self.rx - g["x"]) < 14 and abs(self.ry - g["y"]) < 14:
+            if check_circle_collision(self.rx, self.ry, 6.0, float(g["x"]), float(g["y"]), 6.0):
                 self.gems.remove(g)
                 self.add_score(g["val"])
                 self.oxygen = min(100.0, self.oxygen + 22.0)

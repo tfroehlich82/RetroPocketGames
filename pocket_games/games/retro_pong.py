@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pygame
 
-from pocket_games.core.physics import handle_paddle_collision
+from pocket_games.core.physics import clamp, handle_paddle_collision
 from pocket_games.games.base import BaseGame
 
 
@@ -30,8 +30,6 @@ class Ball:
 
 
 class RetroPongGame(BaseGame):
-    """Refactored Retro Pong 2077 using BaseGame architecture."""
-
     def __init__(self, engine) -> None:
         super().__init__(engine, game_name="Retro Pong 2077")
         self.paddle_y = 120.0
@@ -47,14 +45,14 @@ class RetroPongGame(BaseGame):
         inp = self.engine.input
         self.paddle_prev_y = self.paddle_y
 
-        if inp.is_key_down(pygame.K_UP) or inp.is_key_down(pygame.K_w):
+        if inp.is_up_pressed():
             self.paddle_y = max(40.0, self.paddle_y - 4.5)
-        if inp.is_key_down(pygame.K_DOWN) or inp.is_key_down(pygame.K_s):
+        if inp.is_down_pressed():
             self.paddle_y = min(210.0, self.paddle_y + 4.5)
 
         if inp.mouse_clicked:
             _vx, vy = self.get_virtual_mouse_pos()
-            self.paddle_y = max(40.0, min(210.0, float(vy)))
+            self.paddle_y = clamp(float(vy), 40.0, 210.0)
 
         self.paddle.rect.y = int(self.paddle_y) - 20
 
@@ -69,7 +67,6 @@ class RetroPongGame(BaseGame):
         self.ball.y += self.ball.vy * dt
         self.ball.update_rect()
 
-        # Wall Bounces
         if self.ball.rect.top <= 25:
             self.ball.rect.top = 25
             self.ball.y = self.ball.rect.centery
@@ -87,7 +84,6 @@ class RetroPongGame(BaseGame):
             self.ball.vx *= -1
             self.engine.audio.play("select")
 
-        # Paddle Collision with Gummiball Impulse Transfer
         if self.ball.rect.colliderect(self.paddle.rect):
             handle_paddle_collision(self.ball, self.paddle, paddle_vy=paddle_vy)
             self.ball.x, self.ball.y = self.ball.rect.center
@@ -101,10 +97,7 @@ class RetroPongGame(BaseGame):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 18))
 
-        # Center Line
         pygame.draw.line(surface, (30, 30, 50), (160, 20), (160, 240), 2)
-
-        # Paddle & Ball
         pygame.draw.rect(surface, (0, 255, 200), self.paddle.rect, border_radius=3)
         pygame.draw.circle(surface, (255, 200, 0), self.ball.rect.center, 6)
 

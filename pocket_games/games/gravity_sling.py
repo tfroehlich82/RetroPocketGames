@@ -1,11 +1,14 @@
 # ==========================================
 # GRAVITY SLING (Stellar Navigation Edition)
 # ==========================================
+from __future__ import annotations
+
 import math
 import random
 
 import pygame
 
+from pocket_games.core.physics import calculate_orbital_pull, check_circle_collision
 from pocket_games.games.base import BaseGame
 
 
@@ -14,13 +17,11 @@ class GravitySlingGame(BaseGame):
         super().__init__(engine, "Gravity Sling")
         self.px, self.py = 50.0, 120.0
         self.vx, self.vy = 70.0, -35.0
-
         self.planets = [
             {"x": 160, "y": 120, "r": 22, "color": (80, 140, 255)},
             {"x": 80, "y": 60, "r": 16, "color": (255, 120, 80)},
             {"x": 240, "y": 180, "r": 18, "color": (160, 80, 255)},
         ]
-
         self.crystals = []
         self._spawn_crystal()
 
@@ -30,7 +31,7 @@ class GravitySlingGame(BaseGame):
             cy = random.randint(40, 200)
             valid = True
             for p in self.planets:
-                if math.hypot(cx - p["x"], cy - p["y"]) < p["r"] + 20:
+                if check_circle_collision(cx, cy, 0.0, float(p["x"]), float(p["y"]), float(p["r"] + 20)):
                     valid = False
                     break
             if valid:
@@ -43,12 +44,7 @@ class GravitySlingGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (
-            inp.is_key_just_pressed(pygame.K_SPACE)
-            or inp.mouse_clicked
-            or inp.is_key_just_pressed(pygame.K_UP)
-            or inp.is_key_just_pressed(pygame.K_w)
-        ):
+        if inp.is_action_just_pressed():
             mag = math.hypot(self.vx, self.vy)
             if mag > 0:
                 self.vx += (self.vx / mag) * 55.0
@@ -63,25 +59,21 @@ class GravitySlingGame(BaseGame):
             return
 
         for p in self.planets:
-            dx = p["x"] - self.px
-            dy = p["y"] - self.py
-            dist = math.hypot(dx, dy)
-
-            if dist < p["r"]:
+            # Physik: Orbital pull via physics.py
+            if check_circle_collision(self.px, self.py, 5.0, float(p["x"]), float(p["y"]), float(p["r"])):
                 self.game_over = True
                 self.play_sound("gameover")
                 return
 
-            if dist > 5:
-                force = 20000.0 / (dist**2)
-                self.vx += (dx / dist) * force * dt
-                self.vy += (dy / dist) * force * dt
+            fx, fy = calculate_orbital_pull(self.px, self.py, float(p["x"]), float(p["y"]), strength=20000.0)
+            self.vx += fx * dt
+            self.vy += fy * dt
 
         self.px += self.vx * dt
         self.py += self.vy * dt
 
         for c in self.crystals[:]:
-            if math.hypot(self.px - c["x"], self.py - c["y"]) < 14:
+            if check_circle_collision(self.px, self.py, 5.0, float(c["x"]), float(c["y"]), 6.0):
                 self.crystals.remove(c)
                 self.add_score(50)
                 self.play_sound("score")
@@ -93,18 +85,9 @@ class GravitySlingGame(BaseGame):
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((5, 8, 18))
-
         for p in self.planets:
-            pygame.draw.circle(surface, (30, 45, 70), (p["x"], p["y"]), p["r"] + 12, 1)
-            pygame.draw.circle(surface, (30, 45, 70), (p["x"], p["y"]), p["r"] + 24, 1)
             pygame.draw.circle(surface, p["color"], (p["x"], p["y"]), p["r"])
-            pygame.draw.circle(surface, (255, 255, 255), (p["x"] - 4, p["y"] - 4), 3)
-
         for c in self.crystals:
             pygame.draw.circle(surface, (0, 255, 200), (int(c["x"]), int(c["y"])), 6)
-            pygame.draw.circle(surface, (255, 255, 255), (int(c["x"]), int(c["y"])), 2)
-
         pygame.draw.circle(surface, (255, 215, 0), (int(self.px), int(self.py)), 5)
-        pygame.draw.circle(surface, (255, 255, 255), (int(self.px), int(self.py)), 2)
-
         self.render_ui(surface)

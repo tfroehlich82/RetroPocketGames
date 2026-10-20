@@ -42,3 +42,33 @@ class InputManager:
             self.is_key_just_pressed(pygame.K_ESCAPE)
             or self.is_key_just_pressed(pygame.K_BACKSPACE)
         )
+
+    def is_left_pressed(self) -> bool:
+        return self.is_key_down(pygame.K_LEFT) or self.is_key_down(pygame.K_a)
+
+    def is_right_pressed(self) -> bool:
+        return self.is_key_down(pygame.K_RIGHT) or self.is_key_down(pygame.K_d)
+
+    def is_up_pressed(self) -> bool:
+        return self.is_key_down(pygame.K_UP) or self.is_key_down(pygame.K_w)
+
+    def is_down_pressed(self) -> bool:
+        return self.is_key_down(pygame.K_DOWN) or self.is_key_down(pygame.K_s)
+
+    def is_action_pressed(self) -> bool:
+        return (
+            self.is_key_down(pygame.K_SPACE)
+            or self.is_key_down(pygame.K_RETURN)
+            or self.is_key_down(pygame.K_z)
+            or self.mouse_clicked
+        )
+
+    def is_action_just_pressed(self) -> bool:
+        return (
+            self.is_key_just_pressed(pygame.K_SPACE)
+            or self.is_key_just_pressed(pygame.K_RETURN)
+            or self.is_key_just_pressed(pygame.K_z)
+            or self.is_key_just_pressed(pygame.K_UP)
+            or self.is_key_just_pressed(pygame.K_w)
+            or self.mouse_clicked
+        )

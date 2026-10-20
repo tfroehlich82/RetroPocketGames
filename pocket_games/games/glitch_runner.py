@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pygame
 
+from pocket_games.core.physics import apply_gravity, clamp
 from pocket_games.games.base import BaseGame
 
 
@@ -23,12 +24,7 @@ class GlitchRunnerGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (
-            inp.is_key_just_pressed(pygame.K_SPACE)
-            or inp.mouse_clicked
-            or inp.is_key_just_pressed(pygame.K_UP)
-            or inp.is_key_just_pressed(pygame.K_w)
-        ) and self.py >= 148:
+        if (inp.is_action_just_pressed() or inp.is_up_pressed()) and self.py >= 148:
             self.vy = -200
             self.play_sound("bounce")
 
@@ -38,14 +34,13 @@ class GlitchRunnerGame(BaseGame):
             return
 
         self.timer += dt
-
         interval = max(1.4, 4.5 - (self.score_count * 0.1))
 
         if self.timer > interval:
             self.timer = 0.0
             self.glitch_phase = not self.glitch_phase
 
-        self.vy += 420 * dt
+        self.vy = apply_gravity(self.vy, 420.0, dt)
         self.py += self.vy * dt
 
         if self.py > 150:
@@ -57,6 +52,8 @@ class GlitchRunnerGame(BaseGame):
                 self.vy = 0
                 self.score_count += 1
                 self.add_score(1)
+
+        self.px = clamp(self.px, 0.0, 320.0)
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((12, 15, 22))

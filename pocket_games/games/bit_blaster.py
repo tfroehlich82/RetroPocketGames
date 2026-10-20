@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pygame
 
-from pocket_games.core.physics import handle_paddle_collision
+from pocket_games.core.physics import clamp, handle_paddle_collision
 from pocket_games.games.base import BaseGame
 
 
@@ -52,13 +52,13 @@ class BitBlasterGame(BaseGame):
             return
 
         inp = self.engine.input
-        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+        if inp.is_left_pressed():
             self.px = max(28, self.px - 6)
-        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+        if inp.is_right_pressed():
             self.px = min(292, self.px + 6)
         if inp.mouse_clicked:
             vx, _vy = self.get_virtual_mouse_pos()
-            self.px = max(28, min(292, vx))
+            self.px = clamp(vx, 28.0, 292.0)
 
         self.paddle.rect.x = int(self.px) - 25
 

@@ -106,7 +106,7 @@ The handheld features a unified dual-input scheme:
 | **Menu Navigation** | D-Pad Up / Down (`W / S`) | Tap or swipe list items | 
 | **Confirm / Action** | Button A / Enter / Space | Single tap | 
 | **Back / Settings / Pause** | Button B / Esc / Backspace | Top-Left Back / Settings Icon | 
-| **Global Exit** | Select + Start / Alt+F4 | Return to Main Menu | 
+| **Global Exit** | Select + Start / Alt+F4 / Esc | Return to Main Menu | 
 
 ---
 

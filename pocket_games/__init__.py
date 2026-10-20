@@ -1,5 +1,5 @@
 from __future__ import annotations
 
-__version__ = "0.3.6"
+__version__ = "0.3.7"
 __author__ = "tfroehlich82"
 __email__ = "tfroehlich82@gmx.ch"

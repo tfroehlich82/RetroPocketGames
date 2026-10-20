@@ -7,6 +7,7 @@ import random
 
 import pygame
 
+from pocket_games.core.physics import apply_gravity, clamp
 from pocket_games.games.base import BaseGame
 
 
@@ -83,8 +84,7 @@ class NeonDashGame(BaseGame):
             return
 
         inp = self.engine.input
-        if (inp.is_key_just_pressed(pygame.K_SPACE) or inp.is_key_just_pressed(
-                pygame.K_UP) or inp.mouse_clicked) and self.is_grounded:
+        if (inp.is_action_just_pressed() or inp.is_up_pressed()) and self.is_grounded:
             self.player_vy = self.jump_speed
             self.is_grounded = False
             self.play_sound("jump")
@@ -102,8 +102,9 @@ class NeonDashGame(BaseGame):
                 star["x"] = 320
                 star["y"] = random.randint(0, 160)
 
-        self.player_vy += self.gravity * dt
+        self.player_vy = apply_gravity(self.player_vy, self.gravity, dt)
         self.player_y += self.player_vy * dt
+        self.player_y = clamp(self.player_y, 0.0, 180.0)
 
         if self.player_y >= 180.0:
             self.player_y = 180.0
