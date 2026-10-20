@@ -6,7 +6,7 @@ Welcome to the official manual and documentation for the **Retro Game Collection
 
 ## 🚀 Quick Start & Installation for Linux / Raspberry Pi OS
 
-### Clone the Repository first**
+### Clone the Repository first
 
    ```bash
    git clone https://github.com/tfroehlich82/RetroPocketGames.git
