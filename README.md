@@ -142,15 +142,13 @@ The handheld features a unified dual-input scheme:
 
 ### 3. Neon Dash
 
-* **Goal:** Survive as long as possible along a multi-lane neon highway.
+* **Goal:** Survive as long as possible along a neon highway.
 
-* **Gameplay:** High-speed endless runner. Switch between 3 lanes to avoid oncoming barriers and hazards.
+* **Gameplay:** High-speed endless runner. Jump to avoid oncoming barriers and hazards.
 
 * **Controls:**
 
-  * **D-Pad Left/Right:** Change lane left/right.
-
-  * **Touch:** Tap left or right half of the screen to switch lanes.
+  * **D-Pad Up / Space / Touch:** Jump.
 
 ### 4. Byte Hopper
 
