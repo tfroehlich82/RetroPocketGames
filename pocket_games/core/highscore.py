@@ -5,7 +5,8 @@ from pathlib import Path
 
 from pocket_games.core.logger import logger
 
-HIGHSCORE_FILE = Path("data/highscores.json")
+BASE_DIR = Path(__file__).resolve().parent.parent
+HIGHSCORE_FILE = BASE_DIR / "data/highscores.json"
 
 class HighScoreManager:
     def __init__(self) -> None:
