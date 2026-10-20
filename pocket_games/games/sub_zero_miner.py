@@ -25,23 +25,57 @@ class SubZeroMinerGame(BaseGame):
 
     def reset_level(self) -> None:
         self.rx, self.ry = 160.0, 120.0
+        safety_margin = 14.0  # Mindestabstand zwischen den Objekten
 
+        # Ice Hazards mit Kollisions- und Mindestabstandsprüfung generieren
         self.hazards = []
         while len(self.hazards) < 3:
             hx = random.randint(50, 270)
             hy = random.randint(50, 190)
             hr = 16
-            if (hx - 160) ** 2 + (hy - 120) ** 2 > (hr + 40) ** 2:
+
+            # Abstand zum Startbereich (160, 120) einhalten
+            if (hx - 160) ** 2 + (hy - 120) ** 2 <= (hr + 40) ** 2:
+                continue
+
+            # Abstand zu bereits platzierten Hazards prüfen
+            valid = True
+            for h in self.hazards:
+                if (hx - h["x"]) ** 2 + (hy - h["y"]) ** 2 < (
+                    hr + h["r"] + safety_margin
+                ) ** 2:
+                    valid = False
+                    break
+
+            if valid:
                 self.hazards.append({"x": hx, "y": hy, "r": hr})
 
+        # Toxic Spores Hazards (Müssen Abstand zu Zentrum, Hazards und untereinander wahren)
         self.toxic_spores = []
         while len(self.toxic_spores) < 2 + min(self.level, 3):
             tx = random.randint(40, 280)
             ty = random.randint(40, 200)
             tr = 12
-            if (tx - 160) ** 2 + (ty - 120) ** 2 > (tr + 35) ** 2:
-                self.toxic_spores.append({"x": tx, "y": ty, "r": tr, "pulse": random.uniform(0, math.pi)})
 
+            # Abstand zum Startbereich (160, 120) einhalten
+            if (tx - 160) ** 2 + (ty - 120) ** 2 <= (tr + 35) ** 2:
+                continue
+
+            valid = True
+            # Prüfe Abstand zu allen existierenden Hazards und Toxic Spores
+            for obj in self.hazards + self.toxic_spores:
+                if (tx - obj["x"]) ** 2 + (ty - obj["y"]) ** 2 < (
+                    tr + obj["r"] + safety_margin
+                ) ** 2:
+                    valid = False
+                    break
+
+            if valid:
+                self.toxic_spores.append(
+                    {"x": tx, "y": ty, "r": tr, "pulse": random.uniform(0, math.pi)}
+                )
+
+        # Gems / O2 Bubbles (ebenfalls mit Sicherheitsabstand zu allen Hindernissen)
         self.gems = []
         gem_radius = 6
         for _ in range(4):
@@ -51,7 +85,14 @@ class SubZeroMinerGame(BaseGame):
 
                 valid = True
                 for h in self.hazards + self.toxic_spores:
-                    if check_circle_collision(float(gx), float(gy), float(gem_radius), float(h["x"]), float(h["y"]), float(h["r"] + 4)):
+                    if check_circle_collision(
+                        float(gx),
+                        float(gy),
+                        float(gem_radius),
+                        float(h["x"]),
+                        float(h["y"]),
+                        float(h["r"] + 6),
+                    ):
                         valid = False
                         break
 
@@ -83,13 +124,17 @@ class SubZeroMinerGame(BaseGame):
 
         collides = False
         for h in self.hazards:
-            if check_circle_collision(new_x, new_y, 8.0, float(h["x"]), float(h["y"]), float(h["r"])):
+            if check_circle_collision(
+                new_x, new_y, 8.0, float(h["x"]), float(h["y"]), float(h["r"])
+            ):
                 collides = True
                 self.oxygen -= dt * 12.0
                 break
 
         for ts in self.toxic_spores:
-            if check_circle_collision(new_x, new_y, 8.0, float(ts["x"]), float(ts["y"]), float(ts["r"])):
+            if check_circle_collision(
+                new_x, new_y, 8.0, float(ts["x"]), float(ts["y"]), float(ts["r"])
+            ):
                 collides = True
                 self.oxygen -= dt * 35.0
                 break
@@ -114,7 +159,9 @@ class SubZeroMinerGame(BaseGame):
             ts["pulse"] += dt * 5
 
         for g in self.gems[:]:
-            if check_circle_collision(self.rx, self.ry, 6.0, float(g["x"]), float(g["y"]), 6.0):
+            if check_circle_collision(
+                self.rx, self.ry, 6.0, float(g["x"]), float(g["y"]), 6.0
+            ):
                 self.gems.remove(g)
                 self.add_score(g["val"])
                 self.oxygen = min(100.0, self.oxygen + 22.0)
@@ -128,8 +175,12 @@ class SubZeroMinerGame(BaseGame):
         surface.fill((10, 18, 30))
 
         for h in self.hazards:
-            pygame.draw.circle(surface, (100, 190, 255), (int(h["x"]), int(h["y"])), h["r"])
-            pygame.draw.circle(surface, (180, 230, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1)
+            pygame.draw.circle(
+                surface, (100, 190, 255), (int(h["x"]), int(h["y"])), h["r"]
+            )
+            pygame.draw.circle(
+                surface, (180, 230, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1
+            )
 
         for ts in self.toxic_spores:
             tx, ty = int(ts["x"]), int(ts["y"])
@@ -140,10 +191,14 @@ class SubZeroMinerGame(BaseGame):
 
         for g in self.gems:
             pygame.draw.circle(surface, (0, 255, 255), (int(g["x"]), int(g["y"])), 6)
-            pygame.draw.circle(surface, (255, 255, 255), (int(g["x"]) - 2, int(g["y"]) - 2), 2)
+            pygame.draw.circle(
+                surface, (255, 255, 255), (int(g["x"]) - 2, int(g["y"]) - 2), 2
+            )
 
         mx, my = int(self.rx), int(self.ry)
-        pygame.draw.rect(surface, (255, 130, 0), (mx - 8, my - 8, 16, 16), border_radius=3)
+        pygame.draw.rect(
+            surface, (255, 130, 0), (mx - 8, my - 8, 16, 16), border_radius=3
+        )
         pygame.draw.rect(surface, (255, 255, 255), (mx - 3, my - 3, 6, 6))
 
         pygame.draw.rect(surface, (30, 40, 50), (10, 225, 120, 8), border_radius=2)

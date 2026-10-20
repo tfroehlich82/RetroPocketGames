@@ -16,7 +16,9 @@ class PulseRacerGame(BaseGame):
         self.rx = 160.0
         self.traffic: list[dict] = []
         self.spawn_timer = 0.0
-        self.base_speed = 210.0
+        self.base_speed = (
+            180.0  # Etwas angenehmere Startgeschwindigkeit für perfekte Synchronität
+        )
         self.distance_float = 0.0
         self.last_dist = 0
         self.road_scroll = 0.0
@@ -29,9 +31,9 @@ class PulseRacerGame(BaseGame):
 
         inp = self.engine.input
         dt = 0.016
-        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+        if inp.is_left_pressed():
             self.rx = max(80.0, self.rx - 190.0 * dt)
-        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+        if inp.is_right_pressed():
             self.rx = min(240.0, self.rx + 190.0 * dt)
 
     def update(self, dt: float) -> None:
@@ -39,7 +41,8 @@ class PulseRacerGame(BaseGame):
         if not self.active or self.paused or self.game_over:
             return
 
-        current_base_speed = self.base_speed + (self.elapsed_time * 5.0)
+        # Sanfterer, synchroner Geschwindigkeitsanstieg
+        current_base_speed = self.base_speed + (self.elapsed_time * 3.0)
 
         self.distance_float += current_base_speed * dt
         current_dist = int(self.distance_float)
@@ -48,6 +51,7 @@ class PulseRacerGame(BaseGame):
             self.last_dist = current_dist
             self.add_score(diff)
 
+        # Straßen-Scrollen exakt synchron zur Fahrzeug-Vorwärtsgeschwindigkeit
         self.road_scroll = (self.road_scroll + current_base_speed * dt) % 40
 
         self.spawn_timer += dt
@@ -66,7 +70,7 @@ class PulseRacerGame(BaseGame):
                         "x": lane_x,
                         "target_x": lane_x,
                         "y": -30.0,
-                        "speed": 130.0 + self.elapsed_time * 2.5,
+                        "speed": 110.0 + self.elapsed_time * 2.0,
                         "type": "oncoming",
                         "color": (255, 50, 50),
                     }
@@ -78,7 +82,7 @@ class PulseRacerGame(BaseGame):
                         "x": lane_x,
                         "target_x": lane_x,
                         "y": -40.0,
-                        "speed": 35.0,
+                        "speed": 30.0,
                         "type": "blocker",
                         "color": (255, 180, 0),
                     }
@@ -90,7 +94,7 @@ class PulseRacerGame(BaseGame):
                         "x": lane_x,
                         "target_x": lane_x,
                         "y": -40.0,
-                        "speed": 110.0 + self.elapsed_time * 3.0,
+                        "speed": 95.0 + self.elapsed_time * 2.5,
                         "type": "cruiser",
                         "color": (50, 255, 120),
                     }
@@ -102,7 +106,7 @@ class PulseRacerGame(BaseGame):
                         "x": lane_x,
                         "target_x": lane_x,
                         "y": -40.0,
-                        "speed": 75.0,
+                        "speed": 65.0,
                         "type": "cruiser",
                         "color": (0, 200, 255),
                     }
@@ -178,6 +182,7 @@ class PulseRacerGame(BaseGame):
         pygame.draw.line(surface, (255, 255, 255), (70, 0), (70, 240), 2)
         pygame.draw.line(surface, (255, 255, 255), (250, 0), (250, 240), 2)
 
+        # Fahrstreifen-Trennlinien bewegen sich exakt synchron mit road_scroll
         for y_pos in range(int(-40 + self.road_scroll), 240, 40):
             pygame.draw.line(
                 surface, (255, 255, 255), (130, y_pos), (130, y_pos + 20), 2

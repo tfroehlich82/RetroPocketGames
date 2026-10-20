@@ -15,9 +15,18 @@ class KernelPanicGame(BaseGame):
         super().__init__(engine, game_name="Kernel Panic")
         self.leaks: list[dict] = []
         self.spawn_timer = 0.0
-        self.spawn_interval = 0.7
         self.memory_used = 0.0  # 0% to 100%
-        self.scanline = 0.0
+
+        # Unabhängige Scanline, die sich fließend von oben nach unten und zurück bewegt
+        self.scanline_y = 0.0
+        self.scanline_dir = 1.0
+        self.scanline_speed = 75.0
+
+        # Kleinere, dedizierte Schriftart für den Text innerhalb der Blöcke
+        try:
+            self.code_font = pygame.font.Font(None, 13)
+        except Exception:  # noqa: BLE001
+            self.code_font = pygame.font.SysFont("sans-serif", 11)
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -40,16 +49,29 @@ class KernelPanicGame(BaseGame):
         if not self.active or self.paused or self.game_over:
             return
 
-        self.scanline = (self.scanline + dt * 100) % 240
+        # Scanline-Bewegung von oben nach unten und wieder zurück
+        self.scanline_y += self.scanline_speed * self.scanline_dir * dt
+        if self.scanline_y > 240:
+            self.scanline_y = 240
+            self.scanline_dir = -1.0
+        elif self.scanline_y < 0:
+            self.scanline_y = 0
+            self.scanline_dir = 1.0
+
+        # Schwierigkeit steigt dynamisch mit zunehmender Punktzahl
+        score_multiplier = 1.0 + (self.score / 150.0)
+        spawn_interval = max(0.25, 0.7 - (self.score * 0.004))
+
         self.spawn_timer += dt
-        if self.spawn_timer >= self.spawn_interval:
+        if self.spawn_timer >= spawn_interval:
             self.spawn_timer = 0.0
+            base_speed = random.uniform(65.0, 110.0)
             self.leaks.append(
                 {
                     "x": random.randint(35, 285),
                     "y": -15.0,
-                    "speed": random.uniform(65.0, 120.0),
-                    "size": random.randint(18, 26),
+                    "speed": base_speed * score_multiplier,
+                    "size": random.randint(20, 26),
                     "code": random.choice(["0x0", "ERR", "NULL", "SEG", "BUF"]),
                 }
             )
@@ -70,8 +92,13 @@ class KernelPanicGame(BaseGame):
         for y in range(0, 240, 20):
             pygame.draw.line(surface, (18, 28, 20), (0, y), (320, y), 1)
 
+        # Unabhängige Scanline-Linie
         pygame.draw.line(
-            surface, (40, 80, 50), (0, int(self.scanline)), (320, int(self.scanline)), 2
+            surface,
+            (40, 180, 90),
+            (0, int(self.scanline_y)),
+            (320, int(self.scanline_y)),
+            2,
         )
 
         for l in self.leaks:
@@ -81,7 +108,8 @@ class KernelPanicGame(BaseGame):
             pygame.draw.rect(surface, (255, 30, 80), rect, border_radius=3)
             pygame.draw.rect(surface, (255, 200, 220), rect, 2, border_radius=3)
 
-            txt = self.font.render(l["code"], True, (255, 255, 255))
+            # Code-Beschriftung mit angepasster kleiner Schrift innerhalb des Blocks
+            txt = self.code_font.render(l["code"], True, (255, 255, 255))
             surface.blit(txt, (lx - txt.get_width() // 2, ly - txt.get_height() // 2))
 
         pygame.draw.rect(surface, (20, 35, 25), (15, 220, 290, 12), border_radius=4)

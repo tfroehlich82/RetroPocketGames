@@ -13,7 +13,7 @@ from pocket_games.games.base import BaseGame
 
 class MatrixInvadersGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, "Matrix Invaders")
+        super().__init__(engine, game_name="Matrix Invaders")
         self.px = 160.0
         self.bullets: list[dict] = []
         self.bugs: list[dict] = []
@@ -21,6 +21,7 @@ class MatrixInvadersGame(BaseGame):
         self.collectibles: list[dict] = []
         self.weapon_level = 1
         self.shield_timer = 0.0
+        self.wave = 1
         self.spawn_timer = 0.0
         self.matrix_chars = [
             {
@@ -30,25 +31,32 @@ class MatrixInvadersGame(BaseGame):
             }
             for _ in range(18)
         ]
-        self._spawn_initial_bugs()
+        self._start_wave()
 
-    def _spawn_initial_bugs(self) -> None:
-        for _ in range(4):
-            self._add_bug()
+    def _start_wave(self) -> None:
+        self.bugs.clear()
+        num_bugs = min(14, 4 + self.wave * 2)
+        for _ in range(num_bugs):
+            self._spawn_bug()
 
-    def _add_bug(self) -> None:
-        b_type = random.choices(["drone", "speeder", "tank"], weights=[65, 25, 10])[0]
-        hp = 2 if b_type == "tank" else 1
-        speed = float(random.randint(25, 45)) if b_type == "speeder" else float(random.randint(12, 25))
-        self.bugs.append({
-            "x": float(random.randint(30, 290)),
-            "y": float(random.randint(10, 40)),
-            "speed": speed,
-            "type": b_type,
-            "hp": hp,
-            "max_hp": hp,
-            "wobble": random.uniform(0, math.pi * 2),
-        })
+    def _spawn_bug(self) -> None:
+        b_type = random.choices(["drone", "speeder", "tank"], weights=[50, 30, 20])[0]
+        hp = (
+            2 if b_type == "tank" else (2 if self.wave > 2 and b_type == "drone" else 1)
+        )
+        base_spd = float(random.randint(20, 40)) + (self.wave * 3.0)
+
+        self.bugs.append(
+            {
+                "x": float(random.randint(30, 290)),
+                "y": float(random.randint(-40, 10)),
+                "speed": base_spd,
+                "type": b_type,
+                "hp": hp,
+                "max_hp": hp,
+                "wobble": random.uniform(0, math.pi * 2),
+            }
+        )
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -59,25 +67,35 @@ class MatrixInvadersGame(BaseGame):
         speed = 220.0
         dt = 0.016
 
-        if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
+        if inp.is_left_pressed():
             self.px = max(20.0, self.px - speed * dt)
-        if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
+        if inp.is_right_pressed():
             self.px = min(300.0, self.px + speed * dt)
 
-        if (
-            inp.is_key_just_pressed(pygame.K_SPACE)
-            or inp.is_key_just_pressed(pygame.K_RETURN)
-            or inp.mouse_clicked
-        ):
+        if inp.is_action_just_pressed():
+            # 5 Waffenstufen mit unterschiedlicher Feuerkraft
             if self.weapon_level == 1:
-                self.bullets.append({"x": self.px - 6, "y": 205.0, "vx": 0.0})
-                self.bullets.append({"x": self.px + 6, "y": 205.0, "vx": 0.0})
+                self.bullets.append({"x": self.px - 6, "y": 205.0})
+                self.bullets.append({"x": self.px + 6, "y": 205.0})
             elif self.weapon_level == 2:
-                self.bullets.append({"x": self.px - 8, "y": 205.0, "vx": 0.0})
-                self.bullets.append({"x": self.px, "y": 205.0, "vx": 0.0})
-                self.bullets.append({"x": self.px + 8, "y": 205.0, "vx": 0.0})
-            else:
-                self.bullets.append({"x": self.px, "y": 205.0, "vx": 0.0, "beam": True})
+                self.bullets.append({"x": self.px - 10, "y": 205.0})
+                self.bullets.append({"x": self.px, "y": 205.0})
+                self.bullets.append({"x": self.px + 10, "y": 205.0})
+            elif self.weapon_level == 3:
+                self.bullets.append({"x": self.px - 12, "y": 205.0})
+                self.bullets.append({"x": self.px - 4, "y": 205.0})
+                self.bullets.append({"x": self.px + 4, "y": 205.0})
+                self.bullets.append({"x": self.px + 12, "y": 205.0})
+            elif self.weapon_level == 4:
+                self.bullets.append({"x": self.px - 14, "y": 205.0})
+                self.bullets.append({"x": self.px - 7, "y": 205.0})
+                self.bullets.append({"x": self.px, "y": 205.0})
+                self.bullets.append({"x": self.px + 7, "y": 205.0})
+                self.bullets.append({"x": self.px + 14, "y": 205.0})
+            else:  # Stufe 5 (Maximalstufe) - Starker Laserstrahl + Spread
+                self.bullets.append({"x": self.px, "y": 205.0, "beam": True})
+                self.bullets.append({"x": self.px - 12, "y": 205.0})
+                self.bullets.append({"x": self.px + 12, "y": 205.0})
             self.engine.audio.play("select")
 
     def update(self, dt: float) -> None:
@@ -87,13 +105,6 @@ class MatrixInvadersGame(BaseGame):
 
         if self.shield_timer > 0:
             self.shield_timer -= dt
-
-        self.spawn_timer += dt
-        max_bugs = min(12, 4 + int(self.elapsed_time / 15.0))
-        spawn_interval = max(1.2, 3.0 - (self.elapsed_time * 0.03))
-        if self.spawn_timer >= spawn_interval and len(self.bugs) < max_bugs:
-            self.spawn_timer = 0.0
-            self._add_bug()
 
         for c in self.matrix_chars:
             c["y"] += c["speed"] * dt
@@ -109,7 +120,7 @@ class MatrixInvadersGame(BaseGame):
                 self.particles.remove(p)
 
         for b in self.bullets[:]:
-            b["y"] -= 360.0 * dt
+            b["y"] -= 380.0 * dt
             if b["y"] < 10:
                 self.bullets.remove(b)
 
@@ -117,7 +128,8 @@ class MatrixInvadersGame(BaseGame):
             col["y"] += 70.0 * dt
             if abs(self.px - col["x"]) < 16 and abs(215.0 - col["y"]) < 16:
                 if col["type"] == "weapon":
-                    self.weapon_level = min(3, self.weapon_level + 1)
+                    # Maximal bis Stufe 5, fällt danach nicht zurück, bleibt wirkungslos
+                    self.weapon_level = min(5, self.weapon_level + 1)
                     self.add_score(100)
                 elif col["type"] == "shield":
                     self.shield_timer = 8.0
@@ -127,25 +139,56 @@ class MatrixInvadersGame(BaseGame):
             elif col["y"] > 240:
                 self.collectibles.remove(col)
 
-        for bug in self.bugs[:]:
-            bug["wobble"] += dt * 5
-            bug["y"] += bug["speed"] * dt
-            if bug["type"] == "speeder":
-                bug["x"] += math.sin(bug["wobble"]) * 35.0 * dt
-            else:
-                bug["x"] += math.cos(bug["wobble"]) * 15.0 * dt
+        # Prüfen ob Welle geschafft ist -> Nächste Welle starten
+        if len(self.bugs) == 0:
+            self.wave += 1
+            self.add_score(250 * self.wave)
+            self._start_wave()
 
-            if bug["y"] >= 210:
+        score_speed_boost = self.score * 0.05
+
+        for bug in self.bugs[:]:
+            bug["wobble"] += dt * (4 + self.wave)
+
+            # Invader bewegen sich aktiv auf das Spieler-Raumschiff zu (Homing)
+            homing_speed = (45.0 + self.wave * 6.0 + score_speed_boost) * dt
+            if bug["x"] < self.px:
+                bug["x"] = min(self.px, bug["x"] + homing_speed)
+            elif bug["x"] > self.px:
+                bug["x"] = max(self.px, bug["x"] - homing_speed)
+
+            # Geschwindigkeit skaliert mit Score und Wellen
+            current_bug_speed = (bug["speed"] + score_speed_boost) * (
+                1.0 + (self.wave - 1) * 0.15
+            )
+            bug["y"] += current_bug_speed * dt
+
+            if bug["type"] == "speeder":
+                bug["x"] += math.sin(bug["wobble"]) * 25.0 * dt
+
+            # Kollision mit dem Spieler: Upgrade abgeben statt sofortigem Game Over
+            if abs(bug["x"] - self.px) < 16 and abs(bug["y"] - 215.0) < 18:
                 if self.shield_timer > 0:
                     self.shield_timer = 0.0
                     self.bugs.remove(bug)
+                    self.engine.audio.play("confirm")
                 else:
-                    self.game_over = True
-                    self.engine.audio.play("hit")
-                    return
+                    self.bugs.remove(bug)
+                    if self.weapon_level > 1:
+                        self.weapon_level -= 1
+                        self.play_sound("hit")
+                    else:
+                        self.game_over = True
+                        self.play_sound("gameover")
+                        return
+                continue
+
+            if bug["y"] >= 240:
+                self.bugs.remove(bug)
+                continue
 
             for b in self.bullets[:]:
-                hit_box = 14 if not b.get("beam") else 20
+                hit_box = 14 if not b.get("beam") else 22
                 if (
                     abs(b["x"] - bug["x"]) < hit_box
                     and abs(b["y"] - bug["y"]) < hit_box
@@ -159,7 +202,7 @@ class MatrixInvadersGame(BaseGame):
                         self.add_score(40 if bug["type"] == "tank" else 25)
                         self.engine.audio.play("confirm")
 
-                        if random.random() < 0.25:
+                        if random.random() < 0.3:
                             ptype = random.choice(["weapon", "shield"])
                             self.collectibles.append(
                                 {"x": bug["x"], "y": bug["y"], "type": ptype}
@@ -237,6 +280,12 @@ class MatrixInvadersGame(BaseGame):
                     surface, (180, 40, 220), (bx - 12, by - 12, 24, 24), border_radius=4
                 )
                 pygame.draw.rect(surface, (255, 255, 255), (bx - 6, by - 6, 12, 12), 2)
+
+        # UI: Anzeige für Welle und das aktuelle 5-Stufen Waffen-Level
+        wave_txt = self.font.render(
+            f"WAVE {self.wave} | WPN LVL: {self.weapon_level}/5", True, (0, 255, 200)
+        )
+        surface.blit(wave_txt, (160 - wave_txt.get_width() // 2, 5))
 
         if self.game_over:
             go = self.title_font.render("SYSTEM BREACH", True, (255, 50, 80))

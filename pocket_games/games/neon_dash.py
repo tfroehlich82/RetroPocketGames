@@ -20,7 +20,8 @@ class NeonDashGame(BaseGame):
         self.gravity = 1050.0
         self.jump_speed = -370.0
 
-        self.base_speed = 140.0
+        self.base_speed = 130.0
+        self.distance = 0.0  # Zurückgelegter Weg für Geschwindigkeits- und Schwierigkeits-Skalierung
         self.obstacles: list[dict] = []
         self.spawn_timer = 0.0
         self.stars = [{"x": random.randint(0, 320), "y": random.randint(0, 160), "speed": random.randint(10, 30)} for _ in range(20)]
@@ -28,10 +29,12 @@ class NeonDashGame(BaseGame):
         self._spawn_obstacle()
 
     def _spawn_obstacle(self) -> None:
-        t = self.elapsed_time
+        dist = self.distance
         r = random.random()
 
-        if t >= 35.0 and r < 0.25:
+        # Progressive Hindernis-Vielfalt je nach zurückgelegtem Weg (distance)
+        if dist >= 700.0 and r < 0.25:
+            # Schwere Vierer-Blöcke bei hoher Distanz
             group_x = 330.0
             for i in range(4):
                 self.obstacles.append({
@@ -41,7 +44,8 @@ class NeonDashGame(BaseGame):
                     "h": 22,
                     "type": "block"
                 })
-        elif t >= 20.0 and r < 0.35:
+        elif dist >= 400.0 and r < 0.35:
+            # Dreier-Blöcke ab mittlerer Distanz
             group_x = 330.0
             for i in range(3):
                 self.obstacles.append({
@@ -51,7 +55,8 @@ class NeonDashGame(BaseGame):
                     "h": 22,
                     "type": "block"
                 })
-        elif t >= 10.0 and r < 0.45:
+        elif dist >= 200.0 and r < 0.45:
+            # Zweier-Blöcke
             group_x = 330.0
             for i in range(2):
                 self.obstacles.append({
@@ -62,7 +67,13 @@ class NeonDashGame(BaseGame):
                     "type": "block"
                 })
         else:
-            obs_type = random.choice(["spike", "block", "tall_block"])
+            # Am Anfang nur einfache, leichte Hindernisse (Spikes oder einfache Blöcke).
+            # Höhere Blöcke schalten sich erst ab Distanz 250 frei.
+            if dist < 250.0:
+                obs_type = random.choice(["spike", "block"])
+            else:
+                obs_type = random.choice(["spike", "block", "tall_block"])
+
             if obs_type == "spike":
                 w, h = 18, 22
             elif obs_type == "block":
@@ -94,7 +105,11 @@ class NeonDashGame(BaseGame):
         if self.game_over or self.paused:
             return
 
-        current_speed = self.base_speed + (self.elapsed_time * 3.0)
+        # Spielgeschwindigkeit steigt proportional zum zurückgelegten Weg (distance)
+        current_speed = self.base_speed + (self.distance * 0.035)
+
+        # Weg akkumulieren
+        self.distance += current_speed * dt
 
         for star in self.stars:
             star["x"] -= star["speed"] * dt
@@ -112,7 +127,8 @@ class NeonDashGame(BaseGame):
             self.is_grounded = True
 
         self.spawn_timer += dt
-        spawn_delay = max(0.8, 1.9 - (self.elapsed_time * 0.01) + random.uniform(-0.15, 0.25))
+        # Spawn-Abstände passen sich ebenfalls leicht der Distanz an
+        spawn_delay = max(0.8, 2.0 - (self.distance * 0.0008) + random.uniform(-0.15, 0.25))
         if self.spawn_timer >= spawn_delay:
             self.spawn_timer = 0.0
             self._spawn_obstacle()
@@ -141,9 +157,11 @@ class NeonDashGame(BaseGame):
         pygame.draw.line(surface, (0, 240, 255), (0, 200), (320, 200), 2)
         pygame.draw.line(surface, (100, 50, 200), (0, 201), (320, 201), 1)
 
-        current_speed = self.base_speed + (self.elapsed_time * 3.0)
+        # Exakt dieselbe geschwindigkeitsbasierte Berechnung für den Boden-Scroll,
+        # damit der Boden sich niemals schneller oder langsamer als die Hindernisse bewegt.
+        current_speed = self.base_speed + (self.distance * 0.035)
         for i in range(0, 320, 35):
-            offset = int((self.elapsed_time * current_speed) % 35)
+            offset = int(self.distance % 35)
             x_pos = i - offset
             if x_pos >= 0:
                 pygame.draw.line(surface, (40, 20, 70), (x_pos, 200), (x_pos, 240), 1)
