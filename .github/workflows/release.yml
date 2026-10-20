@@ -77,25 +77,21 @@ jobs:
           path: pocket-games-windows.zip
 
   release:
-    name: Create GitHub Release
-    needs: [build-linux, build-windows]
+    name: Create GitHub Release & Upload Assets
+    needs: [ build-linux, build-windows ]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       - name: Download All Artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+          files: |
+            artifacts/pocket-games-linux.tar.gz
+            artifacts/pocket-games-windows.zip
