@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-
-def get_logger(name: str = "RetroPocketGames", log_filename: str = "data/pocket_games.log") -> logging.Logger:
+BASE_DIR = Path(__file__).resolve().parent.parent
+def get_logger(name: str = "RetroPocketGames", log_filename: str = str(BASE_DIR / "data/pocket_games.log")) -> logging.Logger:
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger
