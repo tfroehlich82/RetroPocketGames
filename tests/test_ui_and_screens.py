@@ -55,7 +55,7 @@ class TestUIScreens(unittest.TestCase):
         # Prüfen, ob render_game_finished fehlerfrei durchläuft
         try:
             game.render(surface)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.fail(f"render_game_finished raised an exception: {e}")
 
 
