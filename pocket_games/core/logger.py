@@ -4,7 +4,9 @@ import logging
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-def get_logger(name: str = "RetroPocketGames", log_filename: str = str(BASE_DIR / "data/pocket_games.log")) -> logging.Logger:
+LOG_FILE = BASE_DIR / "data/pocket_games.log"
+
+def get_logger(name: str = "RetroPocketGames", log_filename: str = str(LOG_FILE.resolve())) -> logging.Logger:
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger

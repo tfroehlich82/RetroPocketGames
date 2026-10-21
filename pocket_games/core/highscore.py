@@ -17,6 +17,7 @@ class HighScoreManager:
         if HIGHSCORE_FILE.exists():
             try:
                 self.scores = json.loads(HIGHSCORE_FILE.read_text())
+                logger.debug(f"Loaded highscore from {HIGHSCORE_FILE}")
             except Exception as e:  # noqa: BLE001
                 logger.error(e)
                 self.scores = {}
@@ -24,6 +25,7 @@ class HighScoreManager:
     def save(self) -> None:
         try:
             HIGHSCORE_FILE.write_text(json.dumps(self.scores, indent=2))
+            logger.debug(f"Saved highscore to {HIGHSCORE_FILE}")
         except Exception as e:  # noqa: BLE001
             logger.error(e)
 
