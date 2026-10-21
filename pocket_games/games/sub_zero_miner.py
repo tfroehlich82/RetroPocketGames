@@ -1,6 +1,11 @@
 # ==========================================
-# SUB ZERO MINER (Deep Ice Core Edition)
-# ==========================================
+# SUB ZERO MINER v1.0
+# An immersive survival adventure in freezing depths.
+# Navigate the miner through frosty ice caves, collect valuable diamonds
+# and oxygen bubbles while avoiding treacherous ice hazards and toxic spores.
+# Atmospheric ice cave visuals with stalactites and a continuously
+# depleting oxygen supply deliver engaging survival gameplay.
+# =========================================
 from __future__ import annotations
 
 import math
@@ -50,19 +55,17 @@ class SubZeroMinerGame(BaseGame):
             if valid:
                 self.hazards.append({"x": hx, "y": hy, "r": hr})
 
-        # Toxic Spores Hazards (Müssen Abstand zu Zentrum, Hazards und untereinander wahren)
+        # Toxic Spores Hazards
         self.toxic_spores = []
         while len(self.toxic_spores) < 2 + min(self.level, 3):
             tx = random.randint(40, 280)
             ty = random.randint(40, 200)
             tr = 12
 
-            # Abstand zum Startbereich (160, 120) einhalten
             if (tx - 160) ** 2 + (ty - 120) ** 2 <= (tr + 35) ** 2:
                 continue
 
             valid = True
-            # Prüfe Abstand zu allen existierenden Hazards und Toxic Spores
             for obj in self.hazards + self.toxic_spores:
                 if (tx - obj["x"]) ** 2 + (ty - obj["y"]) ** 2 < (
                     tr + obj["r"] + safety_margin
@@ -75,7 +78,7 @@ class SubZeroMinerGame(BaseGame):
                     {"x": tx, "y": ty, "r": tr, "pulse": random.uniform(0, math.pi)}
                 )
 
-        # Gems / O2 Bubbles (ebenfalls mit Sicherheitsabstand zu allen Hindernissen)
+        # Gems / O2 Bubbles
         self.gems = []
         gem_radius = 6
         for _ in range(4):
@@ -119,8 +122,8 @@ class SubZeroMinerGame(BaseGame):
         if inp.is_down_pressed():
             dy += speed * dt
 
-        new_x = clamp(self.rx + dx, 20.0, 300.0)
-        new_y = clamp(self.ry + dy, 35.0, 220.0)
+        new_x = clamp(self.rx + dx, 25.0, 295.0)
+        new_y = clamp(self.ry + dy, 40.0, 215.0)
 
         collides = False
         for h in self.hazards:
@@ -172,16 +175,42 @@ class SubZeroMinerGame(BaseGame):
             self.reset_level()
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((10, 18, 30))
+        # Eishöhlen-Hintergrund mit eisigen Farbverläufen und Fels-/Eisstrukturen
+        surface.fill((12, 22, 38))
 
+        # Dekorative Eiszapfen / Stalaktiten an der Decke
+        pygame.draw.rect(surface, (20, 35, 55), (0, 0, 320, 32))
+        for x in range(0, 320, 16):
+            peak_h = 16 + (x % 3) * 6
+            pygame.draw.polygon(surface, (30, 50, 75), [(x, 0), (x + 8, peak_h), (x + 16, 0)])
+            pygame.draw.polygon(surface, (150, 210, 255), [(x + 2, 0), (x + 8, peak_h - 4), (x + 6, 0)], 1)
+
+        # Dekorative Eiszapfen / Stalagmiten am Boden
+        pygame.draw.rect(surface, (20, 35, 55), (0, 212, 320, 28))
+        for x in range(8, 320, 20):
+            peak_h = 212 - (x % 4) * 5
+            pygame.draw.polygon(surface, (30, 50, 75), [(x, 240), (x + 10, peak_h), (x + 20, 240)])
+            pygame.draw.polygon(surface, (150, 210, 255), [(x + 4, 240), (x + 10, peak_h + 4), (x + 16, 240)], 1)
+
+        # Kristallstrukturen / Risse im Hintergrund
+        pygame.draw.line(surface, (22, 42, 68), (60, 40), (100, 90), 2)
+        pygame.draw.line(surface, (22, 42, 68), (100, 90), (80, 140), 2)
+        pygame.draw.line(surface, (22, 42, 68), (240, 50), (200, 110), 2)
+        pygame.draw.line(surface, (22, 42, 68), (200, 110), (230, 170), 2)
+
+        # Eis-Hazards (mit funkelnden Eiskristallen)
         for h in self.hazards:
             pygame.draw.circle(
-                surface, (100, 190, 255), (int(h["x"]), int(h["y"])), h["r"]
+                surface, (110, 200, 255), (int(h["x"]), int(h["y"])), h["r"]
             )
             pygame.draw.circle(
-                surface, (180, 230, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1
+                surface, (200, 240, 255), (int(h["x"]), int(h["y"])), h["r"] - 4, 1
             )
+            hx, hy = int(h["x"]), int(h["y"])
+            pygame.draw.line(surface, (255, 255, 255), (hx - 6, hy), (hx + 6, hy), 1)
+            pygame.draw.line(surface, (255, 255, 255), (hx, hy - 6), (hx, hy + 6), 1)
 
+        # Giftige Sporen
         for ts in self.toxic_spores:
             tx, ty = int(ts["x"]), int(ts["y"])
             glow = int(4 + math.sin(ts["pulse"]) * 3)
@@ -189,18 +218,20 @@ class SubZeroMinerGame(BaseGame):
             pygame.draw.circle(surface, (220, 100, 255), (tx, ty), ts["r"])
             pygame.draw.circle(surface, (255, 255, 255), (tx, ty), 3)
 
+        # Diamanten / Kristalle
         for g in self.gems:
-            pygame.draw.circle(surface, (0, 255, 255), (int(g["x"]), int(g["y"])), 6)
-            pygame.draw.circle(
-                surface, (255, 255, 255), (int(g["x"]) - 2, int(g["y"]) - 2), 2
-            )
+            gx, gy = int(g["x"]), int(g["y"])
+            pygame.draw.polygon(surface, (0, 240, 255), [(gx, gy - 7), (gx + 6, gy), (gx, gy + 7), (gx - 6, gy)])
+            pygame.draw.polygon(surface, (255, 255, 255), [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)], 1)
 
+        # Spieler (Minenarbeiter)
         mx, my = int(self.rx), int(self.ry)
         pygame.draw.rect(
             surface, (255, 130, 0), (mx - 8, my - 8, 16, 16), border_radius=3
         )
         pygame.draw.rect(surface, (255, 255, 255), (mx - 3, my - 3, 6, 6))
 
+        # UI & O2-Leiste
         pygame.draw.rect(surface, (30, 40, 50), (10, 225, 120, 8), border_radius=2)
         o2_w = int(120 * (min(100.0, max(0.0, self.oxygen)) / 100.0))
         o2_col = (0, 220, 255) if self.oxygen > 30 else (255, 50, 50)
