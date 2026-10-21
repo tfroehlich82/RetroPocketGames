@@ -271,7 +271,7 @@ class NeonDashGame(BaseGame):
                 self.level_duration = random.uniform(30.0, 40.0)
                 self.play_sound("confirm")
             else:
-                self.game_over = True  # Sieg
+                self.game_won = True
 
         for p in self.background_particles:
             p["x"] -= p["speed"] * dt

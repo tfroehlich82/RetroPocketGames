@@ -12,17 +12,15 @@ class HighScoreScreen:
         self.active = True
         self.font = pygame.font.SysFont(None, 18)
         self.title_font = pygame.font.SysFont(None, 24)
-        self.frame_counter = 0
         self.scroll_offset = 0
         self.max_visible = 8
         logger.info("Highscore-Bildschirm geöffnet.")
 
     def handle_input(self) -> None:
-        self.frame_counter += 1
-        if self.frame_counter < 5:
+        inp = self.engine.input
+        if not inp:
             return
 
-        inp = self.engine.input
         keys = pygame.key.get_pressed()
 
         if (
@@ -37,18 +35,20 @@ class HighScoreScreen:
         game_keys = list(GAME_METADATA.keys())
         max_scroll = max(0, len(game_keys) - self.max_visible)
 
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
+        # Präzises, ereignisbasiertes Scrollen (ein Tastendruck = exakt ein Schritt)
+        if inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.scroll_offset = max(0, self.scroll_offset - 1)
             self.engine.audio.play("select")
-        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+        elif inp.is_key_just_pressed(pygame.K_DOWN) or inp.is_key_just_pressed(pygame.K_s):
             self.scroll_offset = min(max_scroll, self.scroll_offset + 1)
             self.engine.audio.play("select")
 
-        for event in pygame.event.get(pygame.MOUSEWHEEL):
-            if event.y > 0:
-                self.scroll_offset = max(0, self.scroll_offset - 1)
-            elif event.y < 0:
-                self.scroll_offset = min(max_scroll, self.scroll_offset + 1)
+        for event in inp.events:
+            if event.type == pygame.MOUSEWHEEL:
+                if event.y > 0:
+                    self.scroll_offset = max(0, self.scroll_offset - 1)
+                elif event.y < 0:
+                    self.scroll_offset = min(max_scroll, self.scroll_offset + 1)
 
         if getattr(inp, "mouse_clicked", False):
             mw, mh = self.engine.screen.get_size()

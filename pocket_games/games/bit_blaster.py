@@ -45,7 +45,7 @@ class BitBlasterGame(BaseGame):
         self.paddle = Paddle(int(self.px) - paddle_w // 2, 215, paddle_w, 8)
 
         # Ballgeschwindigkeit steigt pro Level an
-        initial_speed = 120.0 + (self.level - 1) * 7.0
+        initial_speed = 100.0 + (self.level - 1) * 7.0
         self.ball = Ball(160.0, 120.0, 5, initial_speed, -initial_speed)
 
         self.blocks = []
@@ -160,7 +160,7 @@ class BitBlasterGame(BaseGame):
                 self.play_sound("confirm")
                 self._init_blocks()
             else:
-                self.game_over = True
+                self.game_won = True
                 self.play_sound("confirm")
 
         if self.ball.rect.top > 240:

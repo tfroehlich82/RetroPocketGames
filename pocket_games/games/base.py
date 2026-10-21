@@ -39,11 +39,11 @@ class BaseGame:
             orig_update = cls.__dict__["update"]
             def wrapped_update(self, dt, *args, **kwargs):
                 BaseGame.update(self, dt)
-                if self.showing_intro or self.game_over:
+                if self.showing_intro or self.game_over or self.game_won:
                     return
                 res = orig_update(self, dt, *args, **kwargs)
                 if (
-                    self.game_over
+                    (self.game_over or self.game_won)
                     and hasattr(self, "engine")
                     and self.engine
                     and hasattr(self.engine, "highscores")
@@ -61,6 +61,8 @@ class BaseGame:
                 orig_render(self, surface, *args, **kwargs)
                 if self.game_over:
                     self.render_game_over(surface)
+                elif self.game_won:
+                    self.render_game_finished(surface)
                 return
             cls.render = wrapped_render
 
@@ -70,6 +72,7 @@ class BaseGame:
         self.active = True
         self.paused = False
         self.game_over = False
+        self.game_won = False
         self.score = 0
         self.elapsed_time = 0.0
         self.showing_intro = True
@@ -261,4 +264,37 @@ class BaseGame:
 
         if int(pygame.time.get_ticks() / 300) % 2 == 0:
             exit_surf = self.font.render(t(self.engine, "back_hint"), True, (0, 255, 200))
+            surface.blit(exit_surf, (160 - exit_surf.get_width() // 2, 155))
+
+    def render_game_finished(self, surface: pygame.Surface) -> None:
+        overlay = pygame.Surface((320, 240), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 190))
+        surface.blit(overlay, (0, 0))
+
+        pygame.draw.rect(surface, (0, 255, 200), (35, 45, 250, 150), 2, border_radius=8)
+        pygame.draw.rect(surface, (10, 25, 20), (37, 47, 246, 146), border_radius=7)
+
+        win_surf = self.title_font.render("GAME FINISHED!", True, (0, 255, 200))
+        surface.blit(win_surf, (160 - win_surf.get_width() // 2, 60))
+
+        score_surf = self.font.render(
+            f"{t(self.engine, 'final_score')}: {self.score}", True, (255, 255, 255)
+        )
+        surface.blit(score_surf, (160 - score_surf.get_width() // 2, 105))
+
+        best_score = self.score
+        if hasattr(self.engine, "highscores") and self.engine.highscores:
+            best_score = max(
+                self.score,
+                self.engine.highscores.scores.get(self.game_name, self.score),
+            )
+        high_txt = self.font.render(
+            f"{t(self.engine, 'high_score')}: {best_score}", True, (255, 215, 0)
+        )
+        surface.blit(high_txt, (160 - high_txt.get_width() // 2, 125))
+
+        if int(pygame.time.get_ticks() / 300) % 2 == 0:
+            exit_surf = self.font.render(
+                t(self.engine, "back_hint"), True, (255, 255, 255)
+            )
             surface.blit(exit_surf, (160 - exit_surf.get_width() // 2, 155))
