@@ -20,7 +20,7 @@ class Settings:
     def load(self) -> None:
         if SETTINGS_FILE.exists():
             try:
-                data = json.loads(SETTINGS_FILE.read_text())
+                data = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
                 self.sound_enabled = data.get("sound_enabled", True)
                 self.master_volume = data.get("master_volume", 0.8)
                 self.fullscreen = data.get("fullscreen", True)
@@ -36,6 +36,6 @@ class Settings:
             "language": self.language
         }
         try:
-            SETTINGS_FILE.write_text(json.dumps(data, indent=2))
+            SETTINGS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
         except Exception as e:  # noqa: BLE001
             logger.error(e)

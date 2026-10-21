@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pygame
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+from pocket_games.core.settings import GAME_METADATA_FILE, TRANSLATIONS_FILE
 
-TRANSLATIONS_FILE = BASE_DIR / "data/translations.json"
-TRANSLATIONS = json.loads(TRANSLATIONS_FILE.read_text())
+TRANSLATIONS = json.loads(TRANSLATIONS_FILE.read_text(encoding="iso-8859-1"))
+GAME_METADATA = json.loads(GAME_METADATA_FILE.read_text(encoding="iso-8859-1"))
 
-GAME_METADATA_FILE = BASE_DIR / "data/game_metadata.json"
-GAME_METADATA = json.loads(GAME_METADATA_FILE.read_text())
 
 def t(engine, key: str) -> str:
     lang = "English"
