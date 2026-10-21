@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import os
 import unittest
+
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+import pygame
 
 from pocket_games.core.highscore import HIGHSCORE_FILE, HighScoreManager
 
 
-class TestHighScore(unittest.TestCase):
+class TestHighScoreManager(unittest.TestCase):
     def setUp(self) -> None:
+        pygame.init()
         if HIGHSCORE_FILE.exists():
             HIGHSCORE_FILE.unlink()
 
@@ -14,19 +19,23 @@ class TestHighScore(unittest.TestCase):
         if HIGHSCORE_FILE.exists():
             HIGHSCORE_FILE.unlink()
 
-    def test_multiple_games_highscores(self) -> None:
+    def test_highscore_submit_and_save(self) -> None:
         manager = HighScoreManager()
-        manager.submit_score("Retro Pong 2077", 120)
-        manager.submit_score("Bit Blaster", 250)
-        self.assertEqual(manager.get_score("Retro Pong 2077"), 120)
-        self.assertEqual(manager.get_score("Bit Blaster"), 250)
-        self.assertEqual(manager.get_score("Unbekanntes Spiel"), 0)
+        self.assertEqual(manager.get_score("TestGame"), 0)
 
-    def test_high_score_persistence(self) -> None:
-        manager1 = HighScoreManager()
-        manager1.submit_score("Pixel Drop", 500)
+        # Höherer Score soll gespeichert werden
+        updated = manager.submit_score("TestGame", 150)
+        self.assertTrue(updated)
+        self.assertEqual(manager.get_score("TestGame"), 150)
+
+        # Niedrigerer Score soll ignoriert werden
+        updated_lower = manager.submit_score("TestGame", 100)
+        self.assertFalse(updated_lower)
+        self.assertEqual(manager.get_score("TestGame"), 150)
+
+        # Neuer Manager soll Daten von Festplatte laden
         manager2 = HighScoreManager()
-        self.assertEqual(manager2.get_score("Pixel Drop"), 500)
+        self.assertEqual(manager2.get_score("TestGame"), 150)
 
 
 if __name__ == "__main__":

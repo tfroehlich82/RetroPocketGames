@@ -8,6 +8,7 @@ from pocket_games.core.logger import logger
 BASE_DIR = Path(__file__).resolve().parent.parent
 HIGHSCORE_FILE = BASE_DIR / "data/highscores.json"
 
+
 class HighScoreManager:
     def __init__(self) -> None:
         self.scores: dict[str, int] = {}
@@ -24,6 +25,7 @@ class HighScoreManager:
 
     def save(self) -> None:
         try:
+            HIGHSCORE_FILE.parent.mkdir(parents=True, exist_ok=True)
             HIGHSCORE_FILE.write_text(json.dumps(self.scores, indent=2))
             logger.debug(f"Saved highscore to {HIGHSCORE_FILE}")
         except Exception as e:  # noqa: BLE001

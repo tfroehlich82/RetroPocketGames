@@ -41,7 +41,15 @@ class BaseGame:
                 BaseGame.update(self, dt)
                 if self.showing_intro or self.game_over:
                     return
-                return orig_update(self, dt, *args, **kwargs)
+                res = orig_update(self, dt, *args, **kwargs)
+                if (
+                    self.game_over
+                    and hasattr(self, "engine")
+                    and self.engine
+                    and hasattr(self.engine, "highscores")
+                ):
+                    self.engine.highscores.submit_score(self.game_name, self.score)
+                return res
             cls.update = wrapped_update
 
         if "render" in cls.__dict__:

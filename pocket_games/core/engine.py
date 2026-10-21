@@ -71,4 +71,12 @@ class Engine:
             logger.error(f"Unexpected Error in {scene_name}: {e}", exc_info=True)
             raise Exception  # noqa: TRY002
 
+        if (
+            hasattr(scene, "game_name")
+            and hasattr(scene, "score")
+            and hasattr(self, "highscores")
+            and self.highscores
+        ):
+            self.highscores.submit_score(scene.game_name, scene.score)
+
         logger.info(f"Leaving Game: {scene_name}")
