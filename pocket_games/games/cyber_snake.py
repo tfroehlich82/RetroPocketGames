@@ -1,5 +1,9 @@
 # ==========================================
-# CYBER SNAKE
+# CYBER SNAKE v1.0
+# A futuristic cyberpunk-themed retro classic.
+# Navigate the snake through the grid, collect data nodes to score points,
+# and increase your speed with every snack.
+# Avoid crashing into boundaries or your own tail.
 # ==========================================
 from __future__ import annotations
 
@@ -17,11 +21,11 @@ class CyberSnakeGame(BaseGame):
         super().__init__(engine, game_name="Cyber Snake")
         self.grid_size = 10
         self.cols = 32
-        self.rows = 21  # Top area reserved for HUD
+        self.rows = 24  # Gesamtreihen; oberster Bereich (0-2) ist für das HUD reserviert
         self.reset_snake()
 
     def reset_snake(self) -> None:
-        self.snake = [{"x": 10, "y": 10}, {"x": 9, "y": 10}, {"x": 8, "y": 10}]
+        self.snake = [{"x": 16, "y": 12}, {"x": 15, "y": 12}, {"x": 14, "y": 12}]
         self.dir = (1, 0)
         self.next_dir = (1, 0)
         self.food = self.spawn_food()
@@ -32,7 +36,7 @@ class CyberSnakeGame(BaseGame):
     def spawn_food(self) -> dict[str, int]:
         while True:
             fx = random.randint(1, self.cols - 2)
-            fy = random.randint(3, self.rows - 1)
+            fy = random.randint(3, self.rows - 2)
             if not any(s["x"] == fx and s["y"] == fy for s in self.snake):
                 return {"x": fx, "y": fy}
 
@@ -68,12 +72,12 @@ class CyberSnakeGame(BaseGame):
 
             head = {"x": self.snake[0]["x"] + self.dir[0], "y": self.snake[0]["y"] + self.dir[1]}
 
-            # Wall collision or self collision
+            # Wandkollision (unter Berücksichtigung des HUDs in Zeile 0-2) oder Selbstkollision
             if (
                 head["x"] < 0
                 or head["x"] >= self.cols
-                or head["y"] < 2
-                or head["y"] >= self.rows + 2
+                or head["y"] < 3
+                or head["y"] >= self.rows
                 or any(s["x"] == head["x"] and s["y"] == head["y"] for s in self.snake)
             ):
                 self.game_over = True
@@ -95,8 +99,8 @@ class CyberSnakeGame(BaseGame):
 
         # Grid lines background
         for x in range(0, 320, 20):
-            pygame.draw.line(surface, (15, 25, 20), (x, 20), (x, 240), 1)
-        for y in range(20, 240, 20):
+            pygame.draw.line(surface, (15, 25, 20), (x, 30), (x, 240), 1)
+        for y in range(30, 240, 20):
             pygame.draw.line(surface, (15, 25, 20), (0, y), (320, y), 1)
 
         # Render Food
