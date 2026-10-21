@@ -1,5 +1,5 @@
 # ==========================================
-# PULSE RACER v1.0
+# PULSE RACER v1.1
 # A high-speed highway racing game featuring dynamic traffic.
 # Dodge oncoming vehicles and road blockers, maintain your lane,
 # and chase the ultimate highscore.
@@ -19,9 +19,8 @@ class PulseRacerGame(BaseGame):
         self.rx = 160.0
         self.traffic: list[dict] = []
         self.spawn_timer = 0.0
-        self.base_speed = (
-            180.0  # Etwas angenehmere Startgeschwindigkeit für perfekte Synchronität
-        )
+        self.barrier_spawn_timer = 0.0
+        self.base_speed = 180.0
         self.distance_float = 0.0
         self.last_dist = 0
         self.road_scroll = 0.0
@@ -44,7 +43,6 @@ class PulseRacerGame(BaseGame):
         if not self.active or self.paused or self.game_over:
             return
 
-        # Sanfterer, synchroner Geschwindigkeitsanstieg
         current_base_speed = self.base_speed + (self.elapsed_time * 3.0)
 
         self.distance_float += current_base_speed * dt
@@ -54,7 +52,6 @@ class PulseRacerGame(BaseGame):
             self.last_dist = current_dist
             self.add_score(diff)
 
-        # Straßen-Scrollen exakt synchron zur Fahrzeug-Vorwärtsgeschwindigkeit
         self.road_scroll = (self.road_scroll + current_base_speed * dt) % 40
 
         self.spawn_timer += dt
@@ -66,12 +63,18 @@ class PulseRacerGame(BaseGame):
             lane_idx = random.randint(0, 2)
             lane_x = self.lanes[lane_idx]
 
+            base_veh = {
+                "lane": lane_idx,
+                "x": lane_x,
+                "target_x": lane_x,
+                "blinking": False,
+                "blink_timer": 0.0,
+                "decision_timer": random.uniform(1.0, 2.5),
+            }
+
             if v_type == "fast_oncoming":
-                self.traffic.append(
+                base_veh.update(
                     {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "target_x": lane_x,
                         "y": -30.0,
                         "speed": 110.0 + self.elapsed_time * 2.0,
                         "type": "oncoming",
@@ -79,98 +82,127 @@ class PulseRacerGame(BaseGame):
                     }
                 )
             elif v_type == "blocker":
-                self.traffic.append(
+                base_veh.update(
                     {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "target_x": lane_x,
                         "y": -40.0,
-                        "speed": 30.0,
+                        "net_speed_offset": 10.0,  # Sehr langsam, wird schnell eingeholt
                         "type": "blocker",
                         "color": (255, 180, 0),
                     }
                 )
             elif v_type == "speedy":
-                self.traffic.append(
+                base_veh.update(
                     {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "target_x": lane_x,
-                        "y": -40.0,
-                        "speed": 95.0 + self.elapsed_time * 2.5,
-                        "type": "cruiser",
+                        "y": -65.0,
+                        "net_speed_offset": 25.0,  # Schneller (holt Cruiser von hinten ein)
+                        "type": "speedy",
                         "color": (50, 255, 120),
+                        "decision_timer": random.uniform(0.8, 1.8),
                     }
                 )
             else:
-                self.traffic.append(
+                base_veh.update(
                     {
-                        "lane": lane_idx,
-                        "x": lane_x,
-                        "target_x": lane_x,
                         "y": -40.0,
-                        "speed": 65.0,
+                        "net_speed_offset": 70.0,  # Langsamer Cruiser
                         "type": "cruiser",
                         "color": (0, 200, 255),
                     }
                 )
 
+            self.traffic.append(base_veh)
+
+        if self.elapsed_time >= 90.0:
+            self.barrier_spawn_timer += dt
+            if self.barrier_spawn_timer >= 6.0:
+                self.barrier_spawn_timer = 0.0
+                b_lane = random.randint(0, 2)
+                self.traffic.append(
+                    {
+                        "lane": b_lane,
+                        "x": self.lanes[b_lane],
+                        "target_x": self.lanes[b_lane],
+                        "y": -50.0,
+                        "speed": 0.0,
+                        "type": "barrier",
+                        "color": (255, 30, 30),
+                        "blinking": False,
+                        "blink_timer": 0.0,
+                        "decision_timer": 999.0,
+                        "net_speed_offset": 0.0,
+                    }
+                )
+
+        # Verkehrs-KI & Überhollogik
         for veh in self.traffic[:]:
-            if veh["type"] != "oncoming":
-                for other in self.traffic:
-                    if other != veh and other["type"] != "oncoming":
-                        dist = other["y"] - veh["y"]
-                        if 0 < dist < 90 and abs(other["x"] - veh["x"]) < 22:
-                            candidates = [
-                                veh["x"] - 30.0,
-                                veh["x"] + 30.0,
-                                veh["x"] - 60.0,
-                                veh["x"] + 60.0,
-                            ]
-                            valid_candidates = []
-                            for cand in candidates:
-                                if 80.0 <= cand <= 240.0:
-                                    path_blocked = False
-                                    for t_check in self.traffic:
-                                        if (
-                                            t_check != veh
-                                            and abs(t_check["x"] - cand) < 20
-                                            and abs(t_check["y"] - veh["y"]) < 45
-                                        ):
-                                            path_blocked = True
-                                            break
-                                    if not path_blocked:
-                                        valid_candidates.append(cand)
+            if veh["type"] not in ["oncoming", "barrier"]:
+                veh["decision_timer"] -= dt
+                if veh["decision_timer"] <= 0:
+                    veh["decision_timer"] = random.uniform(1.0, 2.0)
+                    for other in self.traffic:
+                        if other != veh and other["type"] not in [
+                            "oncoming",
+                            "barrier",
+                        ] and (
+                                abs(other["x"] - veh["x"]) < 12
+                                and veh["y"] < other["y"]
+                                and (other["y"] - veh["y"]) < 130
+                        ) and veh.get("net_speed_offset", 50) < other.get(
+                            "net_speed_offset", 50
+                        ):
+                            current_lane_idx = (
+                                self.lanes.index(veh["x"])
+                                if veh["x"] in self.lanes
+                                else 1
+                            )
+                            possible_lanes = []
+                            if current_lane_idx > 0:
+                                possible_lanes.append(current_lane_idx - 1)
+                            if current_lane_idx < 2:
+                                possible_lanes.append(current_lane_idx + 1)
 
-                            if valid_candidates:
-                                veh["target_x"] = random.choice(valid_candidates)
-                            else:
-                                veh["speed"] = max(10.0, other["speed"] - 2.0)
+                            if possible_lanes:
+                                target_lane_idx = random.choice(possible_lanes)
+                                target_x = self.lanes[target_lane_idx]
 
-            if "target_x" not in veh:
-                veh["target_x"] = veh["x"]
+                                lane_free = True
+                                for t_check in self.traffic:
+                                    if (
+                                        abs(t_check["x"] - target_x) < 18
+                                        and abs(t_check["y"] - veh["y"]) < 90
+                                    ):
+                                        lane_free = False
+                                        break
+
+                                if lane_free:
+                                    veh["target_x"] = target_x
+                                    veh["blinking"] = True
+                                    veh["blink_timer"] = (
+                                        1.0  # Mindestens 1s Blinker vor dem Spurwechsel
+                                    )
+
+            if veh["blinking"]:
+                veh["blink_timer"] -= dt
+                if veh["blink_timer"] <= 0 and abs(veh["x"] - veh["target_x"]) < 2:
+                    veh["blinking"] = False
 
             if veh["x"] < veh["target_x"]:
-                veh["x"] = min(veh["target_x"], veh["x"] + 140.0 * dt)
+                veh["x"] = min(veh["target_x"], veh["x"] + 130.0 * dt)
             elif veh["x"] > veh["target_x"]:
-                veh["x"] = max(veh["target_x"], veh["x"] - 140.0 * dt)
+                veh["x"] = max(veh["target_x"], veh["x"] - 130.0 * dt)
 
             if veh["type"] == "oncoming":
                 veh["y"] += (current_base_speed + veh["speed"]) * dt
+            elif veh["type"] == "barrier":
+                veh["y"] += current_base_speed * dt
             else:
-                veh["y"] += (current_base_speed - veh["speed"]) * dt
+                offset = veh.get("net_speed_offset", 50.0)
+                veh["y"] += (current_base_speed - offset) * dt
 
-            for other in self.traffic:
-                if other != veh and (
-                    abs(veh["x"] - other["x"]) < 18
-                    and abs(veh["y"] - other["y"]) < 28
-                ):
-                    if veh["y"] < other["y"]:
-                        veh["y"] = other["y"] - 30.0
-                    else:
-                        veh["y"] = other["y"] + 30.0
-
-            if abs(veh["x"] - self.rx) < 14 and abs(veh["y"] - 185.0) < 18:
+            hit_box_size_y = 20 if veh["type"] == "barrier" else 28
+            if abs(veh["x"] - self.rx) < 14 and abs(veh["y"] - 185.0) < (
+                hit_box_size_y / 2 + 10
+            ):
                 self.game_over = True
                 self.play_sound("gameover")
 
@@ -185,7 +217,6 @@ class PulseRacerGame(BaseGame):
         pygame.draw.line(surface, (255, 255, 255), (70, 0), (70, 240), 2)
         pygame.draw.line(surface, (255, 255, 255), (250, 0), (250, 240), 2)
 
-        # Fahrstreifen-Trennlinien bewegen sich exakt synchron mit road_scroll
         for y_pos in range(int(-40 + self.road_scroll), 240, 40):
             pygame.draw.line(
                 surface, (255, 255, 255), (130, y_pos), (130, y_pos + 20), 2
@@ -205,12 +236,26 @@ class PulseRacerGame(BaseGame):
         pygame.draw.circle(surface, (255, 0, 0), (px - 7, py + 12), 2)
         pygame.draw.circle(surface, (255, 0, 0), (px + 7, py + 12), 2)
 
-        # Traffic Vehicles
+        # Traffic Vehicles & Barriers
         for veh in self.traffic:
             vx, vy = int(veh["x"]), int(veh["y"])
-            pygame.draw.rect(
-                surface, veh["color"], (vx - 10, vy - 14, 20, 28), border_radius=5
-            )
-            pygame.draw.rect(surface, (50, 50, 50), (vx - 6, vy - 4, 12, 8))
+            if veh["type"] == "barrier":
+                pygame.draw.rect(
+                    surface, (255, 30, 30), (vx - 22, vy - 6, 44, 12), border_radius=3
+                )
+                pygame.draw.rect(
+                    surface, (255, 255, 255), (vx - 18, vy - 4, 36, 8), border_radius=2
+                )
+            else:
+                pygame.draw.rect(
+                    surface, veh["color"], (vx - 10, vy - 14, 20, 28), border_radius=5
+                )
+                pygame.draw.rect(surface, (50, 50, 50), (vx - 6, vy - 4, 12, 8))
+
+                # Blinker vorne und hinten auf der jeweiligen Spurwechsel-Seite
+                if veh["blinking"] and int(pygame.time.get_ticks() / 200) % 2 == 0:
+                    side_x = vx - 12 if veh["target_x"] < veh["x"] else vx + 12
+                    pygame.draw.circle(surface, (255, 165, 0), (side_x, vy - 12), 2)
+                    pygame.draw.circle(surface, (255, 165, 0), (side_x, vy + 12), 2)
 
         self.render_ui(surface)
