@@ -1,5 +1,9 @@
 # ==========================================
-# BIT BLASTER (Enhanced Brick Breaker)
+# BIT BLASTER v1.0
+# An action-packed brick breaker featuring 20 progressively challenging levels.
+# With each cleared level, the ball speed increases slightly, the paddle becomes
+# narrower, and higher stages introduce tougher multi-hit bricks.
+# Conquer all 20 levels to beat the system.
 # ==========================================
 from __future__ import annotations
 
@@ -21,7 +25,9 @@ class Ball:
         self.radius = radius
         self.vx = vx
         self.vy = vy
-        self.rect = pygame.Rect(int(x - radius), int(y - radius), radius * 2, radius * 2)
+        self.rect = pygame.Rect(
+            int(x - radius), int(y - radius), radius * 2, radius * 2
+        )
 
     def update_rect(self) -> None:
         self.rect.center = (int(self.x), int(self.y))
@@ -31,20 +37,47 @@ class BitBlasterGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Bit Blaster")
         self.px = 160.0
-        self.paddle = Paddle(int(self.px) - 25, 215, 50, 8)
-        self.ball = Ball(160.0, 120.0, 5, 120.0, -120.0)
+        self.level = 1
+        self.max_levels = 20
+
+        # Paddle in Level 1 ca. doppelt so groß (100px), verringert sich progressiv bis Level 20 auf 45px
+        paddle_w = max(45, 100 - (self.level - 1) * 3)
+        self.paddle = Paddle(int(self.px) - paddle_w // 2, 215, paddle_w, 8)
+
+        # Ballgeschwindigkeit steigt pro Level an
+        initial_speed = 120.0 + (self.level - 1) * 7.0
+        self.ball = Ball(160.0, 120.0, 5, initial_speed, -initial_speed)
+
         self.blocks = []
         self._init_blocks()
 
     def _init_blocks(self) -> None:
-        colors = [(255, 80, 80), (255, 180, 0), (0, 220, 255), (180, 100, 255)]
-        for r in range(4):
-            for c in range(7):
-                self.blocks.append({
-                    "rect": pygame.Rect(c * 42 + 13, r * 16 + 30, 38, 12),
-                    "color": colors[r],
-                    "alive": True
-                })
+        self.blocks.clear()
+        rows = min(6, 4 + (self.level - 1) // 5)
+        cols = 7
+
+        colors = [
+            (255, 80, 80),
+            (255, 180, 0),
+            (0, 220, 255),
+            (180, 100, 255),
+            (255, 50, 150),
+            (50, 255, 100),
+        ]
+
+        for r in range(rows):
+            for c in range(cols):
+                hp = 2 if (self.level >= 10 and r == 0 and c % 2 == 0) else 1
+                color = colors[r % len(colors)]
+                self.blocks.append(
+                    {
+                        "rect": pygame.Rect(c * 42 + 13, r * 16 + 30, 38, 12),
+                        "color": color,
+                        "hp": hp,
+                        "max_hp": hp,
+                        "alive": True,
+                    }
+                )
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -52,22 +85,28 @@ class BitBlasterGame(BaseGame):
             return
 
         inp = self.engine.input
+        half_w = self.paddle.rect.width // 2
+
+        # Exakte Begrenzung an den Wänden (Wände bei x=5 und x=315), damit kein Ball durchrutschen kann
+        min_x = 5 + half_w
+        max_x = 315 - half_w
+
         if inp.is_left_pressed():
-            self.px = max(28, self.px - 6)
+            self.px = max(min_x, self.px - 7)
         if inp.is_right_pressed():
-            self.px = min(292, self.px + 6)
+            self.px = min(max_x, self.px + 7)
         if inp.mouse_clicked:
             vx, _vy = self.get_virtual_mouse_pos()
-            self.px = clamp(vx, 28.0, 292.0)
+            self.px = clamp(vx, float(min_x), float(max_x))
 
-        self.paddle.rect.x = int(self.px) - 25
+        self.paddle.rect.x = int(self.px) - half_w
 
     def update(self, dt: float) -> None:
         super().update(dt)
         if self.game_over:
             return
 
-        speed_mod = min(1.5, 1.0 + (self.elapsed_time * 0.005))
+        speed_mod = min(1.6, 1.0 + (self.elapsed_time * 0.004))
         self.ball.x += self.ball.vx * dt * speed_mod
         self.ball.y += self.ball.vy * dt * speed_mod
         self.ball.update_rect()
@@ -88,7 +127,10 @@ class BitBlasterGame(BaseGame):
 
         if self.ball.rect.colliderect(self.paddle.rect):
             handle_paddle_collision(self.ball, self.paddle)
-            self.ball.x, self.ball.y = float(self.ball.rect.centerx), float(self.ball.rect.centery)
+            self.ball.x, self.ball.y = (
+                float(self.ball.rect.centerx),
+                float(self.ball.rect.centery),
+            )
             self.play_sound("hit")
 
         all_cleared = True
@@ -96,14 +138,30 @@ class BitBlasterGame(BaseGame):
             if blk["alive"]:
                 all_cleared = False
                 if self.ball.rect.colliderect(blk["rect"]):
-                    blk["alive"] = False
+                    blk["hp"] -= 1
+                    if blk["hp"] <= 0:
+                        blk["alive"] = False
+                        self.add_score(25 * self.level)
+                        self.play_sound("score")
+                    else:
+                        self.play_sound("hit")
                     self.ball.vy *= -1
-                    self.add_score(25)
-                    self.play_sound("score")
                     break
 
         if all_cleared:
-            self._init_blocks()
+            if self.level < self.max_levels:
+                self.level += 1
+                paddle_w = max(45, 100 - (self.level - 1) * 3)
+                self.paddle.rect.width = paddle_w
+                speed = 120.0 + (self.level - 1) * 7.0
+                self.ball.x, self.ball.y = 160.0, 120.0
+                self.ball.vx = speed if self.ball.vx > 0 else -speed
+                self.ball.vy = -abs(speed)
+                self.play_sound("confirm")
+                self._init_blocks()
+            else:
+                self.game_over = True
+                self.play_sound("confirm")
 
         if self.ball.rect.top > 240:
             self.game_over = True
@@ -113,7 +171,20 @@ class BitBlasterGame(BaseGame):
         surface.fill((15, 10, 25))
         pygame.draw.rect(surface, (0, 200, 255), self.paddle.rect, border_radius=3)
         pygame.draw.circle(surface, (255, 255, 0), self.ball.rect.center, 5)
+
         for blk in self.blocks:
             if blk["alive"]:
-                pygame.draw.rect(surface, blk["color"], blk["rect"], border_radius=2)
+                color = (
+                    blk["color"]
+                    if blk["hp"] == max(1, blk["max_hp"])
+                    else (120, 120, 140)
+                )
+                pygame.draw.rect(surface, color, blk["rect"], border_radius=2)
+                pygame.draw.rect(
+                    surface, (255, 255, 255), blk["rect"], 1, border_radius=2
+                )
+
+        lvl_txt = self.font.render(f"LVL {self.level}/20", True, (0, 255, 200))
+        surface.blit(lvl_txt, (150, 5))
+
         self.render_ui(surface)
