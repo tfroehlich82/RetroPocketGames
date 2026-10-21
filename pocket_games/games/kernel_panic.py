@@ -1,5 +1,9 @@
 # ==========================================
-# KERNEL PANIC (Terminal Glitch Edition)
+# KERNEL PANIC v1.0
+# A fast-paced terminal defense game.
+# Click on falling memory leaks and critical system errors
+# before they completely exhaust your RAM.
+# Increasing speeds driven by your score ensure a continuous and escalating challenge.
 # ==========================================
 from __future__ import annotations
 
@@ -22,7 +26,6 @@ class KernelPanicGame(BaseGame):
         self.scanline_dir = 1.0
         self.scanline_speed = 75.0
 
-        # Kleinere, dedizierte Schriftart für den Text innerhalb der Blöcke
         try:
             self.code_font = pygame.font.Font(None, 13)
         except Exception:  # noqa: BLE001
@@ -37,10 +40,12 @@ class KernelPanicGame(BaseGame):
         if inp.mouse_clicked:
             vx, vy = self.get_virtual_mouse_pos()
             for l in self.leaks[:]:
-                if abs(l["x"] - vx) < 20 and abs(l["y"] - vy) < 20:
+                if abs(l["x"] - vx) < 22 and abs(l["y"] - vy) < 22:
                     self.leaks.remove(l)
-                    self.add_score(25)
-                    self.memory_used = max(0.0, self.memory_used - 6.0)
+                    points = 40 if l.get("fatal") else 25
+                    self.add_score(points)
+                    reduction = 10.0 if l.get("fatal") else 6.0
+                    self.memory_used = max(0.0, self.memory_used - reduction)
                     self.engine.audio.play("confirm")
                     return
 
@@ -58,21 +63,30 @@ class KernelPanicGame(BaseGame):
             self.scanline_y = 0
             self.scanline_dir = 1.0
 
-        # Schwierigkeit steigt dynamisch mit zunehmender Punktzahl
-        score_multiplier = 1.0 + (self.score / 150.0)
-        spawn_interval = max(0.25, 0.7 - (self.score * 0.004))
+        # Sanft ansteigende Schwierigkeit für eine deutlich längere, angenehmere Spieldauer
+        score_factor = self.score / 400.0
+        spawn_interval = max(0.6, 1.4 - (score_factor * 0.4))
 
         self.spawn_timer += dt
         if self.spawn_timer >= spawn_interval:
             self.spawn_timer = 0.0
-            base_speed = random.uniform(65.0, 110.0)
+            is_fatal = self.score > 250 and random.random() < 0.2
+            base_speed = random.uniform(45.0, 75.0)  # Deutlich entspannterer Start
+            speed_multiplier = 1.0 + (self.score / 500.0)  # Sehr sanfter Anstieg
+            code_str = (
+                "FATAL"
+                if is_fatal
+                else random.choice(["0x0", "ERR", "NULL", "SEG", "BUF"])
+            )
+
             self.leaks.append(
                 {
                     "x": random.randint(35, 285),
                     "y": -15.0,
-                    "speed": base_speed * score_multiplier,
-                    "size": random.randint(20, 26),
-                    "code": random.choice(["0x0", "ERR", "NULL", "SEG", "BUF"]),
+                    "speed": base_speed * speed_multiplier,
+                    "size": 24 if is_fatal else random.randint(20, 25),
+                    "code": code_str,
+                    "fatal": is_fatal,
                 }
             )
 
@@ -80,35 +94,37 @@ class KernelPanicGame(BaseGame):
             l["y"] += l["speed"] * dt
             if l["y"] > 240:
                 self.leaks.remove(l)
-                self.memory_used += 14.0
+                penalty = 18.0 if l.get("fatal") else 12.0
+                self.memory_used += penalty
                 self.engine.audio.play("hit")
 
         if self.memory_used >= 100.0:
             self.game_over = True
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((12, 18, 14))
+        bg_color = (25, 12, 14) if self.memory_used >= 80 else (12, 18, 14)
+        surface.fill(bg_color)
 
         for y in range(0, 240, 20):
             pygame.draw.line(surface, (18, 28, 20), (0, y), (320, y), 1)
 
-        # Unabhängige Scanline-Linie
-        pygame.draw.line(
-            surface,
-            (40, 180, 90),
-            (0, int(self.scanline_y)),
-            (320, int(self.scanline_y)),
-            2,
-        )
+        # Scanline-Linie mit Glow-Effekt
+        scan_y = int(self.scanline_y)
+        pygame.draw.line(surface, (20, 100, 50), (0, scan_y - 1), (320, scan_y - 1), 1)
+        pygame.draw.line(surface, (50, 220, 110), (0, scan_y), (320, scan_y), 2)
+        pygame.draw.line(surface, (20, 100, 50), (0, scan_y + 1), (320, scan_y + 1), 1)
 
         for l in self.leaks:
             lx, ly = int(l["x"]), int(l["y"])
             s = l["size"]
             rect = pygame.Rect(lx - s // 2, ly - s // 2, s, s)
-            pygame.draw.rect(surface, (255, 30, 80), rect, border_radius=3)
-            pygame.draw.rect(surface, (255, 200, 220), rect, 2, border_radius=3)
 
-            # Code-Beschriftung mit angepasster kleiner Schrift innerhalb des Blocks
+            box_color = (255, 20, 60) if l.get("fatal") else (255, 40, 90)
+            border_color = (255, 200, 220) if not l.get("fatal") else (255, 255, 0)
+
+            pygame.draw.rect(surface, box_color, rect, border_radius=3)
+            pygame.draw.rect(surface, border_color, rect, 2, border_radius=3)
+
             txt = self.code_font.render(l["code"], True, (255, 255, 255))
             surface.blit(txt, (lx - txt.get_width() // 2, ly - txt.get_height() // 2))
 
