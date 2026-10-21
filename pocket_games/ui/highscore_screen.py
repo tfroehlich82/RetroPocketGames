@@ -21,13 +21,13 @@ class HighScoreScreen:
         if not inp:
             return
 
-        keys = pygame.key.get_pressed()
-
+        # Verwende is_key_just_pressed statt get_pressed(), um ein sofortiges 
+        # Schließen durch den Menü-Auswahlklick (Enter/Space) zu verhindern.
         if (
-            keys[pygame.K_ESCAPE]
-            or keys[pygame.K_BACKSPACE]
-            or keys[pygame.K_RETURN]
-            or keys[pygame.K_SPACE]
+            inp.is_key_just_pressed(pygame.K_ESCAPE)
+            or inp.is_key_just_pressed(pygame.K_BACKSPACE)
+            or inp.is_key_just_pressed(pygame.K_RETURN)
+            or inp.is_key_just_pressed(pygame.K_SPACE)
         ):
             self.active = False
             return
@@ -35,7 +35,7 @@ class HighScoreScreen:
         game_keys = list(GAME_METADATA.keys())
         max_scroll = max(0, len(game_keys) - self.max_visible)
 
-        # Präzises, ereignisbasiertes Scrollen (ein Tastendruck = exakt ein Schritt)
+        # Präzises, ereignisbasiertes Scrollen
         if inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.scroll_offset = max(0, self.scroll_offset - 1)
             self.engine.audio.play("select")
