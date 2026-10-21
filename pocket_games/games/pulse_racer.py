@@ -1,5 +1,8 @@
 # ==========================================
-# PULSE RACER (Highway Pursuit Edition)
+# PULSE RACER v1.0
+# A high-speed highway racing game featuring dynamic traffic.
+# Dodge oncoming vehicles and road blockers, maintain your lane,
+# and chase the ultimate highscore.
 # ==========================================
 from __future__ import annotations
 
