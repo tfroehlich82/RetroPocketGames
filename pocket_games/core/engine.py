@@ -28,11 +28,11 @@ class Engine:
 
         is_windows = sys.platform == "win32"
         if is_windows:
-            window_width = 960
-            window_height = 720
+            window_width = 640
+            window_height = 480
             flags = 0
             logger.info(
-                "Windows-System detected: Run windowed mode with 960x720px."
+                "Windows-System detected: Run windowed mode with 640x480px."
             )
         else:
             window_width = 480

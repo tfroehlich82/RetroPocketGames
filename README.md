@@ -93,7 +93,7 @@ If you prefer installing manually without automated scripts:
 
 ## 🖥️ Platform-Specific Window Behavior
 - **Linux / Raspberry Pi OS:** Runs optimized for the PocketTerm35 form-factor ($480 \times 320$ viewport with optional fullscreen toggle).
-- **Windows Desktops:** Automatically starts in a comfortable, scaled windowed mode ($960 \times 720$ pixels) without forcing fullscreen.
+- **Windows Desktops:** Automatically starts in a comfortable, scaled windowed mode ($640 \times 480$ pixels) without forcing fullscreen.
 
 ---
 
