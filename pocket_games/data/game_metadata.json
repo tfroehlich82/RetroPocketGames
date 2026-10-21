@@ -3,13 +3,13 @@
         "de": {
             "desc": "Klassisches Tetris-Puzzle mit fallenden Steinen.",
             "goal": "Staple Blöcke sauber und räume Reihen ab.",
-            "gameplay": "Alle 20 geräumten Reihen steigt das Level und die Geschwindigkeit.",
+            "gameplay": "Alle 10 geräumten Reihen steigt das Level und die Geschwindigkeit.",
             "controls": "D-Pad: Bewegen / Drehen / Soft Drop"
         },
         "en": {
             "desc": "Classic Tetris puzzle with falling blocks.",
             "goal": "Stack blocks cleanly and clear lines.",
-            "gameplay": "Every 20 cleared lines increases level and speed.",
+            "gameplay": "Every 10 cleared lines increases level and speed.",
             "controls": "D-Pad: Move / Rotate / Soft Drop"
         }
     },
@@ -30,13 +30,13 @@
     "Neon Dash": {
         "de": {
             "desc": "Rasanter Cyberpunk-Endless-Runner.",
-            "goal": "Weiche Hindernissen und 2er/3er/4er-Blöcken aus.",
+            "goal": "Weiche Hindernissen aus.",
             "gameplay": "Springe über Spikes und Blockaden. Steigende Geschwindigkeit.",
             "controls": "Leertaste / D-Pad Oben / Touch (Springen)"
         },
         "en": {
             "desc": "Fast-paced cyberpunk endless runner.",
-            "goal": "Dodge obstacles and 2/3/4-blocks.",
+            "goal": "Dodge obstacles.",
             "gameplay": "Jump over spikes and barriers. Increasing speed.",
             "controls": "Space / D-Pad Up / Touch (Jump)"
         }

@@ -32,16 +32,17 @@ class TestBugHunterGame(unittest.TestCase):
         game = BugHunterGame(engine)
         self.assertTrue(len(game.bugs) > 0)
         self.assertEqual(game.score, 0)
+        self.assertGreater(game.time_left, 0)
 
-    def test_bug_hunter_update_and_difficulty(self) -> None:
+    def test_bug_hunter_dynamic_timer_and_spawn(self) -> None:
         engine = MockEngine()
         game = BugHunterGame(engine)
         game.showing_intro = False
 
-        initial_interval = game.spawn_interval
-        game.difficulty_timer = 9.0
-        game.update(0.5)
-        self.assertLess(game.spawn_interval, initial_interval)
+        initial_time = game.time_left
+        game.update(1.0)
+        # Der Timer läuft mit fortschreitender Zeit schneller ab
+        self.assertLess(game.time_left, initial_time)
 
 
 if __name__ == "__main__":
