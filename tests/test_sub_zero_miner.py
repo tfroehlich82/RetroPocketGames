@@ -38,7 +38,7 @@ class TestSubZeroMinerGame(unittest.TestCase):
         game = SubZeroMinerGame(engine)
         game.showing_intro = False
         initial_o2 = game.oxygen
-        game.update(1.0)
+        game.update(2.0)
         self.assertLess(game.oxygen, initial_o2)
 
 

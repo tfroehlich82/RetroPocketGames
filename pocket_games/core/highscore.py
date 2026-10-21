@@ -5,30 +5,26 @@ from pathlib import Path
 
 from pocket_games.core.logger import logger
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-HIGHSCORE_FILE = BASE_DIR / "data/highscores.json"
-
 
 class HighScoreManager:
-    def __init__(self, filepath: str | Path = HIGHSCORE_FILE) -> None:
+    def __init__(self, filepath: str | Path | None = None) -> None:
+        if filepath is None:
+            from pocket_games.core.settings import HIGHSCORE_FILE
+            filepath = HIGHSCORE_FILE
         self.filepath = Path(filepath)
-        self.backup_path = self.filepath.with_suffix(".bak")
         self.scores: dict[str, int] = {}
         self.load()
 
     def load(self) -> None:
         loaded_data = self._read_json_file(self.filepath)
-        if not loaded_data and self.backup_path.exists():
-            logger.warning(
-                "Hauptdatei leer oder beschädigt. Versuche Wiederherstellung aus Backup..."
-            )
-            loaded_data = self._read_json_file(self.backup_path)
 
         if loaded_data and isinstance(loaded_data, dict):
             self.scores.update(loaded_data)
             logger.info(
                 f"Highscores erfolgreich geladen ({len(self.scores)} Einträge)."
             )
+        else:
+            self.filepath.write_text(json.dumps(self.scores), encoding="utf-8")
 
     def _read_json_file(self, path: Path) -> dict[str, int]:
         if path.exists():
@@ -55,8 +51,7 @@ class HighScoreManager:
 
             json_data = json.dumps(self.scores, indent=4)
             self.filepath.write_text(json_data, encoding="utf-8")
-            self.backup_path.write_text(json_data, encoding="utf-8")
-            logger.info("Highscores & Backup erfolgreich gespeichert.")
+            logger.info("Highscores erfolgreich gespeichert.")
         except Exception as e:  # noqa: BLE001
             logger.error(f"Fehler beim Speichern der Highscores: {e}", exc_info=True)
 
