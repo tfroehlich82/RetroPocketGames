@@ -1,5 +1,9 @@
 # ==========================================
-# BUG HUNTER
+# BUG HUNTER v1.0
+# An action-packed bug-hunting game set in a cyber circuit environment.
+# Hunt and click various digital bugs (Standard, Fast, Armored, and Glitch) before they escape.
+# As your score increases, difficulty ramps up through faster spawn intervals
+# and unpredictable new bug types.
 # ==========================================
 from __future__ import annotations
 
@@ -24,18 +28,25 @@ class BugHunterGame(BaseGame):
         self.spawn_bug()
 
     def spawn_bug(self) -> None:
-        bug_type = random.choice(["standard", "fast", "armored"])
-        speed = 20.0
+        # Neuer Bug-Typ "glitch" für erhöhte Schwierigkeit hinzugefügt
+        bug_type = random.choices(
+            ["standard", "fast", "armored", "glitch"], weights=[40, 30, 20, 10]
+        )[0]
+        speed = 22.0
         hp = 1
         color = (0, 255, 120)
 
         if bug_type == "fast":
-            speed = 45.0
+            speed = 50.0
             color = (255, 200, 0)
         elif bug_type == "armored":
-            speed = 12.0
+            speed = 14.0
             hp = 2
             color = (200, 50, 255)
+        elif bug_type == "glitch":
+            speed = 65.0
+            hp = 1
+            color = (0, 240, 255)
 
         self.bugs.append(
             {
@@ -43,7 +54,7 @@ class BugHunterGame(BaseGame):
                 "y": float(random.randint(40, 200)),
                 "vx": float(random.choice([-1, 1]) * speed),
                 "vy": float(random.choice([-1, 1]) * speed),
-                "radius": 10,
+                "radius": 11 if bug_type == "armored" else 9,
                 "type": bug_type,
                 "hp": hp,
                 "max_hp": hp,
@@ -68,16 +79,40 @@ class BugHunterGame(BaseGame):
                     hit_any = True
                     if b["hp"] <= 0:
                         self.bugs.remove(b)
-                        points = 50 if b["type"] == "armored" else (30 if b["type"] == "fast" else 20)
+                        points = (
+                            75
+                            if b["type"] == "glitch"
+                            else (
+                                50
+                                if b["type"] == "armored"
+                                else (30 if b["type"] == "fast" else 20)
+                            )
+                        )
                         self.add_score(points)
-                        self.splats.append({"x": b["x"], "y": b["y"], "color": b["color"], "timer": 2.0})
+                        self.splats.append(
+                            {
+                                "x": b["x"],
+                                "y": b["y"],
+                                "color": b["color"],
+                                "timer": 2.5,
+                                "radius": 12,
+                            }
+                        )
                         self.engine.audio.play("hit")
                     else:
                         self.engine.audio.play("select")
                     break
 
             if not hit_any:
-                self.splats.append({"x": vx, "y": vy, "color": (100, 100, 100), "timer": 0.3})
+                self.splats.append(
+                    {
+                        "x": vx,
+                        "y": vy,
+                        "color": (120, 120, 120),
+                        "timer": 0.3,
+                        "radius": 5,
+                    }
+                )
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -87,18 +122,25 @@ class BugHunterGame(BaseGame):
         self.spawn_timer += dt
         self.difficulty_timer += dt
 
-        if self.difficulty_timer > 10.0 and self.spawn_interval > 0.4:
-            self.spawn_interval -= 0.05
+        # Ansteigende Schwierigkeit: Kürzeres Spawn-Intervall über Zeit
+        if self.difficulty_timer > 8.0 and self.spawn_interval > 0.3:
+            self.spawn_interval -= 0.04
             self.difficulty_timer = 0.0
 
-        if self.spawn_timer >= self.spawn_interval and len(self.bugs) < 10:
+        max_bugs = min(15, 8 + int(self.score / 150))
+        if self.spawn_timer >= self.spawn_interval and len(self.bugs) < max_bugs:
             self.spawn_timer = 0.0
             self.spawn_bug()
 
         for b in self.bugs:
             b["x"] += b["vx"] * dt
             b["y"] += b["vy"] * dt
-            b["anim_phase"] += dt * 8.0
+            b["anim_phase"] += dt * 10.0
+
+            # Glitch-Bugs ändern unvorhersehbar ihren Kurs
+            if b["type"] == "glitch" and random.random() < 0.05:
+                b["vx"] += random.uniform(-15, 15)
+                b["vy"] += random.uniform(-15, 15)
 
             if b["x"] <= 20 or b["x"] >= 300:
                 b["vx"] *= -1
@@ -113,28 +155,52 @@ class BugHunterGame(BaseGame):
                 self.splats.remove(s)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((20, 22, 18))
+        # Cyber-Leiterbahn-Hintergrund
+        surface.fill((14, 18, 16))
+        for x in range(0, 320, 40):
+            pygame.draw.line(surface, (22, 30, 24), (x, 25), (x, 240), 1)
+        for y in range(25, 240, 40):
+            pygame.draw.line(surface, (22, 30, 24), (0, y), (320, y), 1)
 
-        # Splats
+        # Splats mit Alpha-Glow
         for s in self.splats:
-            alpha = max(0, min(255, int((s["timer"] / 2.0) * 255)))
-            splat_surf = pygame.Surface((20, 20), pygame.SRCALPHA)
-            pygame.draw.circle(splat_surf, (*s["color"][:3], alpha), (10, 10), 8)
-            surface.blit(splat_surf, (int(s["x"]) - 10, int(s["y"]) - 10))
+            alpha = max(0, min(255, int((s["timer"] / 2.5) * 255)))
+            splat_surf = pygame.Surface((30, 30), pygame.SRCALPHA)
+            pygame.draw.circle(
+                splat_surf, (*s["color"][:3], alpha), (15, 15), s["radius"]
+            )
+            surface.blit(splat_surf, (int(s["x"]) - 15, int(s["y"]) - 15))
 
-        # Bugs
+        # Verbesserte Bug-Grafik mit Schatten und Animation
         for b in self.bugs:
             bx, by = int(b["x"]), int(b["y"])
-            # Legs pulse
-            leg_offset = int(math.sin(b["anim_phase"]) * 3)
-            pygame.draw.line(surface, (150, 150, 150), (bx - 12, by - 6 + leg_offset), (bx + 12, by + 6 - leg_offset), 2)
-            pygame.draw.line(surface, (150, 150, 150), (bx - 12, by + 6 - leg_offset), (bx + 12, by - 6 + leg_offset), 2)
+            leg_offset = int(math.sin(b["anim_phase"]) * 3.5)
+
+            pygame.draw.circle(surface, (10, 15, 12), (bx, by), b["radius"] + 2)
+            pygame.draw.line(
+                surface,
+                (120, 180, 140),
+                (bx - 14, by - 6 + leg_offset),
+                (bx + 14, by + 6 - leg_offset),
+                2,
+            )
+            pygame.draw.line(
+                surface,
+                (120, 180, 140),
+                (bx - 14, by + 6 - leg_offset),
+                (bx + 14, by - 6 + leg_offset),
+                2,
+            )
 
             pygame.draw.circle(surface, b["color"], (bx, by), b["radius"])
             pygame.draw.circle(surface, (255, 255, 255), (bx - 3, by - 3), 3)
 
             if b["max_hp"] > 1 and b["hp"] < b["max_hp"]:
-                pygame.draw.rect(surface, (255, 0, 0), (bx - 10, by - 14, 20, 3))
-                pygame.draw.rect(surface, (0, 255, 0), (bx - 10, by - 14, int(20 * (b["hp"] / b["max_hp"])), 3))
+                pygame.draw.rect(surface, (255, 0, 0), (bx - 10, by - 16, 20, 3))
+                pygame.draw.rect(
+                    surface,
+                    (0, 255, 0),
+                    (bx - 10, by - 16, int(20 * (b["hp"] / b["max_hp"])), 3),
+                )
 
         self.render_ui(surface)
