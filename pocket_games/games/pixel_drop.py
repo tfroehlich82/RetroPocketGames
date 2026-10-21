@@ -1,5 +1,9 @@
 # ==========================================
-# PIXEL DROP (Full Tetris Engine)
+# PIXEL DROP v1.0
+# A classic block puzzle game featuring refined progression mechanics.
+# Every 10 successfully cleared lines advance the player to the next level.
+# The falling speed remains constant throughout each level and increases
+# only upon leveling up.
 # ==========================================
 from __future__ import annotations
 
@@ -109,8 +113,9 @@ class PixelDropGame(BaseGame):
         if self.game_over:
             return
 
-        # Geschwindigkeit sinkt erst alle 20 vervollständigten Reihen (Level-basiert)
-        drop_speed = max(0.08, 0.65 - ((self.level - 1) * 0.08))
+        # The falling speed remains constant throughout each level
+        # and increases only upon leveling up
+        drop_speed = max(0.12, 0.70 - ((self.level - 1) * 0.1))
         self.drop_timer += dt
 
         touching_ground = self._check_collision(self.px, self.py + 1, self.shape)
@@ -144,8 +149,13 @@ class PixelDropGame(BaseGame):
 
         if cleared > 0:
             self.total_cleared_lines += cleared
-            self.level = (self.total_cleared_lines // 20) + 1
-            self.add_score(cleared * 100 * self.level)
+            # Level up after 10 cleared rows
+            self.level = (self.total_cleared_lines // 10) + 1
+
+            bonus_multipliers = {1: 100, 2: 300, 3: 500, 4: 800}
+            points = bonus_multipliers.get(cleared, cleared * 250) * self.level
+
+            self.add_score(points)
             self.play_sound("score")
 
     def render(self, surface: pygame.Surface) -> None:
