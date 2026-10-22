@@ -116,7 +116,7 @@ The handheld features a unified dual-input scheme:
 
 * **Goal:** Stack falling blocks cleanly to clear lines and increase your level without letting the grid overflow.
 
-* **Gameplay:** Fast-paced falling block puzzle where blocks drop continuously. Game speed increases strictly every 20 completed lines, ensuring a balanced, long-lasting challenge.
+* **Gameplay:** Fast-paced falling block puzzle where blocks drop continuously. Game speed increases strictly every 5 completed lines, ensuring a balanced, long-lasting challenge.
 
 * **Controls:**
 
@@ -128,9 +128,9 @@ The handheld features a unified dual-input scheme:
 
 ### 2. Circuit Breaker
 
-* **Goal:** Route electrical current across all circuit nodes to restore system power before time runs out.
+* **Goal:** Route electrical current across all cyber-circuit board nodes to restore system power before time runs out.
 
-* **Gameplay:** Select nodes in sequence to establish a closed, active circuit. Complete connections earn high scores. Active connected nodes glow cyan. Energy bar refills upon successful circuit completion.
+* **Gameplay:** Cybernetic circuit board puzzle featuring glowing data traces, status LEDs, and microchips. Select nodes to establish active paths and activate the energy flow.
 
 * **Controls:**
 
@@ -142,9 +142,9 @@ The handheld features a unified dual-input scheme:
 
 ### 3. Neon Dash
 
-* **Goal:** Survive as long as possible along a neon highway.
+* **Goal:** Survive as long as possible across 8 unique cyberpunk visual scenarios.
 
-* **Gameplay:** High-speed endless runner. Jump to avoid oncoming barriers and hazards.
+* **Gameplay:** High-speed endless runner featuring progressive speed scaling, uneven obstacle distances, and complex obstacle combinations in higher levels.
 
 * **Controls:**
 
@@ -152,7 +152,7 @@ The handheld features a unified dual-input scheme:
 
 ### 4. Byte Hopper
 
-* **Goal:** Jump across floating memory registers to climb as high as possible.
+* **Goal:** Jump across smooth-moving, non-colliding platforms to climb as high as possible and collect Data Crystals.
 
 * **Gameplay:** Vertical platforming action. Manage horizontal momentum and time jumps to land on small moving registers.
 
@@ -166,7 +166,7 @@ The handheld features a unified dual-input scheme:
 
 ### 5. Quantum Maze
 
-* **Goal:** Navigate shifting labyrinth walls to collect quantum cores and advance maze complexity.
+* **Goal:** Navigate procedurally generated labyrinths that tighten every second level while collecting timed Quantum Shards before they vanish.
 
 * **Entities:**
 
@@ -176,7 +176,7 @@ The handheld features a unified dual-input scheme:
 
   * **Glitch Traps (Red):** -50 penalty points.
 
-  * **Progress Bar:** Displays progress towards the next procedural maze generation.
+  * **Quantum Shards (Pink):** : Timed high-value items that disappear after 10 seconds.Glitch Traps (Red): -50 penalty points.
 
 * **Controls:**
 
@@ -220,7 +220,7 @@ The handheld features a unified dual-input scheme:
 
 * **Goal:** Squish digital bugs as fast as they spawn on screen.
 
-* **Gameplay:** Fast-tap arcade game. Target rapidly appearing bugs before their internal despawn timers run out.
+* **Gameplay:** Fast-tap arcade game targeting rapidly appearing insects before their despawn timers run out.
 
 * **Controls:**
 
@@ -242,15 +242,15 @@ The handheld features a unified dual-input scheme:
 
 ### 10. Matrix Invaders
 
-* **Goal:** Destroy incoming rogue waves of cyber invaders before they breach the system border.
+* **Goal:** Defend against marching rows of cyber invaders in a classic Space Invaders grid formation with 5 player HP and protective bunkers.
 
 * **Entities:**
 
   * **Invader Types:** Drones (Standard), Speeders (Fast & erratic wobble), Tanks (Armored, require multiple hits).
 
-  * **Power-Ups:** Weapon upgrades (Dual/Triple lasers and energy beams) and temporary Energy Shields.
+  * **Bunkers:** Destructible cover structures available from wave 2 onwards.
 
-  * **Particles:** Neon explosion effects.
+  * **Power-Ups:** Weapon upgrades (Dual/Triple lasers and energy beams) and temporary Energy Shields.
 
 * **Controls:**
 
@@ -258,7 +258,7 @@ The handheld features a unified dual-input scheme:
 
   * **Button A / Space:** Fire plasma laser.
 
-  * **Touch:** Tap screen to fire toward horizontal position.
+  * **Touch:** Tap screen to fire.
 
 ### 11. Bit Blaster
 
@@ -274,9 +274,9 @@ The handheld features a unified dual-input scheme:
 
 ### 12. Pulse Racer
 
-* **Goal:** Dodge high-voltage obstacles on a circuit track.
+* **Goal:** High-speed highway racing featuring classic vehicle sprites, AI lane-dodging, and center-line pylons.
 
-* **Gameplay:** Top-down racing. Maneuver through narrow gaps in track barriers at extreme speeds.
+* **Gameplay:** Dodge oncoming traffic, blinking vehicles, and center-line pylons that both player and traffic must navigate around.
 
 * **Controls:**
 
@@ -286,7 +286,7 @@ The handheld features a unified dual-input scheme:
 
 ### 13. Crypto Decrypt
 
-* **Goal:** Crack 4-digit security sequences before system lockouts.
+* **Goal:** Crack 4-digit security sequences before system lockouts (8 attempts).
 
 * **Gameplay:** Logic code-breaking puzzle. Cycle digits to guess the matching Target Code sequence.
 
@@ -322,7 +322,7 @@ The handheld features a unified dual-input scheme:
 
 ### 16. Chrono Shift
 
-* **Goal:** Collect temporal fragments while evading your own time-rewinding echo trail.
+* **Goal:** Collect temporal fragments while evading your own time-rewinding echo trail and moving glitch anomalies.
 
 * **Gameplay:** Ghost-trail reproducing your exact past movements; collision results in a paradox game over.
 
@@ -334,7 +334,7 @@ The handheld features a unified dual-input scheme:
 
 ### 17. Sonic Pulse
 
-* **Goal:** Rhythm timing game where you expand energy pulses to hit collapsing target rings.
+* **Goal:** Rhythmic precision timing game syncing energy pulses with collapsing target rings.
 
 * **Gameplay:** Audio-visual precision timing challenge. Release sonic pulses to sync perfectly as incoming energy rings collapse onto the target zone.
 
@@ -346,31 +346,29 @@ The handheld features a unified dual-input scheme:
 
 ### 18. Gravity Sling
 
-* **Goal:** Launch a space probe through planetary gravity wells to harvest telemetry data.
+* **Goal:** Pilot your space probe through planetary gravity wells using 4-way active vector thrusters to harvest telemetry crystals.
 
-* **Gameplay:** Physics trajectory puzzle. Slingshot your space probe utilizing orbital gravity pulls to sweep past planets and harvest scientific data beacons.
+* **Gameplay:** Physics trajectory navigation puzzle featuring multi-level sectors.
 
 * **Controls:**
 
-  * **D-Pad / Touch:** Aim trajectory angle and press action to launch probe.
+  * **D-Pad / Touch:** Active directional thrust and probe guidance.
 
 ### 19. Glitch Runner
 
-* **Goal:** Platformer where reality toggles between normal and glitch phase platforms.
+* **Goal:** Navigate your data cursor across a digital grid to reach the core exit node before the real-time countdown timer expires.
 
-* **Gameplay:** Dynamic platforming challenge where floor stability alternates between solid reality and unstable glitch phases. Time your jumps to avoid dropping into the digital void.
+* **Gameplay:** Tactical cyber puzzle game featuring expanding system glitches and multiple escalating sectors.
 
 * **Controls:**
 
-  * **D-Pad Up / Space:** Jump.
-
-  * **Touch:** Tap screen to trigger a jump.
+  * **D-Pad (All Directions):** Move data cursor across grid nodes.
 
 ### 20. Aether Defender
 
 * **Goal:** Dual-colored space shooter where matching shield polarity absorbs enemy lasers.
 
-* **Gameplay:** Tactical shoot 'em up. Switch your ship's energy polarity to match incoming laser streams, absorbing hostile fire to power up counterattacks.
+* **Gameplay:** Tactical shoot 'em up with real-time polarity switching.
 
 * **Controls:**
 
@@ -379,6 +377,7 @@ The handheld features a unified dual-input scheme:
   * **Button A / Space:** Switch shield polarity / Fire.
 
   * **Touch:** Tap screen controls to move and switch polarity.
+
 ---
 
 ## ⚙️ Settings & Hall of Fame
