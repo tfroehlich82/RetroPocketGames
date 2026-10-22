@@ -100,10 +100,15 @@ class ChronoShiftGame(BaseGame):
         self.trail_timer += dt
         if self.trail_timer > 0.1:
             self.trail_timer = 0.0
-            self.trail.insert(0, (self.px, self.py))
-            max_trail = max(30, 50 - (self.level * 5))
-            if len(self.trail) > max_trail:
-                self.trail.pop()
+            if (
+                not self.trail
+                or math.hypot(self.px - self.trail[0][0], self.py - self.trail[0][1])
+                > 4.0
+            ):
+                self.trail.insert(0, (self.px, self.py))
+                max_trail = max(30, 50 - (self.level * 5))
+                if len(self.trail) > max_trail:
+                    self.trail.pop()
 
         if self.spawn_protection <= 0:
             for pos in self.trail[8:]:
