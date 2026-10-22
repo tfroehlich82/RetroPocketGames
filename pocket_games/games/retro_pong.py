@@ -1,5 +1,8 @@
 # ==========================================
-# RETRO PONG
+# RETRO PONG 2077 v1.0
+# A modern cyberpunk take on the arcade classic.
+# Starts out accessible and ramps up ball velocity
+# every 10 paddle strikes.
 # ==========================================
 from __future__ import annotations
 
@@ -35,7 +38,9 @@ class RetroPongGame(BaseGame):
         self.paddle_y = 120.0
         self.paddle_prev_y = 120.0
         self.paddle = Paddle(15, int(self.paddle_y) - 20, 8, 40)
-        self.ball = Ball(160.0, 120.0, 6, 130.0, 90.0)
+        # Weniger aggressiver Start (geringere Startgeschwindigkeit)
+        self.ball = Ball(160.0, 120.0, 6, 95.0, 65.0)
+        self.paddle_hits = 0
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -87,6 +92,13 @@ class RetroPongGame(BaseGame):
         if self.ball.rect.colliderect(self.paddle.rect):
             handle_paddle_collision(self.ball, self.paddle, paddle_vy=paddle_vy)
             self.ball.x, self.ball.y = self.ball.rect.center
+            self.paddle_hits += 1
+
+            # Alle 10 Kontakte den Ball aggressiver/schneller machen
+            if self.paddle_hits % 10 == 0:
+                self.ball.vx *= 1.15
+                self.ball.vy *= 1.15
+
             self.add_score(10)
             self.engine.audio.play("confirm")
 
