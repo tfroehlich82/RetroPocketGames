@@ -354,22 +354,28 @@ class MatrixInvadersGame(BaseGame):
                 pygame.draw.rect(
                     surface, (255, 40, 120), (bx - 8, by - 6, 16, 12), border_radius=3
                 )
+                pygame.draw.rect(surface, (255, 255, 255), (bx - 4, by - 3, 2, 2))
+                pygame.draw.rect(surface, (255, 255, 255), (bx + 2, by - 3, 2, 2))
             elif bug["type"] == "speeder":
                 pygame.draw.polygon(
                     surface,
                     (255, 200, 0),
                     [(bx, by - 9), (bx - 10, by + 6), (bx + 10, by + 6)],
                 )
+                pygame.draw.circle(surface, (255, 255, 255), (bx, by), 2)
             elif bug["type"] == "elite":
                 pygame.draw.polygon(
                     surface,
                     (0, 255, 180),
                     [(bx, by - 10), (bx - 12, by + 4), (bx + 12, by + 4)],
                 )
+                pygame.draw.rect(surface, (255, 255, 255), (bx - 3, by - 2, 6, 4))
             else:
                 pygame.draw.rect(
                     surface, (180, 50, 240), (bx - 12, by - 10, 24, 20), border_radius=4
                 )
+                pygame.draw.rect(surface, (255, 255, 255), (bx - 6, by - 5, 4, 4))
+                pygame.draw.rect(surface, (255, 255, 255), (bx + 2, by - 5, 4, 4))
 
         # UI: Anzeige für Welle, Waffen-Level und Spieler-HP (Leben)
         hud_txt = self.font.render(
