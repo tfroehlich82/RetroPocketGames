@@ -178,7 +178,7 @@ class GlitchRunnerGame(BaseGame):
 
         cell_size = 32
         board_w = self.grid_w * cell_size
-        board_h = self.grid_h * cell_size
+        # board_h = self.grid_h * cell_size
         start_x = (320 - board_w) // 2
         start_y = 50
 
