@@ -21,7 +21,7 @@ class MockEngine:
         self.settings = type("MockSettings", (), {"language": "English"})()
 
 
-class TestGravitySlingV3(unittest.TestCase):
+class TestGravitySling(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         pygame.init()
