@@ -9,8 +9,9 @@ import pygame
 from pocket_games.core.input import InputManager
 from pocket_games.games.kernel_panic import KernelPanicGame
 from pocket_games.games.neon_dash import NeonDashGame
-from pocket_games.games.pulse_racer import PulseRacerGame
-from pocket_games.games.quantum_maze import QuantumMazeGame
+
+# from pocket_games.games.pulse_racer import PulseRacerGame
+# from pocket_games.games.quantum_maze import QuantumMazeGame
 from pocket_games.games.retro_pong import RetroPongGame
 
 
