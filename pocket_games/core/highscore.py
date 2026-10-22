@@ -47,7 +47,7 @@ class HighScoreManager:
                     data = json.loads(content)
                     if isinstance(data, dict):
                         return data
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.error(f"Fehler beim Lesen von {path}: {e}")
         return {}
 
@@ -65,7 +65,7 @@ class HighScoreManager:
             json_data = json.dumps(self.scores, indent=4)
             self.filepath.write_text(json_data, encoding="utf-8")
             logger.info("Highscores erfolgreich gespeichert.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Fehler beim Speichern der Highscores: {e}", exc_info=True)
 
     def get_score(self, game_name: str) -> int:

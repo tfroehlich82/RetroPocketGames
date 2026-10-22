@@ -49,7 +49,7 @@ class TestGameOverRenderBestRun(unittest.TestCase):
         surface = pygame.Surface((320, 240))
         try:
             game.render_game_over(surface)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.fail(f"render_game_over raised an exception: {e}")
 
 

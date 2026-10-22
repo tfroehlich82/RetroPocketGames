@@ -1,5 +1,5 @@
 # ==========================================
-# CRYPTO DECRYPT v1.0
+# CRYPTO DECRYPT v1.1
 # A masterminds-style logical deduction game.
 # Crack the secret 4-digit code within 8 attempts.
 # After each guess, feedback indicators show correct
@@ -16,7 +16,7 @@ from pocket_games.games.base import BaseGame
 
 
 class CryptoDecryptGame(BaseGame):
-    """Complete overhaul of Crypto Decrypt with Mastermind-style deduction gameplay."""
+    """Mastermind-style vault cracking game with alarm system aesthetics and input lockout."""
 
     def __init__(self, engine) -> None:
         super().__init__(engine, game_name="Crypto Decrypt")
@@ -29,6 +29,9 @@ class CryptoDecryptGame(BaseGame):
         self.attempts_left = self.max_attempts
         self.revealing_code = False
         self.reveal_timer = 0.0
+        self.input_lockout_timer = (
+            3.0  # 3 Sekunden Sperre gegen unbeabsichtigtes Drücken
+        )
         self.reset_game()
 
     def reset_game(self) -> None:
@@ -40,9 +43,15 @@ class CryptoDecryptGame(BaseGame):
         self.game_over = False
         self.revealing_code = False
         self.reveal_timer = 0.0
+        self.input_lockout_timer = 3.0
 
     def submit_guess(self) -> None:
-        if self.game_over or self.revealing_code or self.attempts_left <= 0:
+        if (
+            self.game_over
+            or self.revealing_code
+            or self.attempts_left <= 0
+            or self.input_lockout_timer > 0.0
+        ) and self.showing_intro:
             return
 
         target_copy = list(self.target_code)
@@ -73,7 +82,6 @@ class CryptoDecryptGame(BaseGame):
             self.engine.audio.play("confirm")
             self.reset_game()
         elif self.attempts_left <= 0:
-            # Letzter Versuch aufgebraucht: Code für 3 Sekunden anzeigen
             self.revealing_code = True
             self.reveal_timer = 3.0
             self.engine.audio.play("hit")
@@ -85,7 +93,9 @@ class CryptoDecryptGame(BaseGame):
         if not self.active or self.paused:
             return
 
-        # 3 Sekunden Wartezeit beim Aufdecken des Codes abarbeiten
+        if self.input_lockout_timer > 0.0:
+            self.input_lockout_timer -= dt
+
         if self.revealing_code:
             self.reveal_timer -= dt
             if self.reveal_timer <= 0.0:
@@ -107,7 +117,6 @@ class CryptoDecryptGame(BaseGame):
                 self.reset_game()
             return
 
-        # Warten, während der Code aufgedeckt wird, keine Eingaben erlauben
         if self.revealing_code:
             return
 
@@ -134,101 +143,137 @@ class CryptoDecryptGame(BaseGame):
         elif inp.is_key_just_pressed(pygame.K_RETURN) or inp.is_key_just_pressed(
             pygame.K_SPACE
         ):
-            self.submit_guess()
+            if self.input_lockout_timer <= 0.0:
+                self.submit_guess()
 
         if inp.mouse_clicked:
             vx, vy = self.get_virtual_mouse_pos()
             for i in range(self.code_length):
-                bx = 70 + i * 40
+                bx = 65 + i * 44
                 by = 180
-                if bx <= vx <= bx + 32 and by <= vy <= by + 36:
+                if bx <= vx <= bx + 36 and by <= vy <= by + 38:
                     self.cursor = i
                     self.current_guess[i] = (self.current_guess[i] + 1) % 10
                     self.engine.audio.play("select")
                     return
-            if 240 <= vx <= 305 and 180 <= vy <= 216:
+            if 242 <= vx <= 310 and 180 <= vy <= 218 and self.input_lockout_timer <= 0.0:
                 self.submit_guess()
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((8, 16, 24))
+        # Tresor / Alarmanlagen Hintergrund im Cyber-Industrial-Stil
+        surface.fill((12, 16, 24))
 
-        # Title / Terminal Header
-        pygame.draw.rect(surface, (15, 30, 45), (10, 25, 300, 20), border_radius=3)
-        lbl = self.font.render(
-            f"ATTEMPTS REMAINING: {self.attempts_left}/{self.max_attempts}",
+        # Dezente Stahl-Gitterlinien
+        for x in range(0, 320, 32):
+            pygame.draw.line(surface, (18, 24, 36), (x, 0), (x, 240), 1)
+        for y in range(0, 240, 32):
+            pygame.draw.line(surface, (18, 24, 36), (0, y), (320, y), 1)
+
+        # Alarm- / Sicherheits-Panel oben
+        pygame.draw.rect(surface, (22, 10, 14), (10, 15, 300, 28), border_radius=4)
+        pygame.draw.rect(surface, (180, 40, 50), (10, 15, 300, 28), 2, border_radius=4)
+
+        # Pulsierende Alarm-LED
+        alarm_on = int(pygame.time.get_ticks() / 250) % 2 == 0
+        led_color = (255, 50, 50) if alarm_on else (100, 20, 20)
+        pygame.draw.circle(surface, led_color, (24, 29), 6)
+        pygame.draw.circle(surface, (255, 200, 200), (22, 27), 2)
+
+        status_txt = self.font.render(
+            f"VAULT SECURE | ATTEMPTS: {self.attempts_left}/{self.max_attempts}",
             True,
-            (0, 255, 200),
+            (255, 220, 100),
         )
-        surface.blit(lbl, (15, 28))
+        surface.blit(status_txt, (38, 22))
 
-        # Render History
-        visible_history = self.history[-7:]
+        # Sicherheits-Sperre (Lockout) Countdown
+        if self.input_lockout_timer > 0.0:
+            lock_txt = self.font.render(
+                f"SECURITY LOCKOUT: {math.ceil(self.input_lockout_timer)}s",
+                True,
+                (255, 100, 100),
+            )
+            surface.blit(lock_txt, (110, 46))
+
+        # Terminal-Protokoll der bisherigen Versuche
+        pygame.draw.rect(surface, (8, 12, 18), (15, 62, 290, 108), border_radius=4)
+        pygame.draw.rect(surface, (40, 60, 90), (15, 62, 290, 108), 1, border_radius=4)
+
+        visible_history = self.history[-6:]
         for idx, entry in enumerate(visible_history):
-            hy = 50 + idx * 18
+            hy = 68 + idx * 16
             g_str = " ".join(map(str, entry["guess"]))
             txt = self.font.render(
-                f"TRY {self.history.index(entry) + 1}:  {g_str}", True, (210, 210, 210)
+                f"LOG #{self.history.index(entry) + 1}: [{g_str}]",
+                True,
+                (200, 210, 225),
             )
-            surface.blit(txt, (20, hy))
+            surface.blit(txt, (22, hy))
 
+            # Exakte Treffer (Grün) und Teil-Treffer (Gelb) als LED-Indikatoren
             for e in range(entry["exact"]):
-                pygame.draw.circle(surface, (0, 255, 100), (160 + e * 12, hy + 6), 4)
+                pygame.draw.circle(surface, (0, 255, 120), (220 + e * 12, hy + 6), 4)
             for n in range(entry["near"]):
                 pygame.draw.circle(
-                    surface, (255, 200, 0), (160 + (entry["exact"] + n) * 12, hy + 6), 4
+                    surface, (255, 200, 0), (220 + (entry["exact"] + n) * 12, hy + 6), 4
                 )
 
-        # Zustand während des Aufdeckens oder Eingabe
+        # Code-Aufdeckung oder Eingabe-Interface
         if self.revealing_code:
             code_str = " ".join(map(str, self.target_code))
             reveal_txt = self.font.render(
-                f"CORRECT CODE WAS: {code_str}", True, (255, 200, 0)
+                f"VAULT BREACHED! CODE: {code_str}", True, (255, 200, 0)
             )
-            surface.blit(reveal_txt, (50, 185))
+            surface.blit(reveal_txt, (35, 185))
 
             time_txt = self.font.render(
-                f"REVEALING IN {math.ceil(self.reveal_timer)}s...",
+                f"LOCKDOWN IN {math.ceil(self.reveal_timer)}s...",
                 True,
                 (150, 180, 220),
             )
             surface.blit(time_txt, (95, 205))
         elif not self.game_over:
+            # Schwere Tresor-Ziffernblöcke für maximale Lesbarkeit
             for i in range(self.code_length):
-                bx = 70 + i * 40
+                bx = 65 + i * 44
                 by = 180
                 is_sel = i == self.cursor
 
-                box_bg = (25, 50, 75) if is_sel else (18, 32, 48)
-                border_col = (0, 255, 220) if is_sel else (90, 120, 150)
+                box_bg = (30, 45, 65) if is_sel else (16, 26, 40)
+                border_col = (0, 255, 200) if is_sel else (70, 100, 130)
 
-                pygame.draw.rect(surface, box_bg, (bx, by, 32, 36), border_radius=4)
+                pygame.draw.rect(surface, box_bg, (bx, by, 36, 38), border_radius=4)
                 pygame.draw.rect(
-                    surface, border_col, (bx, by, 32, 36), 2, border_radius=4
+                    surface, border_col, (bx, by, 36, 38), 2, border_radius=4
+                )
+                # Innere Aussparung für Tresor-Look
+                pygame.draw.rect(
+                    surface, (8, 14, 22), (bx + 4, by + 4, 28, 30), border_radius=2
                 )
 
                 val_surf = self.title_font.render(
                     str(self.current_guess[i]),
                     True,
-                    (255, 255, 255) if is_sel else (200, 220, 240),
+                    (255, 255, 255) if is_sel else (210, 230, 255),
                 )
-                surface.blit(val_surf, (bx + 10, by + 6))
+                surface.blit(val_surf, (bx + 12, by + 8))
 
-            # Submit Button
+            # Tresor-Entriegelungsknopf (UNLOCK)
+            btn_bg = (180, 40, 50) if self.input_lockout_timer > 0.0 else (0, 160, 100)
+            pygame.draw.rect(surface, btn_bg, (242, 180, 68, 38), border_radius=4)
             pygame.draw.rect(
-                surface, (0, 180, 100), (240, 180, 65, 36), border_radius=4
+                surface, (255, 255, 255), (242, 180, 68, 38), 1, border_radius=4
             )
-            btn_txt = self.font.render("DECRYPT", True, (255, 255, 255))
-            surface.blit(btn_txt, (244, 192))
+            btn_txt = self.font.render("UNLOCK", True, (255, 255, 255))
+            surface.blit(btn_txt, (250, 192))
         else:
             code_str = " ".join(map(str, self.target_code))
-            go_txt = self.font.render(
-                f"FAILED! CODE WAS: {code_str}", True, (255, 50, 50)
-            )
-            surface.blit(go_txt, (45, 185))
+            go_txt = self.font.render(f"ALARM! CODE: {code_str}", True, (255, 60, 60))
+            surface.blit(go_txt, (55, 185))
 
             restart_txt = self.font.render(
-                "PRESS ENTER TO RETRY", True, (150, 180, 220)
+                "PRESS ENTER TO RESET VAULT", True, (150, 180, 220)
             )
-            surface.blit(restart_txt, (80, 205))
+            surface.blit(restart_txt, (65, 205))
 
         self.render_ui(surface)

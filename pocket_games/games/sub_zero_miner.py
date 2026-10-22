@@ -1,5 +1,5 @@
 # ==========================================
-# SUB ZERO MINER v1.0
+# SUB ZERO MINER v1.1
 # An immersive survival adventure in freezing depths.
 # Navigate the miner through frosty ice caves, collect valuable diamonds
 # and oxygen bubbles while avoiding treacherous ice hazards and toxic spores.
@@ -182,15 +182,29 @@ class SubZeroMinerGame(BaseGame):
         pygame.draw.rect(surface, (20, 35, 55), (0, 0, 320, 32))
         for x in range(0, 320, 16):
             peak_h = 16 + (x % 3) * 6
-            pygame.draw.polygon(surface, (30, 50, 75), [(x, 0), (x + 8, peak_h), (x + 16, 0)])
-            pygame.draw.polygon(surface, (150, 210, 255), [(x + 2, 0), (x + 8, peak_h - 4), (x + 6, 0)], 1)
+            pygame.draw.polygon(
+                surface, (30, 50, 75), [(x, 0), (x + 8, peak_h), (x + 16, 0)]
+            )
+            pygame.draw.polygon(
+                surface,
+                (150, 210, 255),
+                [(x + 2, 0), (x + 8, peak_h - 4), (x + 6, 0)],
+                1,
+            )
 
         # Dekorative Eiszapfen / Stalagmiten am Boden
         pygame.draw.rect(surface, (20, 35, 55), (0, 212, 320, 28))
         for x in range(8, 320, 20):
             peak_h = 212 - (x % 4) * 5
-            pygame.draw.polygon(surface, (30, 50, 75), [(x, 240), (x + 10, peak_h), (x + 20, 240)])
-            pygame.draw.polygon(surface, (150, 210, 255), [(x + 4, 240), (x + 10, peak_h + 4), (x + 16, 240)], 1)
+            pygame.draw.polygon(
+                surface, (30, 50, 75), [(x, 240), (x + 10, peak_h), (x + 20, 240)]
+            )
+            pygame.draw.polygon(
+                surface,
+                (150, 210, 255),
+                [(x + 4, 240), (x + 10, peak_h + 4), (x + 16, 240)],
+                1,
+            )
 
         # Kristallstrukturen / Risse im Hintergrund
         pygame.draw.line(surface, (22, 42, 68), (60, 40), (100, 90), 2)
@@ -221,8 +235,17 @@ class SubZeroMinerGame(BaseGame):
         # Diamanten / Kristalle
         for g in self.gems:
             gx, gy = int(g["x"]), int(g["y"])
-            pygame.draw.polygon(surface, (0, 240, 255), [(gx, gy - 7), (gx + 6, gy), (gx, gy + 7), (gx - 6, gy)])
-            pygame.draw.polygon(surface, (255, 255, 255), [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)], 1)
+            pygame.draw.polygon(
+                surface,
+                (0, 240, 255),
+                [(gx, gy - 7), (gx + 6, gy), (gx, gy + 7), (gx - 6, gy)],
+            )
+            pygame.draw.polygon(
+                surface,
+                (255, 255, 255),
+                [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)],
+                1,
+            )
 
         # Spieler (Minenarbeiter)
         mx, my = int(self.rx), int(self.ry)
@@ -231,14 +254,30 @@ class SubZeroMinerGame(BaseGame):
         )
         pygame.draw.rect(surface, (255, 255, 255), (mx - 3, my - 3, 6, 6))
 
-        # UI & O2-Leiste
+        # UI & O2-Leiste mit neutralen Hintergründen für exzellente Lesbarkeit
+        # Hintergrund für O2-Balken
+        pygame.draw.rect(surface, (10, 15, 25, 200), (8, 221, 126, 16), border_radius=3)
         pygame.draw.rect(surface, (30, 40, 50), (10, 225, 120, 8), border_radius=2)
         o2_w = int(120 * (min(100.0, max(0.0, self.oxygen)) / 100.0))
         o2_col = (0, 220, 255) if self.oxygen > 30 else (255, 50, 50)
         if o2_w > 0:
             pygame.draw.rect(surface, o2_col, (10, 225, o2_w, 8), border_radius=2)
 
+        # Neutraler Hintergrund für Depth Level (unten rechts)
         lvl_txt = self.font.render(f"DEPTH LVL {self.level}", True, (200, 220, 255))
+        pygame.draw.rect(
+            surface,
+            (10, 15, 25, 200),
+            (215, 218, lvl_txt.get_width() + 10, lvl_txt.get_height() + 6),
+            border_radius=3,
+        )
         surface.blit(lvl_txt, (220, 222))
+
+        # Neutraler Hintergrund für Score (oben links über Basis-UI)
+        score_bg_w = 90
+        score_bg_h = 18
+        pygame.draw.rect(
+            surface, (10, 15, 25, 200), (6, 3, score_bg_w, score_bg_h), border_radius=3
+        )
 
         self.render_ui(surface)
