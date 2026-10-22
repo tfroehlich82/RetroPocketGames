@@ -38,15 +38,7 @@ class BaseGame:
                 BaseGame.update(self, dt)
                 if self.showing_intro or self.game_over or self.game_won:
                     return
-                res = orig_update(self, dt, *args, **kwargs)
-                if (
-                    (self.game_over or self.game_won)
-                    and hasattr(self, "engine")
-                    and self.engine
-                    and hasattr(self.engine, "highscores")
-                ):
-                    self.engine.highscores.submit_score(self.game_name, self.score)
-                return res
+                return orig_update(self, dt, *args, **kwargs)
             cls.update = wrapped_update
 
         if "render" in cls.__dict__:
@@ -73,6 +65,7 @@ class BaseGame:
         self.score = 0
         self.elapsed_time = 0.0
         self.showing_intro = True
+        self._score_submitted = False
 
         lang = "English"
         if hasattr(self.engine, "settings") and self.engine.settings:
@@ -185,7 +178,20 @@ class BaseGame:
             self.active = False
 
     def update(self, dt: float) -> None:
-        if self.showing_intro or self.game_over:
+        if self.showing_intro or self.game_over or self.game_won:
+            # Einmaliges Übertragen beim Übergang zu Game Over / Game Won
+            if (self.game_over or self.game_won) and not self._score_submitted:
+                self._score_submitted = True
+                if (
+                    hasattr(self, "engine")
+                    and self.engine
+                    and hasattr(self.engine, "highscores")
+                ):
+                    level = getattr(self, "level", 1)
+                    time_played = getattr(self, "elapsed_time", 0.0)
+                    self.engine.highscores.submit_score(
+                        self.game_name, self.score, level, time_played
+                    )
             return
         if not self.paused:
             self.elapsed_time += dt
@@ -238,30 +244,49 @@ class BaseGame:
 
     def render_game_over(self, surface: pygame.Surface) -> None:
         overlay = pygame.Surface((320, 240), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 190))
+        overlay.fill((0, 0, 0, 210))
         surface.blit(overlay, (0, 0))
 
-        pygame.draw.rect(surface, (255, 50, 80), (35, 45, 250, 150), 2, border_radius=8)
-        pygame.draw.rect(surface, (20, 10, 15), (37, 47, 246, 146), border_radius=7)
+        pygame.draw.rect(surface, (255, 50, 80), (20, 20, 280, 200), 2, border_radius=8)
+        pygame.draw.rect(surface, (20, 10, 15), (22, 22, 276, 196), border_radius=7)
 
         go_surf = self.title_font.render(t(self.engine, "game_over"), True, (255, 50, 80))
-        surface.blit(go_surf, (160 - go_surf.get_width() // 2, 60))
+        surface.blit(go_surf, (160 - go_surf.get_width() // 2, 26))
 
-        score_surf = self.font.render(f"{t(self.engine, 'final_score')}: {self.score}", True, (255, 255, 255))
-        surface.blit(score_surf, (160 - score_surf.get_width() // 2, 105))
+        # Final Score mit Level und Zeit des aktuellen Laufs
+        final_str = f"{t(self.engine, 'final_score')}: {self.score} (Lvl {getattr(self, 'level', 1)}, {round(self.elapsed_time, 1)}s)"
+        score_surf = self.font.render(final_str, True, (255, 255, 255))
+        surface.blit(score_surf, (30, 50))
 
-        best_score = self.score
+        # Besten Lauf direkt vom Highscore-Manager abrufen
+        best_run = {"score": self.score, "level": getattr(self, "level", 1), "time": round(self.elapsed_time, 1)}
+        runs = []
         if hasattr(self.engine, "highscores") and self.engine.highscores:
-            best_score = max(
-                self.score,
-                self.engine.highscores.scores.get(self.game_name, self.score),
-            )
-        high_txt = self.font.render(f"{t(self.engine, 'high_score')}: {best_score}", True, (0, 255, 200))
-        surface.blit(high_txt, (160 - high_txt.get_width() // 2, 125))
+            best_run = self.engine.highscores.get_best_run(self.game_name)
+            runs = self.engine.highscores.get_runs(self.game_name)
+
+        # High Score mit Level und Zeit aus dem best_run anzeigen
+        high_str = f"{t(self.engine, 'high_score')}: {best_run['score']} (Lvl {best_run.get('level', 1)}, {best_run.get('time', 0.0)}s)"
+        high_txt = self.font.render(high_str, True, (0, 255, 200))
+        surface.blit(high_txt, (30, 68))
+
+        history_title = self.font.render("LAST 3 RUNS (Score / Lvl / Time):", True, (255, 215, 0))
+        surface.blit(history_title, (30, 92))
+
+        y_offset = 110
+        if not runs:
+            no_runs = self.font.render("No previous runs recorded.", True, (150, 150, 150))
+            surface.blit(no_runs, (30, y_offset))
+        else:
+            for idx, run in enumerate(runs[:3]):
+                run_str = f"#{idx+1}: {run.get('score', 0)} pts | Lvl {run.get('level', 1)} | {run.get('time', 0.0)}s"
+                run_txt = self.font.render(run_str, True, (200, 220, 240))
+                surface.blit(run_txt, (30, y_offset))
+                y_offset += 18
 
         if int(pygame.time.get_ticks() / 300) % 2 == 0:
             exit_surf = self.font.render(t(self.engine, "back_hint"), True, (0, 255, 200))
-            surface.blit(exit_surf, (160 - exit_surf.get_width() // 2, 155))
+            surface.blit(exit_surf, (160 - exit_surf.get_width() // 2, 196))
 
     def render_game_finished(self, surface: pygame.Surface) -> None:
         overlay = pygame.Surface((320, 240), pygame.SRCALPHA)

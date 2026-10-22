@@ -76,10 +76,10 @@ class HighScoreScreen:
         pygame.draw.line(surface, (40, 50, 80), (16, 48), (295, 48), 1)
 
         game_keys = list(GAME_METADATA.keys())
-        scores = (
-            self.engine.highscores.scores
+        highscores_mgr = (
+            self.engine.highscores
             if hasattr(self.engine, "highscores") and self.engine.highscores
-            else {}
+            else None
         )
 
         start_y = 52
@@ -101,7 +101,20 @@ class HighScoreScreen:
                     border_radius=3,
                 )
 
-            score = scores.get(game_name, 0)
+            score = 0
+            if highscores_mgr:
+                if hasattr(highscores_mgr, "get_score"):
+                    score = highscores_mgr.get_score(game_name)
+                elif hasattr(highscores_mgr, "scores"):
+                    val = highscores_mgr.scores.get(game_name, 0)
+                    score = (
+                        val.get("all_time", 0) if isinstance(val, dict) else int(val)
+                    )
+                elif isinstance(highscores_mgr, dict):
+                    val = highscores_mgr.get(game_name, 0)
+                    score = (
+                        val.get("all_time", 0) if isinstance(val, dict) else int(val)
+                    )
 
             # Linke Spalte: Spielname (Trunkierung falls zu lang)
             display_name = game_name if len(game_name) <= 22 else f"{game_name[:20]}.."
