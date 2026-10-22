@@ -176,7 +176,7 @@ The handheld features a unified dual-input scheme:
 
   * **Glitch Traps (Red):** -50 penalty points.
 
-  * **Quantum Shards (Pink):** : Timed high-value items that disappear after 10 seconds.Glitch Traps (Red): -50 penalty points.
+  * **Quantum Shards (Pink):** : Timed high-value items that disappear after 10 seconds.
 
 * **Controls:**
 
