@@ -1,7 +1,7 @@
 # ==========================================
-# PIXEL DROP v1.0
+# PIXEL DROP v1.1
 # A classic block puzzle game featuring refined progression mechanics.
-# Every 10 successfully cleared lines advance the player to the next level.
+# Every 5 successfully cleared lines advance the player to the next level.
 # The falling speed remains constant throughout each level and increases
 # only upon leveling up.
 # ==========================================
@@ -149,8 +149,8 @@ class PixelDropGame(BaseGame):
 
         if cleared > 0:
             self.total_cleared_lines += cleared
-            # Level up after 10 cleared rows
-            self.level = (self.total_cleared_lines // 10) + 1
+            # Level up after 5 cleared rows
+            self.level = (self.total_cleared_lines // 5) + 1
 
             bonus_multipliers = {1: 100, 2: 300, 3: 500, 4: 800}
             points = bonus_multipliers.get(cleared, cleared * 250) * self.level
