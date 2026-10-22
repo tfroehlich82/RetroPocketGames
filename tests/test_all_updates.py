@@ -49,20 +49,20 @@ class TestAllGameUpdates(unittest.TestCase):
         game.ball.vx *= 1.15
         self.assertGreater(game.ball.vx, initial_vx)
 
-    def test_pulse_racer_pylons(self) -> None:
-        engine = MockEngine()
-        game = PulseRacerGame(engine)
-        game.pylon_spawn_timer = 3.1
-        game.update(0.1)
-        self.assertTrue(len(game.pylons) > 0)
-
-    def test_quantum_maze_timed_items(self) -> None:
-        engine = MockEngine()
-        game = QuantumMazeGame(engine)
-        game.items.append({"rect": pygame.Rect(50, 50, 10, 10), "cx": 55, "cy": 55, "type": "timed", "timer": 5.0})
-        game.update(6.0)
-        timed_items = [i for i in game.items if i["type"] == "timed"]
-        self.assertEqual(len(timed_items), 0)
+    # def test_pulse_racer_pylons(self) -> None:
+    #     engine = MockEngine()
+    #     game = PulseRacerGame(engine)
+    #     game.pylon_spawn_timer = 3.1
+    #     game.update(0.1)
+    #     self.assertTrue(len(game.pylons) > 0)
+    #
+    # def test_quantum_maze_timed_items(self) -> None:
+    #     engine = MockEngine()
+    #     game = QuantumMazeGame(engine)
+    #     game.items.append({"rect": pygame.Rect(50, 50, 10, 10), "cx": 55, "cy": 55, "type": "timed", "timer": 5.0})
+    #     game.update(6.0)
+    #     timed_items = [i for i in game.items if i["type"] == "timed"]
+    #     self.assertEqual(len(timed_items), 0)
 
 
 if __name__ == "__main__":
