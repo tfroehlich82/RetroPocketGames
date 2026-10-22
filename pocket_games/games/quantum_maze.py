@@ -1,5 +1,8 @@
 # ==========================================
-# QUANTUM MAZE (Advanced Collectibles & Reset Progress)
+# QUANTUM MAZE v1.0
+# Navigate through procedurally generated mazes that
+# tighten every second level while collecting time-sensitive
+# Quantum Shards before they vanish.
 # ==========================================
 import random
 
@@ -27,7 +30,6 @@ class QuantumMazeGame(BaseGame):
         self._generate_maze()
 
     def _generate_maze(self) -> None:
-        """Generates a procedural maze based on current grid density."""
         cols = self.grid_cols
         rows = self.grid_rows
 
@@ -69,46 +71,24 @@ class QuantumMazeGame(BaseGame):
         self.walls = []
         wall_thick = 4
 
-        self.walls.append(
-            pygame.Rect(
-                bounds.x - wall_thick,
-                bounds.y - wall_thick,
-                bounds.width + 2 * wall_thick,
-                wall_thick,
-            )
-        )
-        self.walls.append(
-            pygame.Rect(
-                bounds.x - wall_thick,
-                bounds.bottom,
-                bounds.width + 2 * wall_thick,
-                wall_thick,
-            )
-        )
-        self.walls.append(
-            pygame.Rect(bounds.x - wall_thick, bounds.y, wall_thick, bounds.height)
-        )
-        self.walls.append(
-            pygame.Rect(bounds.right, bounds.y, wall_thick, bounds.height)
-        )
+        self.walls.append(pygame.Rect(bounds.x - wall_thick, bounds.y - wall_thick, bounds.width + 2 * wall_thick, wall_thick))
+        self.walls.append(pygame.Rect(bounds.x - wall_thick, bounds.bottom, bounds.width + 2 * wall_thick, wall_thick))
+        self.walls.append(pygame.Rect(bounds.x - wall_thick, bounds.y, wall_thick, bounds.height))
+        self.walls.append(pygame.Rect(bounds.right, bounds.y, wall_thick, bounds.height))
 
         for x in range(cols):
             for y in range(rows + 1):
                 if horiz_walls[x][y] and 0 < y < rows:
                     wx = bounds.x + x * cell_w
                     wy = bounds.y + y * cell_h - wall_thick / 2
-                    self.walls.append(
-                        pygame.Rect(wx, wy, cell_w + wall_thick / 2, wall_thick)
-                    )
+                    self.walls.append(pygame.Rect(wx, wy, cell_w + wall_thick / 2, wall_thick))
 
         for x in range(cols + 1):
             for y in range(rows):
                 if vert_walls[x][y] and 0 < x < cols:
                     wx = bounds.x + x * cell_w - wall_thick / 2
                     wy = bounds.y + y * cell_h
-                    self.walls.append(
-                        pygame.Rect(wx, wy, wall_thick, cell_h + wall_thick / 2)
-                    )
+                    self.walls.append(pygame.Rect(wx, wy, wall_thick, cell_h + wall_thick / 2))
 
         self.px = bounds.x + cell_w / 2 - self.pw / 2
         self.py = bounds.y + cell_h / 2 - self.ph / 2
@@ -131,14 +111,11 @@ class QuantumMazeGame(BaseGame):
             candidate = pygame.Rect(cx - 5, cy - 5, 10, 10)
 
             p_rect = pygame.Rect(int(self.px), int(self.py), self.pw, self.ph)
-            if not p_rect.colliderect(candidate.inflate(20, 20)) and not any(
-                candidate.colliderect(w) for w in self.walls
-            ):
-                itype = random.choices(
-                    ["core", "fragment", "trap"], weights=[50, 30, 20]
-                )[0]
+            if not p_rect.colliderect(candidate.inflate(20, 20)) and not any(candidate.colliderect(w) for w in self.walls):
+                # Neuer Typ "timed" (Quantum Shard) der nach 10s verschwindet
+                itype = random.choices(["core", "fragment", "timed", "trap"], weights=[40, 25, 20, 15])[0]
                 self.items.append(
-                    {"rect": candidate, "cx": cx, "cy": cy, "type": itype}
+                    {"rect": candidate, "cx": cx, "cy": cy, "type": itype, "timer": 10.0 if itype == "timed" else 0.0}
                 )
                 break
 
@@ -161,7 +138,6 @@ class QuantumMazeGame(BaseGame):
             dy += speed
 
         dt = 0.016
-
         if dx != 0:
             next_x = self.px + dx * dt
             test_rect_x = pygame.Rect(int(next_x), int(self.py), self.pw, self.ph)
@@ -182,7 +158,15 @@ class QuantumMazeGame(BaseGame):
         self.time_counter += dt
         player_rect = pygame.Rect(int(self.px), int(self.py), self.pw, self.ph)
 
+        # Zeitbasierte Elemente aktualisieren & abgelaufene Items entfernen
         for item in self.items[:]:
+            if item["type"] == "timed":
+                item["timer"] -= dt
+                if item["timer"] <= 0:
+                    self.items.remove(item)
+                    self._spawn_item()
+                    continue
+
             if player_rect.colliderect(item["rect"]):
                 self.items.remove(item)
 
@@ -193,7 +177,8 @@ class QuantumMazeGame(BaseGame):
 
                     if self.collected_count % 10 == 0:
                         self.level += 1
-                        if self.grid_cols < 12:
+                        # Mit jedem 2. Level etwas enger gestalten, aber maximal so eng, dass der Spieler durchkommt (max 10 cols/rows)
+                        if self.level % 2 == 0 and self.grid_cols < 10:
                             self.grid_cols += 1
                             self.grid_rows += 1
                         self._generate_maze()
@@ -201,6 +186,9 @@ class QuantumMazeGame(BaseGame):
                 elif item["type"] == "fragment":
                     self.add_score(50)
                     self.play_sound("score")
+                elif item["type"] == "timed":
+                    self.add_score(200)  # Extraschatz für zeitkritische Items
+                    self.play_sound("confirm")
                 elif item["type"] == "trap":
                     self.add_score(-50)
                     self.play_sound("hit")
@@ -223,23 +211,18 @@ class QuantumMazeGame(BaseGame):
             cx, cy = int(item["cx"]), int(item["cy"])
             if item["type"] == "core":
                 pygame.draw.circle(surface, (0, 255, 200), (cx, cy), 5)
-                pygame.draw.circle(surface, (255, 255, 255), (cx, cy), 2)
             elif item["type"] == "fragment":
                 pygame.draw.circle(surface, (255, 220, 0), (cx, cy), 4)
+            elif item["type"] == "timed":
+                # Blinkender Quantum Shard
+                if int(pygame.time.get_ticks() / 150) % 2 == 0:
+                    pygame.draw.circle(surface, (255, 0, 255), (cx, cy), 6)
             elif item["type"] == "trap":
                 pygame.draw.circle(surface, (255, 40, 80), (cx, cy), 5)
-                pygame.draw.circle(surface, (255, 255, 255), (cx, cy), 2)
 
         px, py = int(self.px), int(self.py)
-        pygame.draw.rect(
-            surface, (255, 80, 180), (px, py, self.pw, self.ph), border_radius=2
-        )
+        pygame.draw.rect(surface, (255, 80, 180), (px, py, self.pw, self.ph), border_radius=2)
 
-        progress_text = self.font.render(
-            f"Maze Reset Progress: {self.collected_count % 10}/10 Cores",
-            True,
-            (0, 255, 200),
-        )
+        progress_text = self.font.render(f"Level {self.level} | Cores: {self.collected_count % 10}/10", True, (0, 255, 200))
         surface.blit(progress_text, (160 - progress_text.get_width() // 2, 12))
-
         self.render_ui(surface)
