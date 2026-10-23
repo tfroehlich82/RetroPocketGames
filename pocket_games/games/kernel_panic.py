@@ -1,5 +1,5 @@
 # ==========================================
-# KERNEL PANIC v1.1
+# KERNEL PANIC v1.2
 # A fast-paced terminal defense game.
 # Click on falling memory leaks and critical system errors
 # before they completely exhaust your RAM.
@@ -74,7 +74,7 @@ class KernelPanicGame(BaseGame):
         self.spawn_timer += dt
         if self.spawn_timer >= spawn_interval:
             self.spawn_timer = 0.0
-            is_fatal = self.score > 200 and random.random() < 0.25
+            is_fatal = self.score > 250 and random.random() < 0.15
             base_speed = random.uniform(70.0, 90.0)
             speed_multiplier = 1.2 + (self.score / 600.0)
             code_str = "FATAL" if is_fatal else random.choice(["0x0", "ERR", "NULL", "SEG", "BUF"])
@@ -87,8 +87,8 @@ class KernelPanicGame(BaseGame):
                     "size": 24 if is_fatal else random.randint(20, 25),
                     "code": code_str,
                     "fatal": is_fatal,
-                    "clicks": random.randint(2, 3) if is_fatal else 1,
-                    "max_clicks": 3 if is_fatal else 1,
+                    "clicks": 2 if is_fatal else 1,
+                    "max_clicks": 2 if is_fatal else 1,
                 }
             )
 
