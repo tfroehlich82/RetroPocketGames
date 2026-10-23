@@ -3,7 +3,7 @@
         "de": {
             "desc": "Klassisches Tetris-Puzzle mit fallenden Steinen.",
             "goal": "Staple Blöcke sauber und räume Reihen ab.",
-            "gameplay": "Alle 10 geräumten Reihen steigt das Level und die Geschwindigkeit.",
+            "gameplay": "Alle 10 geräumten Reihen steigt das\nLevel und die Geschwindigkeit.",
             "controls": "D-Pad: Bewegen / Drehen / Soft Drop"
         },
         "en": {
@@ -31,7 +31,7 @@
         "de": {
             "desc": "Rasanter Cyberpunk-Endless-Runner.",
             "goal": "Weiche Hindernissen aus.",
-            "gameplay": "Springe über Spikes und Blockaden. Steigende Geschwindigkeit.",
+            "gameplay": "Springe über Spikes und Blockaden.\nSteigende Geschwindigkeit.",
             "controls": "Leertaste / D-Pad Oben / Touch (Springen)"
         },
         "en": {
@@ -45,13 +45,13 @@
         "de": {
             "desc": "Vertikale Jump-and-Run-Plattform-Action.",
             "goal": "Springe über Speicherregister so hoch wie möglich.",
-            "gameplay": "Nutze statische, horizontal und vertikal schwingende Plattformen.",
+            "gameplay": "Nutze statische, horizontal und vertikal\nschwingende Plattformen.",
             "controls": "D-Pad: Bewegen / Oben: Springen"
         },
         "en": {
             "desc": "Vertical jump-and-run platform action.",
             "goal": "Jump across memory registers as high as possible.",
-            "gameplay": "Use static, horizontally and vertically oscillating platforms.",
+            "gameplay": "Use static, horizontally and vertically\noscillating platforms.",
             "controls": "D-Pad: Move / Up: Jump"
         }
     },
@@ -73,13 +73,13 @@
         "de": {
             "desc": "Mining-Abenteuer in eisigen Tiefen.",
             "goal": "Sammle O2-Blasen und Edelsteine.",
-            "gameplay": "Meide Eis und toxische Sporen. O2 sinkt mit jeder Tiefe schneller.",
+            "gameplay": "Meide Eis und toxische Sporen.\nO2 sinkt mit jeder Tiefe schneller.",
             "controls": "D-Pad / WASD (Bohr-Rig steuern)"
         },
         "en": {
             "desc": "Mining adventure in deep ice.",
             "goal": "Collect O2 bubbles and gems.",
-            "gameplay": "Avoid ice and toxic spores. O2 depletes faster with depth.",
+            "gameplay": "Avoid ice and toxic spores.\nO2 depletes faster with depth.",
             "controls": "D-Pad / WASD (Control mining rig)"
         }
     },
@@ -129,13 +129,13 @@
         "de": {
             "desc": "Vertikaler Cyberpunk-Space-Shooter.",
             "goal": "Vernichte anstürmende Drohnen, Speeders und Tanks.",
-            "gameplay": "Nutze Laser-Upgrades und Energieschilde gegen den Breach.",
+            "gameplay": "Nutze Laser-Upgrades und Energieschilde\ngegen den Breach.",
             "controls": "D-Pad: Bewegen | Space: Feuer"
         },
         "en": {
             "desc": "Vertical cyberpunk space shooter.",
             "goal": "Destroy oncoming drones, speeders, and tanks.",
-            "gameplay": "Use laser upgrades and energy shields against the breach.",
+            "gameplay": "Use laser upgrades and energy shields\nagainst the breach.",
             "controls": "D-Pad: Move | Space: Fire"
         }
     },
@@ -143,21 +143,21 @@
         "de": {
             "desc": "Klassisches Brick-Breaker-Spiel.",
             "goal": "Zerstöre alle Datensteine mit dem Energieball.",
-            "gameplay": "Fange den Ball mit dem Paddle ab und räume das Feld.",
+            "gameplay": "Fange den Ball mit dem Paddle ab und\nräume das Feld.",
             "controls": "D-Pad Links / Rechts (Paddle bewegen)"
         },
         "en": {
             "desc": "Classic brick breaker game.",
             "goal": "Destroy all data bricks with the energy ball.",
-            "gameplay": "Catch the ball with the paddle and clear the field.",
+            "gameplay": "Catch the ball with the paddle and\nclear the field.",
             "controls": "D-Pad Left / Right (Move paddle)"
         }
     },
     "Pulse Racer": {
         "de": {
             "desc": "High-Speed-Autobahnrennen im Cyber-Space.",
-            "goal": "Weiche entgegenkommendem Verkehr und Hindernissen aus.",
-            "gameplay": "Manövriere mit Höchstgeschwindigkeit durch den Verkehr.",
+            "goal": "Weiche entgegenkommendem Verkehr und\nHindernissen aus.",
+            "gameplay": "Manövriere mit Höchstgeschwindigkeit\ndurch den Verkehr.",
             "controls": "D-Pad Links / Rechts (Lenken)"
         },
         "en": {
@@ -198,36 +198,36 @@
     "Orbital Defense": {
         "de": {
             "desc": "Planetares Verteidigungsspiel.",
-            "goal": "Schütze den Reaktor-Kern vor eintreffenden Meteoren.",
-            "gameplay": "Rotiere den Energieschild präzise, um Weltraummüll abzuwehren.",
+            "goal": "Schütze den Reaktor-Kern vor\neintreffenden Meteoren.",
+            "gameplay": "Rotiere den Energieschild präzise,\num Weltraummüll abzuwehren.",
             "controls": "D-Pad Links / Rechts (Schild rotieren)"
         },
         "en": {
             "desc": "Planetary defense game.",
-            "goal": "Protect the reactor core from incoming meteors.",
-            "gameplay": "Rotate the energy shield precisely to deflect space debris.",
+            "goal": "Protect the reactor core from\nincoming meteors.",
+            "gameplay": "Rotate the energy shield precisely\nto deflect space debris.",
             "controls": "D-Pad Left / Right (Rotate shield)"
         }
     },
     "Chrono Shift": {
         "de": {
             "desc": "High-Speed-Zeitparadoxon-Spiel.",
-            "goal": "Sammle Fragmente und meide deinen eigenen Echo-Trail.",
-            "gameplay": "Jede Bewegung hinterlässt ein gefährliches Zeit-Echo.",
+            "goal": "Sammle Fragmente und meide deinen\neigenen Echo-Trail.",
+            "gameplay": "Jede Bewegung hinterlässt ein\ngefährliches Zeit-Echo.",
             "controls": "D-Pad / WASD (Navigation)"
         },
         "en": {
             "desc": "High-speed time paradox game.",
-            "goal": "Collect fragments and avoid your own echo trail.",
-            "gameplay": "Every movement leaves a dangerous time echo.",
+            "goal": "Collect fragments and avoid your\nown echo trail.",
+            "gameplay": "Every movement leaves a\ndangerous time echo.",
             "controls": "D-Pad / WASD (Navigation)"
         }
     },
     "Sonic Pulse": {
         "de": {
             "desc": "Rhythmus-Timing-Präzisionsspiel.",
-            "goal": "Triff kollabierende Energie-Ringe im exakten Moment.",
-            "gameplay": "Baue Combos auf und halte die Systemintegrität aufrecht.",
+            "goal": "Triff kollabierende Energie-Ringe\nim exakten Moment.",
+            "gameplay": "Baue Combos auf und halte die\nSystemintegrität aufrecht.",
             "controls": "Leertaste / A-Button / Klick (Puls auslösen)"
         },
         "en": {
@@ -241,7 +241,7 @@
         "de": {
             "desc": "Astrodynamisches Physik-Puzzle.",
             "goal": "Manövriere durch Gravitationsfelder.",
-            "gameplay": "Nutze die Schwerkraft von Planeten, um Kristalle zu sammeln.",
+            "gameplay": "Nutze die Schwerkraft von Planeten,\num Kristalle zu sammeln.",
             "controls": "D-Pad / Touch (Schub geben)"
         },
         "en": {
@@ -254,28 +254,28 @@
     "Glitch Runner": {
         "de": {
             "desc": "Reaktionsschneller Plattform-Runner.",
-            "goal": "Überlebe den Plattform-Wechsel im Glitch-Modus.",
-            "gameplay": "Kurze Sprünge und schnelles Timing im digitalen Raster.",
+            "goal": "Überlebe den Plattform-Wechsel\nim Glitch-Modus.",
+            "gameplay": "Kurze Sprünge und schnelles\nTiming im digitalen Raster.",
             "controls": "D-Pad Oben / Space (Schnellstart-Sprung)"
         },
         "en": {
             "desc": "Responsive platform runner.",
-            "goal": "Survive platform switching in glitch mode.",
-            "gameplay": "Short jumps and quick timing in the digital grid.",
+            "goal": "Survive platform switching in\nglitch mode.",
+            "gameplay": "Short jumps and quick timing\nin the digital grid.",
             "controls": "D-Pad Up / Space (Quick jump)"
         }
     },
     "Aether Defender": {
         "de": {
             "desc": "Farbbasiertes Taktik-Shooter-Spiel.",
-            "goal": "Absorbiere feindliche Drohnen mit passender Schild-Polarität.",
-            "gameplay": "Wechsle im richtigen Moment die Polarität (Cyan/Magenta).",
+            "goal": "Absorbiere feindliche Drohnen mit\npassender Schild-Polarität.",
+            "gameplay": "Wechsle im richtigen Moment die\nPolarität (Cyan/Magenta).",
             "controls": "D-Pad: Bewegen | Space: Polarität wechseln"
         },
         "en": {
             "desc": "Color-based tactical shooter game.",
-            "goal": "Absorb hostile drones with matching shield polarity.",
-            "gameplay": "Switch polarity at the right moment (Cyan/Magenta).",
+            "goal": "Absorb hostile drones with matching\nshield polarity.",
+            "gameplay": "Switch polarity at the right\nmoment (Cyan/Magenta).",
             "controls": "D-Pad: Move | Space: Switch polarity"
         }
     }
