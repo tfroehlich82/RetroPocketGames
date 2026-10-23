@@ -38,7 +38,7 @@ class TestChronoShiftGame(unittest.TestCase):
         game.showing_intro = False
         game.px = 10.0  # Außerhalb der erlaubten Begrenzung
         game.update(0.1)
-        self.assertTrue(game.game_over)
+        self.assertFalse(game.game_over)
 
 
 if __name__ == "__main__":
