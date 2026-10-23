@@ -1,5 +1,5 @@
 # ==========================================
-# GLITCH RUNNER v1.1
+# GLITCH RUNNER v1.2
 # A tactical cyber puzzle game against the clock.
 # Navigate your data cursor across a digital grid to reach
 # the stable core exit node while beating the countdown timer
@@ -24,7 +24,6 @@ class GlitchRunnerGame(BaseGame):
         self.player_pos = [0, 0]
         self.exit_pos = [5, 5]
         self.glitched_tiles: set[tuple[int, int]] = set()
-        self.particles: list[dict] = []
         self.level = 1
         self.sectors_cleared = 0
         self.glitch_timer = 0.0
@@ -99,27 +98,6 @@ class GlitchRunnerGame(BaseGame):
                 self.sectors_cleared += 1
                 self.play_sound("confirm")
 
-                cell_size = 32
-                board_w = self.grid_w * cell_size
-                start_x = (320 - board_w) // 2
-                start_y = 50
-                ex_px = start_x + self.exit_pos[0] * cell_size + cell_size // 2
-                ex_py = start_y + self.exit_pos[1] * cell_size + cell_size // 2
-                for _ in range(12):
-                    ang = random.uniform(0, math.pi * 2)
-                    spd = random.uniform(40, 100)
-                    self.particles.append(
-                        {
-                            "x": ex_px,
-                            "y": ex_py,
-                            "vx": math.cos(ang) * spd,
-                            "vy": math.sin(ang) * spd,
-                            "life": 0.4,
-                            "color": (0, 255, 180),
-                        }
-                    )
-
-                # Pausen/Rest-Timer komplett entfernt – Level steigt direkt und ohne Verzögerung
                 if self.sectors_cleared >= 3 and self.level < 3:
                     self.level += 1
                     self.sectors_cleared = 0
@@ -148,13 +126,6 @@ class GlitchRunnerGame(BaseGame):
             self.play_sound("gameover")
             return
 
-        for p in self.particles[:]:
-            p["x"] += p["vx"] * dt
-            p["y"] += p["vy"] * dt
-            p["life"] -= dt
-            if p["life"] <= 0:
-                self.particles.remove(p)
-
         self.glitch_timer += dt
         if self.glitch_timer > max(1.5, 4.0 - (self.level * 0.8)):
             self.glitch_timer = 0.0
@@ -172,9 +143,6 @@ class GlitchRunnerGame(BaseGame):
         board_w = self.grid_w * cell_size
         start_x = (320 - board_w) // 2
         start_y = 50
-
-        for p in self.particles:
-            pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
         for r in range(self.grid_h):
             for c in range(self.grid_w):
