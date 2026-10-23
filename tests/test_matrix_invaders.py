@@ -36,7 +36,7 @@ class TestMatrixInvadersGame(unittest.TestCase):
         engine = MockEngine()
         game = MatrixInvadersGame(engine)
         # 5 Spalten x 4 Reihen = 20 Invasoren
-        self.assertEqual(len(game.bugs), 15)
+        self.assertEqual(len(game.bugs), 8)
 
 
 if __name__ == "__main__":

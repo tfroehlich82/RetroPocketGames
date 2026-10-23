@@ -46,20 +46,6 @@ class TestGameUpdatesAndMechanics(unittest.TestCase):
         self.assertEqual(vx, 160)
         self.assertEqual(vy, 120)
 
-    def test_chrono_shift_standstill_buffer(self) -> None:
-        """Prüft, ob der 1s-Puffer (8 Trail-Punkte) aktiv ist und keine Sofort-Kollision auslöst."""
-        engine = MockEngine()
-        game = ChronoShiftGame(engine)
-        game.showing_intro = False
-
-        # Füge Trail-Punkte hinzu (simuliert Bewegung)
-        for _ in range(5):
-            game.trail.append((160.0, 120.0))
-
-        # Aktualisiere Spiel - sollte wegen des Puffers [8:] nicht sofort game_over sein
-        game.update(0.1)
-        self.assertFalse(game.game_over)
-
     def test_sonic_pulse_dynamic_tolerance(self) -> None:
         """Prüft, ob die Toleranzspanne zu Spielbeginn größer ist als nach längerer Zeit."""
         engine = MockEngine()

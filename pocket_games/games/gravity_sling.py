@@ -1,5 +1,5 @@
 # ==========================================
-# GRAVITY SLING v1.0
+# GRAVITY SLING v1.1
 # Actively pilot your space probe through gravity-dense star systems.
 # Utilize full 4-way vector thrusters for precision control while
 # leveraging planetary gravitational pull to perform slingshot maneuvers.
@@ -21,9 +21,11 @@ class GravitySlingGame(BaseGame):
         super().__init__(engine, "Gravity Sling")
         self.px, self.py = 50.0, 120.0
         self.vx, self.vy = 0.0, 0.0
+        self.lives = 3
         self.level = 1
         self.crystals_collected = 0
         self.rest_timer = 0.0
+        self.invulnerable_timer = 0.0
         self.planets: list[dict] = []
         self.crystals: list[dict] = []
         self.particles: list[dict] = []
@@ -31,14 +33,61 @@ class GravitySlingGame(BaseGame):
 
     def _setup_level(self) -> None:
         self.planets = []
-        # Ausgewogene Planeten-Konfigurationen mit sichtbarem Gravitationsradius
         planet_configs = [
-            [{"x": 160, "y": 120, "r": 18, "gravity_r": 65, "color": (80, 140, 255), "strength": 7500.0}],
-            [{"x": 110, "y": 90, "r": 16, "gravity_r": 55, "color": (80, 140, 255), "strength": 8000.0},
-             {"x": 210, "y": 150, "r": 16, "gravity_r": 55, "color": (255, 120, 80), "strength": 8000.0}],
-            [{"x": 90, "y": 80, "r": 15, "gravity_r": 50, "color": (80, 140, 255), "strength": 8500.0},
-             {"x": 230, "y": 90, "r": 15, "gravity_r": 50, "color": (255, 120, 80), "strength": 8500.0},
-             {"x": 160, "y": 170, "r": 16, "gravity_r": 55, "color": (160, 80, 255), "strength": 9000.0}]
+            [
+                {
+                    "x": 160,
+                    "y": 120,
+                    "r": 18,
+                    "gravity_r": 65,
+                    "color": (80, 140, 255),
+                    "strength": 7500.0,
+                }
+            ],
+            [
+                {
+                    "x": 110,
+                    "y": 90,
+                    "r": 16,
+                    "gravity_r": 55,
+                    "color": (80, 140, 255),
+                    "strength": 8000.0,
+                },
+                {
+                    "x": 210,
+                    "y": 150,
+                    "r": 16,
+                    "gravity_r": 55,
+                    "color": (255, 120, 80),
+                    "strength": 8000.0,
+                },
+            ],
+            [
+                {
+                    "x": 90,
+                    "y": 80,
+                    "r": 15,
+                    "gravity_r": 50,
+                    "color": (80, 140, 255),
+                    "strength": 8500.0,
+                },
+                {
+                    "x": 230,
+                    "y": 90,
+                    "r": 15,
+                    "gravity_r": 50,
+                    "color": (255, 120, 80),
+                    "strength": 8500.0,
+                },
+                {
+                    "x": 160,
+                    "y": 170,
+                    "r": 16,
+                    "gravity_r": 55,
+                    "color": (160, 80, 255),
+                    "strength": 9000.0,
+                },
+            ],
         ]
         cfg_idx = min(self.level - 1, len(planet_configs) - 1)
         self.planets = planet_configs[cfg_idx]
@@ -51,12 +100,27 @@ class GravitySlingGame(BaseGame):
             cy = random.randint(50, 190)
             valid = True
             for p in self.planets:
-                if check_circle_collision(cx, cy, 0.0, float(p["x"]), float(p["y"]), float(p["r"] + 25)):
+                if check_circle_collision(
+                    cx, cy, 0.0, float(p["x"]), float(p["y"]), float(p["r"] + 25)
+                ):
                     valid = False
                     break
             if valid:
                 self.crystals.append({"x": cx, "y": cy})
                 break
+
+    def handle_damage(self) -> None:
+        if self.invulnerable_timer > 0.0:
+            return
+        self.lives -= 1
+        self.play_sound("hit")
+        if self.lives <= 0:
+            self.game_over = True
+            self.play_sound("gameover")
+        else:
+            self.px, self.py = 50.0, 120.0
+            self.vx, self.vy = 0.0, 0.0
+            self.invulnerable_timer = 1.5
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -67,7 +131,6 @@ class GravitySlingGame(BaseGame):
         thrust = 180.0
         dt = 0.016
 
-        # Aktive 4-Richtungen Steuerungsdüsen
         pushed = False
         if inp.is_left_pressed():
             self.vx -= thrust * dt
@@ -82,14 +145,17 @@ class GravitySlingGame(BaseGame):
             self.vy += thrust * dt
             pushed = True
 
-        # Triebwerks-Partikel erzeugen bei Schub
         if pushed and random.random() < 0.4:
-            self.particles.append({
-                "x": self.px, "y": self.py,
-                "vx": -self.vx * 0.3 + random.uniform(-10, 10),
-                "vy": -self.vy * 0.3 + random.uniform(-10, 10),
-                "life": 0.2, "color": (255, 200, 50)
-            })
+            self.particles.append(
+                {
+                    "x": self.px,
+                    "y": self.py,
+                    "vx": -self.vx * 0.3 + random.uniform(-10, 10),
+                    "vy": -self.vy * 0.3 + random.uniform(-10, 10),
+                    "life": 0.2,
+                    "color": (255, 200, 50),
+                }
+            )
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -100,6 +166,9 @@ class GravitySlingGame(BaseGame):
             self.rest_timer -= dt
             return
 
+        if self.invulnerable_timer > 0.0:
+            self.invulnerable_timer -= dt
+
         for p in self.particles[:]:
             p["x"] += p["vx"] * dt
             p["y"] += p["vy"] * dt
@@ -107,29 +176,29 @@ class GravitySlingGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
-        # Orbital-Physik & Kollisionsprüfung
         for p in self.planets:
-            # Aufprall auf Planetenoberfläche
-            if check_circle_collision(self.px, self.py, 3.0, float(p["x"]), float(p["y"]), float(p["r"] - 2)):
-                self.game_over = True
-                self.play_sound("gameover")
+            if self.invulnerable_timer <= 0.0 and check_circle_collision(
+                self.px, self.py, 3.0, float(p["x"]), float(p["y"]), float(p["r"] - 2)
+            ):
+                self.handle_damage()
                 return
 
-            # Gravitationsanziehung
-            fx, fy = calculate_orbital_pull(self.px, self.py, float(p["x"]), float(p["y"]), strength=p["strength"])
+            fx, fy = calculate_orbital_pull(
+                self.px, self.py, float(p["x"]), float(p["y"]), strength=p["strength"]
+            )
             self.vx += fx * dt
             self.vy += fy * dt
 
-        # Sanfter Weltraum-Widerstand (Dämpfung für präzise Manövrierbarkeit)
         self.vx *= 0.985
         self.vy *= 0.985
 
         self.px += self.vx * dt
         self.py += self.vy * dt
 
-        # Kristall einsammeln
         for c in self.crystals[:]:
-            if check_circle_collision(self.px, self.py, 6.0, float(c["x"]), float(c["y"]), 10.0):
+            if check_circle_collision(
+                self.px, self.py, 6.0, float(c["x"]), float(c["y"]), 10.0
+            ):
                 self.crystals.remove(c)
                 self.add_score(50 * self.level)
                 self.crystals_collected += 1
@@ -146,45 +215,54 @@ class GravitySlingGame(BaseGame):
                 else:
                     self._spawn_crystal()
 
-        # Spielfeldbegrenzung
-        if self.px < 5 or self.px > 315 or self.py < 25 or self.py > 235:
-            self.game_over = True
-            self.play_sound("gameover")
+        if (
+            self.px < 5 or self.px > 315 or self.py < 25 or self.py > 235
+        ) and self.invulnerable_timer <= 0.0:
+            self.handle_damage()
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((5, 8, 18))
 
-        # Sternenhintergrund
         for i in range(15):
             surface.set_at(((i * 31) % 320, (i * 47) % 240), (60, 80, 120))
 
-        # Partikel
         for p in self.particles:
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
-        # Planeten & Gravitationsringe
         for p in self.planets:
-            # Gravitationsfeld
-            pygame.draw.circle(surface, (20, 40, 70), (p["x"], p["y"]), p["gravity_r"], 1)
-            # Planet
+            pygame.draw.circle(
+                surface, (20, 40, 70), (p["x"], p["y"]), p["gravity_r"], 1
+            )
             pygame.draw.circle(surface, p["color"], (p["x"], p["y"]), p["r"])
-            pygame.draw.circle(surface, (255, 255, 255), (p["x"], p["y"]), p["r"] - 3, 1)
+            pygame.draw.circle(
+                surface, (255, 255, 255), (p["x"], p["y"]), p["r"] - 3, 1
+            )
 
-        # Kristalle
         for c in self.crystals:
             pygame.draw.circle(surface, (0, 255, 200), (int(c["x"]), int(c["y"])), 6)
             pygame.draw.circle(surface, (255, 255, 255), (int(c["x"]), int(c["y"])), 2)
 
-        # Raumsonde (Player)
-        px, py = int(self.px), int(self.py)
-        pygame.draw.circle(surface, (255, 215, 0), (px, py), 6)
-        pygame.draw.circle(surface, (255, 255, 255), (px, py), 2)
+        if self.invulnerable_timer <= 0 or int(pygame.time.get_ticks() / 100) % 2 == 0:
+            px, py = int(self.px), int(self.py)
+            pygame.draw.circle(surface, (255, 215, 0), (px, py), 6)
+            pygame.draw.circle(surface, (255, 255, 255), (px, py), 2)
 
-        lvl_txt = self.font.render(f"SECTOR {self.level} | CRYSTALS: {self.crystals_collected}/4", True, (0, 255, 200))
-        surface.blit(lvl_txt, (160 - lvl_txt.get_width() // 2, 10))
+        # Info-Leiste unten (Hintergrund-Panel + Text für Sektor, Kristalle und Leben)
+        pygame.draw.rect(
+            surface, (10, 12, 22, 220), (10, 215, 300, 20), border_radius=4
+        )
+
+        info_txt = self.font.render(
+            f"LIVES: {self.lives} | SEC: {self.level} | GEMS: {self.crystals_collected}/4",
+            True,
+            (0, 255, 200),
+        )
+        surface.blit(info_txt, (160 - info_txt.get_width() // 2, 218))
 
         if self.rest_timer > 0:
-            rest_txt = self.title_font.render(f"ENTERING SECTOR {self.level}...", True, (255, 215, 0))
+            rest_txt = self.title_font.render(
+                f"ENTERING SECTOR {self.level}...", True, (255, 215, 0)
+            )
             surface.blit(rest_txt, (160 - rest_txt.get_width() // 2, 110))
 
         self.render_ui(surface)
