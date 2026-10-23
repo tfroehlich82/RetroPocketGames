@@ -7,7 +7,6 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 import pygame
 
 from pocket_games.core.input import InputManager
-from pocket_games.games.chrono_shift import ChronoShiftGame
 from pocket_games.games.sonic_pulse import SonicPulseGame
 
 
