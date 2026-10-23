@@ -1,10 +1,9 @@
 # ==========================================
-# MATRIX INVADERS v1.0
+# MATRIX INVADERS v1.1
 # A futuristic arcade shooter inspired by classic Space Invaders.
 # Defend against marching rows of cyber invaders advancing
-# row by row towards the surface. Collect weapon upgrades
-# and energy shields while surviving multiple challenging
-# waves featuring tactical rest breaks.
+# row by row towards the surface. Collect weapon upgrades,
+# energy shields and extra lives while surviving challenging waves.
 # ==========================================
 from __future__ import annotations
 
@@ -20,7 +19,8 @@ class MatrixInvadersGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, game_name="Matrix Invaders")
         self.px = 160.0
-        self.player_hp = 5  # Spieler benötigt zu Beginn 5 Treffer
+        self.player_hp = 5
+        self.max_player_hp = 5
         self.bullets: list[dict] = []
         self.enemy_bullets: list[dict] = []
         self.bugs: list[dict] = []
@@ -31,8 +31,9 @@ class MatrixInvadersGame(BaseGame):
         self.shield_timer = 0.0
         self.wave = 1
         self.formation_dir = 1.0
-        self.formation_speed = 30.0
+        self.formation_speed = 22.0
         self.rest_timer = 0.0
+        self.life_dropped_this_wave = False
         self.matrix_chars = [
             {
                 "x": random.randint(10, 310),
@@ -46,16 +47,21 @@ class MatrixInvadersGame(BaseGame):
     def _start_wave(self) -> None:
         self.bugs.clear()
         self.enemy_bullets.clear()
+        self.life_dropped_this_wave = False
 
-        cols = min(8, 4 + self.wave)
-        rows = min(5, 3 + (self.wave // 2))
-        start_x = max(20, 160 - (cols * 22))
+        # Begrenzte Anzahl an Spalten/Zeilen, um Überforderung zu verhindern
+        cols = min(7, 4 + (self.wave // 3))
+        rows = min(4, 2 + (self.wave // 3))
+        start_x = max(25, 160 - (cols * 20))
         start_y = 45
-        spacing_x = 42
-        spacing_y = 26
+        spacing_x = 40
+        spacing_y = 25
 
         for r in range(rows):
-            if r == 0 and self.wave >= 2:
+            # Stärkere Gegnertypen in höheren Wellen statt zu viele Gegner
+            if r == 0 and self.wave >= 6:
+                b_type = "cyber_lord"
+            elif r == 0 and self.wave >= 3:
                 b_type = "elite"
             elif r == 0:
                 b_type = "tank"
@@ -64,9 +70,8 @@ class MatrixInvadersGame(BaseGame):
             else:
                 b_type = "drone"
 
-            # HP skalieren mit Level: Tanks und Elites benötigen 2-3 Treffer
-            base_hp = 3 if b_type == "elite" else (2 if b_type == "tank" else 1)
-            hp = min(3, base_hp + (self.wave // 2))
+            base_hp = 3 if b_type == "cyber_lord" else (2 if b_type in ["elite", "tank"] else 1)
+            hp = min(4, base_hp + (self.wave // 4))
 
             for c in range(cols):
                 self.bugs.append(
@@ -76,13 +81,13 @@ class MatrixInvadersGame(BaseGame):
                         "type": b_type,
                         "hp": hp,
                         "max_hp": hp,
-                        # Nur Tanks, Speeders und Elites können schiessen (Drones nicht)
-                        "can_shoot": b_type in ["tank", "elite", "speeder"],
+                        "can_shoot": b_type in ["tank", "elite", "speeder", "cyber_lord"],
                         "shoot_cooldown": random.uniform(2.0, 5.0),
+                        "is_diving": False,
                     }
                 )
 
-        self.formation_speed = 25.0 + (self.wave * 4.0)
+        self.formation_speed = 20.0 + (self.wave * 2.0)
 
         self.bunkers.clear()
         if self.wave >= 2:
@@ -199,6 +204,10 @@ class MatrixInvadersGame(BaseGame):
                 elif col["type"] == "shield":
                     self.shield_timer = 8.0
                     self.add_score(150)
+                elif col["type"] == "life":
+                    # Leben dürfen nicht höher als der maximale player_hp-Wert (3) sein
+                    self.player_hp = min(self.max_player_hp, self.player_hp + 1)
+                    self.add_score(200)
                 self.collectibles.remove(col)
                 self.engine.audio.play("confirm")
             elif col["y"] > 240:
@@ -206,16 +215,23 @@ class MatrixInvadersGame(BaseGame):
 
         edge_reached = False
         for bug in self.bugs:
-            bug["x"] += self.formation_speed * self.formation_dir * dt
-            if bug["x"] > 295 or bug["x"] < 25:
-                edge_reached = True
+            # Ab Level 8: Kamikaze-Invader fallen direkt auf den Spieler herab
+            if self.wave >= 8 and not bug["is_diving"] and random.random() < 0.001 * self.wave:
+                bug["is_diving"] = True
 
-            # Nur schussfähige Einheiten eröffnen das Feuer
-            if bug.get("can_shoot"):
+            if bug["is_diving"]:
+                bug["y"] += 140.0 * dt
+            else:
+                bug["x"] += self.formation_speed * self.formation_dir * dt
+                if bug["x"] > 295 or bug["x"] < 25:
+                    edge_reached = True
+
+            if bug.get("can_shoot") and not bug["is_diving"]:
                 bug["shoot_cooldown"] -= dt
                 if bug["shoot_cooldown"] <= 0:
-                    bug["shoot_cooldown"] = random.uniform(2.5, 6.0) - min(
-                        1.5, self.wave * 0.2
+                    # Verstärkte Feuerrate der Invader
+                    bug["shoot_cooldown"] = random.uniform(1.8, 4.5) - min(
+                        1.2, self.wave * 0.1
                     )
                     self.enemy_bullets.append(
                         {
@@ -228,7 +244,8 @@ class MatrixInvadersGame(BaseGame):
         if edge_reached:
             self.formation_dir *= -1.0
             for bug in self.bugs:
-                bug["y"] += 10.0
+                if not bug["is_diving"]:
+                    bug["y"] += 8.0
 
         if len(self.bugs) == 0:
             self.wave += 1
@@ -239,7 +256,7 @@ class MatrixInvadersGame(BaseGame):
             return
 
         for bug in self.bugs[:]:
-            if bug["y"] >= 200:
+            if bug["y"] >= 200 or (bug["is_diving"] and bug["y"] >= 230):
                 self.game_over = True
                 self.play_sound("gameover")
                 return
@@ -262,15 +279,22 @@ class MatrixInvadersGame(BaseGame):
                     if bug["hp"] <= 0:
                         self.bugs.remove(bug)
                         pts = (
-                            60
-                            if bug["type"] == "elite"
-                            else (40 if bug["type"] == "tank" else 25)
+                            100
+                            if bug["type"] == "cyber_lord"
+                            else (60 if bug["type"] == "elite" else (40 if bug["type"] == "tank" else 25))
                         )
                         self.add_score(pts)
                         self.engine.audio.play("confirm")
 
-                        if random.random() < 0.3:
-                            ptype = random.choice(["weapon", "shield"])
+                        # Powerup-Drop Logik: "life" darf nur 1x pro Wave ausgeschüttet werden
+                        possible_types = ["weapon", "shield"]
+                        if not self.life_dropped_this_wave:
+                            possible_types.append("life")
+
+                        if random.random() < 0.35:
+                            ptype = random.choice(possible_types)
+                            if ptype == "life":
+                                self.life_dropped_this_wave = True
                             self.collectibles.append(
                                 {"x": bug["x"], "y": bug["y"], "type": ptype}
                             )
@@ -312,7 +336,12 @@ class MatrixInvadersGame(BaseGame):
 
         for col in self.collectibles:
             cx, cy = int(col["x"]), int(col["y"])
-            col_color = (0, 255, 255) if col["type"] == "weapon" else (50, 255, 100)
+            if col["type"] == "weapon":
+                col_color = (0, 255, 255)
+            elif col["type"] == "shield":
+                col_color = (50, 255, 100)
+            else:
+                col_color = (255, 50, 180)  # Pink/Magenta für Leben +1
             pygame.draw.circle(surface, col_color, (cx, cy), 8)
             pygame.draw.circle(surface, (255, 255, 255), (cx, cy), 3)
 
@@ -370,6 +399,12 @@ class MatrixInvadersGame(BaseGame):
                     [(bx, by - 10), (bx - 12, by + 4), (bx + 12, by + 4)],
                 )
                 pygame.draw.rect(surface, (255, 255, 255), (bx - 3, by - 2, 6, 4))
+            elif bug["type"] == "cyber_lord":
+                pygame.draw.rect(
+                    surface, (255, 20, 220), (bx - 14, by - 12, 28, 24), border_radius=5
+                )
+                pygame.draw.rect(surface, (255, 255, 255), (bx - 8, by - 6, 6, 6))
+                pygame.draw.rect(surface, (255, 255, 255), (bx + 2, by - 6, 6, 6))
             else:
                 pygame.draw.rect(
                     surface, (180, 50, 240), (bx - 12, by - 10, 24, 20), border_radius=4
@@ -377,9 +412,8 @@ class MatrixInvadersGame(BaseGame):
                 pygame.draw.rect(surface, (255, 255, 255), (bx - 6, by - 5, 4, 4))
                 pygame.draw.rect(surface, (255, 255, 255), (bx + 2, by - 5, 4, 4))
 
-        # UI: Anzeige für Welle, Waffen-Level und Spieler-HP (Leben)
         hud_txt = self.font.render(
-            f"WAVE {self.wave} | HP: {self.player_hp}/5 | WPN: {self.weapon_level}",
+            f"WAVE {self.wave} | HP: {self.player_hp} | WPN: {self.weapon_level}",
             True,
             (0, 255, 200),
         )
