@@ -1,5 +1,5 @@
 # ==========================================
-# PULSE RACER v1.2
+# PULSE RACER v1.3
 # A high-speed highway racing game featuring dynamic traffic.
 # Dodge oncoming vehicles and road blockers, maintain your lane,
 # and chase the ultimate highscore.
@@ -17,17 +17,31 @@ class PulseRacerGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, game_name="Pulse Racer")
         self.rx = 160.0
+        self.lives = 3
         self.traffic: list[dict] = []
         self.pylons: list[dict] = []
+        self.roadside_obstacles: list[dict] = []
         self.spawn_timer = 0.0
         self.pylon_spawn_timer = 0.0
-        self.barrier_spawn_timer = 0.0
+        self.roadside_spawn_timer = 0.0
         self.base_speed = 180.0
         self.distance_float = 0.0
         self.last_dist = 0
         self.road_scroll = 0.0
         self.lanes = [100.0, 160.0, 220.0]
         self.dividers = [130.0, 190.0]
+
+    def _trigger_crash(self) -> None:
+        self.lives -= 1
+        self.play_sound("crash")
+        if self.lives <= 0:
+            self.game_over = True
+        else:
+            self.rx = 160.0
+            # Nahegehende Gefahren direkt entfernen, um Kettenkollisionen beim Respawn zu verhindern
+            self.traffic = [t for t in self.traffic if abs(t["y"] - 185.0) > 70]
+            self.pylons = [p for p in self.pylons if abs(p["y"] - 185.0) > 70]
+            self.roadside_obstacles = [ro for ro in self.roadside_obstacles if abs(ro["y"] - 185.0) > 70]
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -37,9 +51,9 @@ class PulseRacerGame(BaseGame):
         inp = self.engine.input
         dt = 0.016
         if inp.is_left_pressed():
-            self.rx = max(80.0, self.rx - 190.0 * dt)
+            self.rx = max(85.0, self.rx - 190.0 * dt)
         if inp.is_right_pressed():
-            self.rx = min(240.0, self.rx + 190.0 * dt)
+            self.rx = min(235.0, self.rx + 190.0 * dt)
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -57,6 +71,7 @@ class PulseRacerGame(BaseGame):
 
         self.road_scroll = (self.road_scroll + current_base_speed * dt) % 40
 
+        # Mittlere Pylonen auf den Trennlinien
         self.pylon_spawn_timer += dt
         if self.pylon_spawn_timer >= 3.0:
             self.pylon_spawn_timer = 0.0
@@ -66,11 +81,34 @@ class PulseRacerGame(BaseGame):
         for p in self.pylons[:]:
             p["y"] += current_base_speed * dt
             if abs(p["x"] - self.rx) < 12 and abs(p["y"] - 185.0) < 16:
-                self.game_over = True
-                self.play_sound("crash")
-            if p["y"] > 260:
+                self._trigger_crash()
+                if p in self.pylons:
+                    self.pylons.remove(p)
+                continue
+            if p["y"] > 260 and p in self.pylons:
                 self.pylons.remove(p)
 
+        # Fahrbahnrand-Blockaden (Fussgängerinseln / Pylonen an den Rändern)
+        self.roadside_spawn_timer += dt
+        if self.roadside_spawn_timer >= 2.2:
+            self.roadside_spawn_timer = 0.0
+            side = random.choice(["left", "right", "both"])
+            if side in ["left", "both"]:
+                self.roadside_obstacles.append({"x": 75.0, "y": -30.0})
+            if side in ["right", "both"]:
+                self.roadside_obstacles.append({"x": 245.0, "y": -30.0})
+
+        for ro in self.roadside_obstacles[:]:
+            ro["y"] += current_base_speed * dt
+            if abs(ro["x"] - self.rx) < 14 and abs(ro["y"] - 185.0) < 18:
+                self._trigger_crash()
+                if ro in self.roadside_obstacles:
+                    self.roadside_obstacles.remove(ro)
+                continue
+            if ro["y"] > 260 and ro in self.roadside_obstacles:
+                self.roadside_obstacles.remove(ro)
+
+        # Verkehrs-Spawn
         self.spawn_timer += dt
         spawn_interval = max(0.45, 2.2 - (self.elapsed_time * 0.03))
 
@@ -161,10 +199,12 @@ class PulseRacerGame(BaseGame):
 
             hit_box_size_y = 20 if veh["type"] == "barrier" else 28
             if abs(veh["x"] - self.rx) < 14 and abs(veh["y"] - 185.0) < (hit_box_size_y / 2 + 10):
-                self.game_over = True
-                self.play_sound("crash")
+                self._trigger_crash()
+                if veh in self.traffic:
+                    self.traffic.remove(veh)
+                continue
 
-            if veh["y"] > 260 or veh["y"] < -60:
+            if (veh["y"] > 260 or veh["y"] < -60) and veh in self.traffic:
                 self.traffic.remove(veh)
 
     def render(self, surface: pygame.Surface) -> None:
@@ -179,19 +219,27 @@ class PulseRacerGame(BaseGame):
             pygame.draw.line(surface, (255, 255, 255), (130, y_pos), (130, y_pos + 20), 2)
             pygame.draw.line(surface, (255, 255, 255), (190, y_pos), (190, y_pos + 20), 2)
 
+        # Mittlere Pylonen
         for p in self.pylons:
             px, py = int(p["x"]), int(p["y"])
             pygame.draw.polygon(surface, (255, 128, 0), [(px, py - 6), (px - 5, py + 6), (px + 5, py + 6)])
             pygame.draw.rect(surface, (255, 255, 255), (px - 3, py, 6, 2))
 
-        # Spieler-Fahrzeug im detailreichen Original-Design
+        # Fahrbahnrand-Blockaden (Fussgängerinseln / Pylonen)
+        for ro in self.roadside_obstacles:
+            rx, ry = int(ro["x"]), int(ro["y"])
+            pygame.draw.rect(surface, (120, 120, 130), (rx - 6, ry - 10, 12, 20), border_radius=3)
+            pygame.draw.polygon(surface, (255, 140, 0), [(rx, ry - 8), (rx - 4, ry + 2), (rx + 4, ry + 2)])
+            pygame.draw.rect(surface, (255, 255, 255), (rx - 2, ry + 4, 4, 2))
+
+        # Spieler-Fahrzeug
         px, py = int(self.rx), 185
         pygame.draw.rect(surface, (0, 255, 180), (px - 10, py - 14, 20, 28), border_radius=5)
         pygame.draw.rect(surface, (255, 255, 255), (px - 6, py - 6, 12, 10), border_radius=2)
         pygame.draw.circle(surface, (255, 0, 0), (px - 7, py + 12), 2)
         pygame.draw.circle(surface, (255, 0, 0), (px + 7, py + 12), 2)
 
-        # Andere Fahrzeuge im detailreichen Original-Design mit Front-/Heck-Blinkern
+        # Andere Fahrzeuge
         for veh in self.traffic:
             vx, vy = int(veh["x"]), int(veh["y"])
             if veh["type"] == "barrier":
@@ -205,5 +253,9 @@ class PulseRacerGame(BaseGame):
                     side_x = vx - 12 if veh["target_x"] < veh["x"] else vx + 12
                     pygame.draw.circle(surface, (255, 165, 0), (side_x, vy - 12), 2)
                     pygame.draw.circle(surface, (255, 165, 0), (side_x, vy + 12), 2)
+
+        # Leben-Anzeige oben rechts
+        lives_txt = self.font.render(f"LIVES: {self.lives}", True, (255, 215, 0))
+        surface.blit(lives_txt, (240, 5))
 
         self.render_ui(surface)
