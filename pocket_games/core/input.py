@@ -78,8 +78,7 @@ class InputManager:
             self.is_key_just_pressed(pygame.K_ESCAPE)
             or self.is_key_just_pressed(pygame.K_BACKSPACE)
             or self.is_key_just_pressed(pygame.K_x)
-            or self.is_joy_button_just_pressed(1)
-            or self.is_joy_button_just_pressed(3)
+            or self.is_key_just_pressed(pygame.K_b)
         )
 
     def is_global_exit_pressed(self) -> bool:
@@ -87,15 +86,7 @@ class InputManager:
         if self.is_key_just_pressed(pygame.K_ESCAPE):
             return True
 
-        start_held = (
-            self.is_key_down(pygame.K_RETURN)
-            or self.is_key_down(pygame.K_KP_ENTER)
-            or self.is_key_down(pygame.K_TAB)
-            or self.is_joy_button_down(7)
-            or self.is_joy_button_down(8)
-            or self.is_joy_button_down(9)
-        )
-
+        start_held = self.is_key_down(pygame.K_BREAK)
         if start_held:
             current_time = pygame.time.get_ticks()
             if self._start_press_start_time is None:
@@ -125,11 +116,9 @@ class InputManager:
         # Button A / Enter / Space
         return (
             self.is_key_down(pygame.K_SPACE)
-            or self.is_key_down(pygame.K_RETURN)
+            or self.is_key_just_pressed(pygame.K_RETURN)
             or self.is_key_down(pygame.K_KP_ENTER)
-            or self.is_key_down(pygame.K_z)
-            or self.is_key_down(pygame.K_LALT)
-            or self.is_joy_button_down(0)
+            or self.is_key_down(pygame.K_a)
             or self.mouse_clicked
         )
 
@@ -138,10 +127,6 @@ class InputManager:
             self.is_key_just_pressed(pygame.K_SPACE)
             or self.is_key_just_pressed(pygame.K_RETURN)
             or self.is_key_just_pressed(pygame.K_KP_ENTER)
-            or self.is_key_just_pressed(pygame.K_z)
-            or self.is_key_just_pressed(pygame.K_LALT)
-            or self.is_key_just_pressed(pygame.K_UP)
-            or self.is_key_just_pressed(pygame.K_w)
-            or self.is_joy_button_just_pressed(0)
+            or self.is_key_just_pressed(pygame.K_a)
             or self.mouse_clicked
         )
