@@ -2,17 +2,11 @@ from __future__ import annotations
 
 import pygame
 
-# Action               Keyboard                    Touchscreen
-# ---------------------------------------------------------------------------
-# Menu Navigation      D-Pad Up/Down               Tap or swipe list items
-# Confirm/Action       Button A/Enter/Space        Single tap
-# Back                 Button B/Esc/Backspace      tap button on screen
-# Global Exit          Start (Hold >3s)/Esc        tap button on screen
-
 
 class InputManager:
     def __init__(self) -> None:
         self.events: list[pygame.event.Event] = []
+        self.keys_pressed: set[int] = set()
         self.keys_just_pressed: set[int] = set()
         self.joystick_buttons_pressed: set[int] = set()
         self.joystick_buttons_just_pressed: set[int] = set()
@@ -20,7 +14,6 @@ class InputManager:
         self.mouse_clicked: bool = False
         self._start_press_start_time: int | None = None
 
-        # Joysticks / Gamepads für Handhelds wie PocketTerm35 initialisieren
         try:
             if not pygame.joystick.get_init():
                 pygame.joystick.init()
@@ -52,7 +45,10 @@ class InputManager:
                 else:
                     self.mouse_pos = (0, 0)
             elif event.type == pygame.KEYDOWN:
+                self.keys_pressed.add(event.key)
                 self.keys_just_pressed.add(event.key)
+            elif event.type == pygame.KEYUP:
+                self.keys_pressed.discard(event.key)
             elif event.type == pygame.JOYBUTTONDOWN:
                 self.joystick_buttons_pressed.add(event.button)
                 self.joystick_buttons_just_pressed.add(event.button)
@@ -63,8 +59,15 @@ class InputManager:
         return key in self.keys_just_pressed
 
     def is_key_down(self, key: int) -> bool:
-        pressed = pygame.key.get_pressed()
-        return bool(pressed[key])
+        if key in self.keys_pressed:
+            return True
+        try:
+            pressed = pygame.key.get_pressed()
+            if pressed and pressed[key]:
+                return True
+        except Exception:  # noqa: S110 BLE001
+            pass
+        return False
 
     def is_joy_button_down(self, button: int) -> bool:
         return button in self.joystick_buttons_pressed
@@ -117,6 +120,7 @@ class InputManager:
         return (
             self.is_key_down(pygame.K_SPACE)
             or self.is_key_just_pressed(pygame.K_RETURN)
+            or self.is_key_down(pygame.K_RETURN)
             or self.is_key_down(pygame.K_KP_ENTER)
             or self.is_key_down(pygame.K_a)
             or self.mouse_clicked

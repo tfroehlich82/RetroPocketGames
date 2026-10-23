@@ -1,5 +1,5 @@
 # ==========================================
-# ORBITAL DEFENSE v1.0
+# ORBITAL DEFENSE v1.1
 # Protect the central reactor core from incoming meteors.
 # The game features an accessible start that progressively
 # scales in difficulty over time. Advancing through levels
@@ -21,6 +21,8 @@ class OrbitalDefenseGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Orbital Defense")
         self.angle = 0.0
+        self.reactor_hp = 3  # Reaktor startet mit 3 Lebenspunkten
+        self.max_reactor_hp = 3
         self.meteors = []
         self.particles = []
         self.spawn_timer = 0.0
@@ -109,15 +111,12 @@ class OrbitalDefenseGame(BaseGame):
             )
 
             if hit_shield1 or hit_shield2:
-                # Merken der exakten Meteoriten-Position vor dem Entfernen für die Partikel
                 impact_x, impact_y = m["x"], m["y"]
-
                 self.meteors.remove(m)
                 pts = 30 if m.get("smart") else 20
                 self.add_score(pts)
                 self.play_sound("bounce")
 
-                # Partikel explodieren nun direkt am Treffpunkt des Meteoriten
                 for _ in range(10):
                     ang = random.uniform(0, math.pi * 2)
                     spd = random.uniform(40, 120)
@@ -135,8 +134,29 @@ class OrbitalDefenseGame(BaseGame):
             elif check_circle_collision(
                 m["x"], m["y"], float(m["size"]), 160.0, 120.0, 14.0
             ):
-                self.game_over = True
-                self.play_sound("gameover")
+                # Meteor trifft den Reaktor direkt
+                self.meteors.remove(m)
+                self.reactor_hp -= 1
+                self.play_sound("hit")
+
+                # Explosionspartikel am Kern
+                for _ in range(15):
+                    ang = random.uniform(0, math.pi * 2)
+                    spd = random.uniform(30, 90)
+                    self.particles.append(
+                        {
+                            "x": 160.0,
+                            "y": 120.0,
+                            "vx": math.cos(ang) * spd,
+                            "vy": math.sin(ang) * spd,
+                            "life": 0.4,
+                            "color": (255, 50, 50),
+                        }
+                    )
+
+                if self.reactor_hp <= 0:
+                    self.game_over = True
+                    self.play_sound("gameover")
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((8, 12, 22))
@@ -151,8 +171,17 @@ class OrbitalDefenseGame(BaseGame):
 
         pulse = (math.sin(self.time_counter * 6) + 1) * 0.5
         core_rad = int(12 + pulse * 4)
-        pygame.draw.circle(surface, (0, 120, 255), (160, 120), core_rad + 6, 2)
-        pygame.draw.circle(surface, (0, 220, 255), (160, 120), core_rad)
+
+        # Farbe des Kerns ändert sich leicht, wenn HP niedrig sind
+        core_col = (0, 220, 255) if self.reactor_hp > 1 else (255, 80, 80)
+        pygame.draw.circle(
+            surface,
+            (0, 120, 255) if self.reactor_hp > 1 else (180, 30, 30),
+            (160, 120),
+            core_rad + 6,
+            2,
+        )
+        pygame.draw.circle(surface, core_col, (160, 120), core_rad)
         pygame.draw.circle(surface, (255, 255, 255), (160, 120), 5)
 
         pygame.draw.circle(surface, (30, 60, 100), (160, 120), 42, 1)
@@ -177,7 +206,10 @@ class OrbitalDefenseGame(BaseGame):
             pygame.draw.circle(surface, col, (mx, my), m["size"])
             pygame.draw.circle(surface, (255, 120, 0), (mx, my), m["size"] - 3)
 
-        lvl_txt = self.font.render(f"DEFENSE LVL {self.level}", True, (200, 220, 255))
+        # HUD: Level und Reaktor-HP anzeigen
+        lvl_txt = self.font.render(
+            f"LVL {self.level} | CORE HP: {self.reactor_hp}/3", True, (200, 220, 255)
+        )
         surface.blit(lvl_txt, (160 - lvl_txt.get_width() // 2, 10))
 
         self.render_ui(surface)

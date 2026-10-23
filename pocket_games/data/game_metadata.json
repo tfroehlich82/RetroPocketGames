@@ -240,13 +240,13 @@
     "Gravity Sling": {
         "de": {
             "desc": "Astrodynamisches Physik-Puzzle.",
-            "goal": "Manövriere die Raumsonde durch Gravitationsfelder.",
+            "goal": "Manövriere durch Gravitationsfelder.",
             "gameplay": "Nutze die Schwerkraft von Planeten, um Kristalle zu sammeln.",
             "controls": "D-Pad / Touch (Schub geben)"
         },
         "en": {
             "desc": "Astrodynamic physics puzzle.",
-            "goal": "Maneuver the space probe through gravitational fields.",
+            "goal": "Maneuver through gravitational fields.",
             "gameplay": "Use planet gravity to collect crystals.",
             "controls": "D-Pad / Touch (Apply thrust)"
         }

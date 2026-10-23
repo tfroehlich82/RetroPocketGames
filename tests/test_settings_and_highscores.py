@@ -84,10 +84,10 @@ class TestSettingsAndHighScores(unittest.TestCase):
 
         # Überprüfen, ob exakt alle 20 Spiele in derselben Reihenfolge wie im Menü vorhanden sind
         game_keys = list(GAME_METADATA.keys())
-        self.assertEqual(len(game_keys), 20)
+        self.assertEqual(len(game_keys), 22)
         self.assertEqual(game_keys[0], "Pixel Drop")
         self.assertEqual(game_keys[1], "Circuit Breaker")
-        self.assertEqual(game_keys[-1], "Aether Defender")
+        self.assertEqual(game_keys[-1], "Pixel Platformer")
 
     def test_highscore_screen_rendering(self) -> None:
         engine = MockEngine()

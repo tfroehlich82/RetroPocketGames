@@ -15,30 +15,36 @@ class TestInputManager(unittest.TestCase):
         pygame.init()
         pygame.display.set_mode((320, 240))
 
-    def test_key_just_pressed_vs_held(self) -> None:
+    def test_key_handling(self) -> None:
         inp = InputManager()
-
-        # Simuliere ein KEYDOWN Event
-        event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_UP)
+        # Simuliere Keydown Event
+        event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_LEFT)
         pygame.event.post(event)
-
         inp.update()
 
-        # Im Frame des Tastenanschlags muss is_key_just_pressed True sein
-        self.assertTrue(inp.is_key_just_pressed(pygame.K_UP))
+        self.assertTrue(inp.is_key_down(pygame.K_LEFT))
+        self.assertTrue(inp.is_key_just_pressed(pygame.K_LEFT))
+        self.assertTrue(inp.is_left_pressed())
 
-        # Im nächsten Frame ohne neues Event muss is_key_just_pressed wieder False sein
+        # Simuliere Keyup Event
+        event_up = pygame.event.Event(pygame.KEYUP, key=pygame.K_LEFT)
+        pygame.event.post(event_up)
         inp.update()
-        self.assertFalse(inp.is_key_just_pressed(pygame.K_UP))
 
-    def test_back_pressed_trigger(self) -> None:
+        self.assertFalse(inp.is_key_down(pygame.K_LEFT))
+
+    def test_navigation_shortcuts(self) -> None:
         inp = InputManager()
-
-        # Simuliere ESCAPE Taste
-        pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+        # Back and action test
+        event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)
+        pygame.event.post(event)
+        event_space = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE)
+        pygame.event.post(event_space)
         inp.update()
 
         self.assertTrue(inp.is_back_pressed())
+        self.assertTrue(inp.is_action_pressed())
+        self.assertTrue(inp.is_action_just_pressed())
 
 
 if __name__ == "__main__":
