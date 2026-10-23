@@ -1,5 +1,5 @@
 # ==========================================
-# BIT BLASTER v1.0
+# BIT BLASTER v1.1
 # An action-packed brick breaker featuring 20 progressively challenging levels.
 # With each cleared level, the ball speed increases slightly, the paddle becomes
 # narrower, and higher stages introduce tougher multi-hit bricks.
@@ -37,14 +37,13 @@ class BitBlasterGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Bit Blaster")
         self.px = 160.0
+        self.lives = 3
         self.level = 1
         self.max_levels = 20
 
-        # Paddle in Level 1 ca. doppelt so groß (100px), verringert sich progressiv bis Level 20 auf 45px
         paddle_w = max(45, 100 - (self.level - 1) * 3)
         self.paddle = Paddle(int(self.px) - paddle_w // 2, 215, paddle_w, 8)
 
-        # Ballgeschwindigkeit steigt pro Level an
         initial_speed = 100.0 + (self.level - 1) * 7.0
         self.ball = Ball(160.0, 120.0, 5, initial_speed, -initial_speed)
 
@@ -79,6 +78,12 @@ class BitBlasterGame(BaseGame):
                     }
                 )
 
+    def _reset_ball_position(self) -> None:
+        speed = 100.0 + (self.level - 1) * 7.0
+        self.ball.x, self.ball.y = 160.0, 120.0
+        self.ball.vx = speed if self.ball.vx > 0 else -speed
+        self.ball.vy = -abs(speed)
+
     def handle_input(self) -> None:
         super().handle_input()
         if self.game_over:
@@ -87,7 +92,6 @@ class BitBlasterGame(BaseGame):
         inp = self.engine.input
         half_w = self.paddle.rect.width // 2
 
-        # Exakte Begrenzung an den Wänden (Wände bei x=5 und x=315), damit kein Ball durchrutschen kann
         min_x = 5 + half_w
         max_x = 315 - half_w
 
@@ -153,19 +157,21 @@ class BitBlasterGame(BaseGame):
                 self.level += 1
                 paddle_w = max(45, 100 - (self.level - 1) * 3)
                 self.paddle.rect.width = paddle_w
-                speed = 120.0 + (self.level - 1) * 7.0
-                self.ball.x, self.ball.y = 160.0, 120.0
-                self.ball.vx = speed if self.ball.vx > 0 else -speed
-                self.ball.vy = -abs(speed)
                 self.play_sound("confirm")
+                self._reset_ball_position()
                 self._init_blocks()
             else:
                 self.game_won = True
                 self.play_sound("confirm")
 
         if self.ball.rect.top > 240:
-            self.game_over = True
-            self.play_sound("gameover")
+            self.lives -= 1
+            self.play_sound("hit")
+            if self.lives <= 0:
+                self.game_over = True
+                self.play_sound("gameover")
+            else:
+                self._reset_ball_position()
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((15, 10, 25))
@@ -184,7 +190,7 @@ class BitBlasterGame(BaseGame):
                     surface, (255, 255, 255), blk["rect"], 1, border_radius=2
                 )
 
-        lvl_txt = self.font.render(f"LVL {self.level}/20", True, (0, 255, 200))
-        surface.blit(lvl_txt, (150, 5))
+        lvl_txt = self.font.render(f"LIVES: {self.lives} | LVL {self.level}/20", True, (0, 255, 200))
+        surface.blit(lvl_txt, (120, 5))
 
         self.render_ui(surface)
