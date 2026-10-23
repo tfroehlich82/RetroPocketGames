@@ -55,8 +55,8 @@ class NeonDashGame(BaseGame):
         self._spawn_obstacle()
 
     def _get_current_speed(self) -> float:
-        base = 130.0 + (self.level - 1) * 16.0
-        return base + (self.level_timer * 0.06)
+        base = 180.0 + (self.level - 1) * 18.0
+        return base + (self.level_timer * 0.08)
 
     def _spawn_obstacle(self) -> None:
         group_x = 330.0
