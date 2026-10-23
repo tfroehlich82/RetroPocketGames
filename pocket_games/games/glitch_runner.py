@@ -1,5 +1,5 @@
 # ==========================================
-# GLITCH RUNNER v1.0
+# GLITCH RUNNER v1.1
 # A tactical cyber puzzle game against the clock.
 # Navigate your data cursor across a digital grid to reach
 # the stable core exit node while beating the countdown timer
@@ -27,7 +27,6 @@ class GlitchRunnerGame(BaseGame):
         self.particles: list[dict] = []
         self.level = 1
         self.sectors_cleared = 0
-        self.rest_timer = 0.0
         self.glitch_timer = 0.0
         self.time_limit = 15.0
         self.time_remaining = 15.0
@@ -38,7 +37,6 @@ class GlitchRunnerGame(BaseGame):
         self.grid_h = min(7, 5 + (self.level // 2))
         self.player_pos = [0, 0]
 
-        # Zeitlimit skaliert leicht mit der Rastergröße ab
         self.time_limit = max(10.0, 18.0 - (self.level * 2.0))
         self.time_remaining = self.time_limit
 
@@ -59,7 +57,7 @@ class GlitchRunnerGame(BaseGame):
 
     def handle_input(self) -> None:
         super().handle_input()
-        if self.game_over or self.rest_timer > 0:
+        if self.game_over:
             return
 
         inp = self.engine.input
@@ -101,7 +99,6 @@ class GlitchRunnerGame(BaseGame):
                 self.sectors_cleared += 1
                 self.play_sound("confirm")
 
-                # Partikel-Effekt bei Erfolg
                 cell_size = 32
                 board_w = self.grid_w * cell_size
                 start_x = (320 - board_w) // 2
@@ -122,10 +119,11 @@ class GlitchRunnerGame(BaseGame):
                         }
                     )
 
+                # Pausen/Rest-Timer komplett entfernt – Level steigt direkt und ohne Verzögerung
                 if self.sectors_cleared >= 3 and self.level < 3:
                     self.level += 1
                     self.sectors_cleared = 0
-                    self.rest_timer = 2.0
+
                 self.setup_level()
                 return
 
@@ -144,11 +142,6 @@ class GlitchRunnerGame(BaseGame):
         if self.game_over:
             return
 
-        if self.rest_timer > 0:
-            self.rest_timer -= dt
-            return
-
-        # Zeit gegen die Uhr
         self.time_remaining -= dt
         if self.time_remaining <= 0:
             self.game_over = True
@@ -170,7 +163,6 @@ class GlitchRunnerGame(BaseGame):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((6, 10, 18))
 
-        # Cyber-Grid Hintergrundlinien
         for x in range(0, 320, 20):
             pygame.draw.line(surface, (10, 18, 30), (x, 0), (x, 240), 1)
         for y in range(0, 240, 20):
@@ -178,7 +170,6 @@ class GlitchRunnerGame(BaseGame):
 
         cell_size = 32
         board_w = self.grid_w * cell_size
-        # board_h = self.grid_h * cell_size
         start_x = (320 - board_w) // 2
         start_y = 50
 
@@ -192,7 +183,6 @@ class GlitchRunnerGame(BaseGame):
                 rect = pygame.Rect(rx + 2, ry + 2, cell_size - 4, cell_size - 4)
 
                 if [c, r] == self.exit_pos:
-                    # Pulsierender Exit Node
                     pulse = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 40)
                     pygame.draw.rect(
                         surface, (0, 200 + pulse, 150 + pulse), rect, border_radius=4
@@ -215,14 +205,12 @@ class GlitchRunnerGame(BaseGame):
                     pygame.draw.rect(surface, (15, 28, 45), rect, border_radius=4)
                     pygame.draw.rect(surface, (35, 60, 95), rect, 1, border_radius=4)
 
-        # Spieler-Cursor mit Neon-Schein
         px = start_x + self.player_pos[0] * cell_size + cell_size // 2
         py = start_y + self.player_pos[1] * cell_size + cell_size // 2
         pygame.draw.circle(surface, (255, 215, 0), (px, py), 11)
         pygame.draw.circle(surface, (255, 140, 0), (px, py), 11, 2)
         pygame.draw.circle(surface, (255, 255, 255), (px, py), 4)
 
-        # UI & Timer-Balken oben
         lvl_txt = self.font.render(
             f"SECTOR {self.level} | TARGETS: {self.sectors_cleared}/3",
             True,
@@ -230,7 +218,6 @@ class GlitchRunnerGame(BaseGame):
         )
         surface.blit(lvl_txt, (160 - lvl_txt.get_width() // 2, 6))
 
-        # Zeit-Balken
         pygame.draw.rect(surface, (20, 10, 15), (35, 222, 250, 10), border_radius=4)
         timer_ratio = max(0.0, self.time_remaining / self.time_limit)
         bar_w = int(250 * timer_ratio)
@@ -248,11 +235,5 @@ class GlitchRunnerGame(BaseGame):
             )
         )
         surface.blit(time_txt, (160 - time_txt.get_width() // 2, 201))
-
-        if self.rest_timer > 0:
-            rest_txt = self.title_font.render(
-                f"STABILIZING SECTOR {self.level}...", True, (255, 215, 0)
-            )
-            surface.blit(rest_txt, (160 - rest_txt.get_width() // 2, 110))
 
         self.render_ui(surface)
