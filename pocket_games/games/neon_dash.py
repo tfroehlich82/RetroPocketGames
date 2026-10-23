@@ -1,11 +1,10 @@
 # ==========================================
-# NEON DASH v1.2
+# NEON DASH v1.3
 # A fast-paced cyberpunk endless runner featuring 5 challenging stages and distinct visual scenarios
 # (Cyber Neon, Matrix Grid, Sunset Highway, Deep Abyss, Quantum Core). Each level is tuned for an
 # engaging run. The game starts with easy obstacles. As you advance through levels,
 # speed and obstacle density increase progressively, introducing advanced elements such as tall
-# double blocks and complex pattern combinations (1x1-1x2-1x2-1x1). Featuring optimized gravity and
-# perfectly synchronous floor scrolling, the game remains thrilling all the way to the final level.
+# double blocks and complex pattern combinations remains thrilling all the way to the final level.
 # ==========================================
 from __future__ import annotations
 
@@ -29,19 +28,63 @@ class NeonDashGame(BaseGame):
         self.density = 2.0
 
         self.background_particles = [
-            {"x": random.randint(0, 320), "y": random.randint(0, 160), "speed": random.randint(10, 25)}
+            {
+                "x": random.randint(0, 320),
+                "y": random.randint(0, 160),
+                "speed": random.randint(10, 25),
+            }
             for _ in range(25)
         ]
 
         self.scenarios = {
-            1: {"name": "Cyber Neon", "bg": (8, 5, 18), "floor": (0, 240, 255), "obs": (255, 180, 0)},
-            2: {"name": "Matrix Grid", "bg": (4, 15, 10), "floor": (0, 255, 120), "obs": (180, 50, 255)},
-            3: {"name": "Sunset Highway", "bg": (25, 10, 20), "floor": (255, 100, 150), "obs": (255, 220, 0)},
-            4: {"name": "Deep Abyss", "bg": (15, 8, 8), "floor": (255, 50, 50), "obs": (0, 255, 200)},
-            5: {"name": "Quantum Core", "bg": (5, 15, 30), "floor": (100, 200, 255), "obs": (255, 50, 200)},
-            6: {"name": "Neon Void", "bg": (20, 5, 30), "floor": (255, 0, 255), "obs": (0, 255, 150)},
-            7: {"name": "Cyber Storm", "bg": (10, 20, 35), "floor": (50, 150, 255), "obs": (255, 100, 50)},
-            8: {"name": "Hyper Warp", "bg": (30, 5, 5), "floor": (255, 255, 0), "obs": (255, 0, 100)},
+            1: {
+                "name": "Cyber Neon",
+                "bg": (8, 5, 18),
+                "floor": (0, 240, 255),
+                "obs": (255, 180, 0),
+            },
+            2: {
+                "name": "Matrix Grid",
+                "bg": (4, 15, 10),
+                "floor": (0, 255, 120),
+                "obs": (180, 50, 255),
+            },
+            3: {
+                "name": "Sunset Highway",
+                "bg": (25, 10, 20),
+                "floor": (255, 100, 150),
+                "obs": (255, 220, 0),
+            },
+            4: {
+                "name": "Deep Abyss",
+                "bg": (15, 8, 8),
+                "floor": (255, 50, 50),
+                "obs": (0, 255, 200),
+            },
+            5: {
+                "name": "Quantum Core",
+                "bg": (5, 15, 30),
+                "floor": (100, 200, 255),
+                "obs": (255, 50, 200),
+            },
+            6: {
+                "name": "Neon Void",
+                "bg": (20, 5, 30),
+                "floor": (255, 0, 255),
+                "obs": (0, 255, 150),
+            },
+            7: {
+                "name": "Cyber Storm",
+                "bg": (10, 20, 35),
+                "floor": (50, 150, 255),
+                "obs": (255, 100, 50),
+            },
+            8: {
+                "name": "Hyper Warp",
+                "bg": (30, 5, 5),
+                "floor": (255, 255, 0),
+                "obs": (255, 0, 100),
+            },
         }
         self.level = 1
         self.max_levels = len(self.scenarios)
@@ -50,7 +93,7 @@ class NeonDashGame(BaseGame):
         self.distance = 0.0
         self.obstacles: list[dict] = []
         self.spawn_timer = 0.0
-        self.next_spawn_delay = 1.8  # Großzügiger Startabstand für sicheres Gameplay
+        self.next_spawn_delay = 1.8
 
         self._spawn_obstacle()
 
@@ -61,52 +104,92 @@ class NeonDashGame(BaseGame):
     def _spawn_obstacle(self) -> None:
         group_x = 330.0
 
-        # Komplexe Kombinationen erst ab Level 6
-        if self.level >= 6:
-            combo_type = random.choice(["single", "pair", "combo_pattern", "gap_combo"])
+        # Hilfsfunktion zur Bestimmung der erlaubten Elementtypen (Spike, Block, Tall Block)
+        def get_random_element(allow_tall: bool = True) -> str:
+            possible_types = ["spike", "block"]
+            if allow_tall:
+                possible_types.append("tall_block")
+            return random.choice(possible_types)
+
+        if self.level >= 2:
+            if self.level >= 7:
+                combo_choices = ["single", "pair", "triple", "quad"]
+            elif self.level >= 5:
+                combo_choices = ["single", "pair", "triple"]
+            else:
+                combo_choices = ["single", "pair"]
+
+            combo_type = random.choice(combo_choices)
+
             if combo_type == "pair":
+                # Bei 2er-Blöcken dürfen tall blocks an beliebiger Position stehen
                 for i in range(2):
-                    self.obstacles.append({
-                        "x": group_x + (i * 40),
-                        "y": 200.0 - 22,
-                        "w": 20,
-                        "h": 22,
-                        "type": "block",
-                    })
-                return
-            elif combo_type == "combo_pattern":
-                offsets = [0, 32, 64]
-                types = ["spike", "block", "spike"]
-                for i, t in enumerate(types):
+                    t = get_random_element(allow_tall=True)
                     w = 18 if t == "spike" else 22
-                    h = 22
-                    self.obstacles.append({
-                        "x": group_x + offsets[i],
-                        "y": 200.0 - h,
-                        "w": w,
-                        "h": h,
-                        "type": t,
-                    })
+                    h = 38 if t == "tall_block" else 22
+                    self.obstacles.append(
+                        {
+                            "x": group_x + (i * 38),
+                            "y": 200.0 - h,
+                            "w": w,
+                            "h": h,
+                            "type": t,
+                        }
+                    )
                 return
-            elif combo_type == "gap_combo":
-                self.obstacles.append({"x": group_x, "y": 200.0, "w": 45, "h": 10, "type": "gap"})
+            elif combo_type == "triple" and self.level >= 5:
+                # Bei 3er-Blöcken dürfen tall blocks nur in der Mitte (Index 1) stehen
+                for i in range(3):
+                    allow_tall = i == 1
+                    t = get_random_element(allow_tall=allow_tall)
+                    w = 18 if t == "spike" else 22
+                    h = 38 if t == "tall_block" else 22
+                    self.obstacles.append(
+                        {
+                            "x": group_x + (i * 35),
+                            "y": 200.0 - h,
+                            "w": w,
+                            "h": h,
+                            "type": t,
+                        }
+                    )
+                return
+            elif combo_type == "quad" and self.level >= 7:
+                # Bei 4er-Blöcken dürfen tall blocks nur in der Mitte (Index 1 und 2) stehen
+                for i in range(4):
+                    allow_tall = i in (1, 2)
+                    t = get_random_element(allow_tall=allow_tall)
+                    w = 18 if t == "spike" else 22
+                    h = 38 if t == "tall_block" else 22
+                    self.obstacles.append(
+                        {
+                            "x": group_x + (i * 32),
+                            "y": 200.0 - h,
+                            "w": w,
+                            "h": h,
+                            "type": t,
+                        }
+                    )
                 return
 
-        # Standard-Einzelhindernisse für Level 1–5 (garantiert lösbar mit genug Reaktionszeit)
-        r = random.random()
-        if self.level >= 4 and r < 0.25:
-            self.obstacles.append({"x": group_x, "y": 200.0, "w": 40, "h": 10, "type": "gap"})
+        # Löcher erst ab Level 3
+        if self.level >= 3 and random.random() < 0.25:
+            self.obstacles.append(
+                {"x": group_x, "y": 200.0, "w": 45, "h": 10, "type": "gap"}
+            )
         else:
             obs_type = random.choice(["spike", "block", "tall_block"])
             w = 18 if obs_type == "spike" else 22
             h = 38 if obs_type == "tall_block" else 22
-            self.obstacles.append({
-                "x": group_x,
-                "y": 200.0 - h,
-                "w": w,
-                "h": h,
-                "type": obs_type,
-            })
+            self.obstacles.append(
+                {
+                    "x": group_x,
+                    "y": 200.0 - h,
+                    "w": w,
+                    "h": h,
+                    "type": obs_type,
+                }
+            )
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -151,7 +234,10 @@ class NeonDashGame(BaseGame):
         in_gap = False
         if self.player_y >= 180.0:
             for obs in self.obstacles:
-                if obs["type"] == "gap" and obs["x"] <= player_cx <= obs["x"] + obs["w"]:
+                if (
+                    obs["type"] == "gap"
+                    and obs["x"] <= player_cx <= obs["x"] + obs["w"]
+                ):
                     in_gap = True
                     break
 
@@ -169,7 +255,6 @@ class NeonDashGame(BaseGame):
         self.spawn_timer += dt
         if self.spawn_timer >= self.next_spawn_delay:
             self.spawn_timer = 0.0
-            # Ungleichmäßige Abstände ab Level 1, jedoch so berechnet, dass stets ausreichend Sprungzeit bleibt
             self.next_spawn_delay = random.uniform(1.3, 2.2) - (self.level * 0.05)
             self._spawn_obstacle()
 
@@ -201,13 +286,23 @@ class NeonDashGame(BaseGame):
 
         floor_color = scenario["floor"]
         last_x = 0
-        active_gaps = sorted([o for o in self.obstacles if o["type"] == "gap"], key=lambda o: o["x"])
+        active_gaps = sorted(
+            [o for o in self.obstacles if o["type"] == "gap"], key=lambda o: o["x"]
+        )
 
         for gap in active_gaps:
             g_start = int(gap["x"])
             g_end = int(gap["x"] + gap["w"])
             if g_start > last_x:
                 pygame.draw.line(surface, floor_color, (last_x, 200), (g_start, 200), 2)
+
+            abyss_rect = pygame.Rect(g_start, 201, gap["w"], 39)
+            pygame.draw.rect(surface, (5, 3, 10), abyss_rect)
+            pygame.draw.line(surface, (255, 50, 100), (g_start, 200), (g_start, 210), 2)
+            pygame.draw.line(surface, (255, 50, 100), (g_end, 200), (g_end, 210), 2)
+            for lx in range(g_start + 6, g_end, 10):
+                pygame.draw.line(surface, (30, 15, 30), (lx, 205), (lx, 235), 1)
+
             last_x = max(last_x, g_end)
 
         if last_x < 320:
@@ -217,14 +312,22 @@ class NeonDashGame(BaseGame):
         for i in range(0, 320, 35):
             x_pos = i - offset
             if x_pos >= 0:
-                in_any_gap = any(g["x"] <= x_pos <= g["x"] + g["w"] for g in active_gaps)
+                in_any_gap = any(
+                    g["x"] <= x_pos <= g["x"] + g["w"] for g in active_gaps
+                )
                 if not in_any_gap:
-                    pygame.draw.line(surface, floor_color, (x_pos, 200), (x_pos, 240), 1)
+                    pygame.draw.line(
+                        surface, floor_color, (x_pos, 200), (x_pos, 240), 1
+                    )
 
         px, py = 40, int(self.player_y)
-        pygame.draw.rect(surface, (255, 0, 150), (px - 2, py - 2, 24, 24), border_radius=4)
+        pygame.draw.rect(
+            surface, (255, 0, 150), (px - 2, py - 2, 24, 24), border_radius=4
+        )
         pygame.draw.rect(surface, floor_color, (px, py, 20, 20), border_radius=3)
-        pygame.draw.rect(surface, (255, 255, 255), (px + 4, py + 4, 12, 12), border_radius=2)
+        pygame.draw.rect(
+            surface, (255, 255, 255), (px + 4, py + 4, 12, 12), border_radius=2
+        )
 
         obs_color = scenario["obs"]
         for obs in self.obstacles:
@@ -232,10 +335,16 @@ class NeonDashGame(BaseGame):
                 continue
             ox, oy, ow, oh = int(obs["x"]), int(obs["y"]), obs["w"], obs["h"]
             if obs["type"] == "spike":
-                pygame.draw.polygon(surface, obs_color, [(ox, oy + oh), (ox + ow // 2, oy), (ox + ow, oy + oh)])
+                pygame.draw.polygon(
+                    surface,
+                    obs_color,
+                    [(ox, oy + oh), (ox + ow // 2, oy), (ox + ow, oy + oh)],
+                )
             else:
                 pygame.draw.rect(surface, obs_color, (ox, oy, ow, oh), border_radius=3)
 
-        lvl_txt = self.font.render(f"LVL {self.level}: {scenario['name']}", True, (255, 255, 255))
+        lvl_txt = self.font.render(
+            f"LVL {self.level}: {scenario['name']}", True, (255, 255, 255)
+        )
         surface.blit(lvl_txt, (160 - lvl_txt.get_width() // 2, 5))
         self.render_ui(surface)
