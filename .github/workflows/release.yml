@@ -2,6 +2,8 @@ name: Build & Release
 
 on:
   push:
+    branches:
+      - '**'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -78,7 +80,8 @@ jobs:
 
   release:
     name: Create GitHub Release & Upload Assets
-    needs: [ build-linux, build-windows ]
+    needs: [build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
