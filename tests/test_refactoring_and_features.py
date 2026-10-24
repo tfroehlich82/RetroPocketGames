@@ -13,10 +13,7 @@ from pocket_games.games.base import BaseGame
 
 
 class CustomControlGame(BaseGame):
-    CONTROLS = {
-        **BaseGame.CONTROLS,
-        "action": [pygame.K_f]  # Eigene deklarative Zuweisung
-    }
+    CONTROLS = {"action": [pygame.K_f]}  # noqa: RUF012
 
     def __init__(self, engine) -> None:
         super().__init__(engine, "CustomGame")

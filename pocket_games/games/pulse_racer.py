@@ -1,5 +1,5 @@
 # ==========================================
-# PULSE RACER v1.3
+# PULSE RACER v1.4
 # A high-speed highway racing game featuring dynamic traffic.
 # Dodge oncoming vehicles and road blockers, maintain your lane,
 # and chase the ultimate highscore.
@@ -25,6 +25,7 @@ class PulseRacerGame(BaseGame):
         self.pylon_spawn_timer = 0.0
         self.roadside_spawn_timer = 0.0
         self.base_speed = 180.0
+        self.car_speed = 180.0  # Startet beschleunigt, nach Tod auf 0
         self.distance_float = 0.0
         self.last_dist = 0
         self.road_scroll = 0.0
@@ -38,7 +39,7 @@ class PulseRacerGame(BaseGame):
             self.game_over = True
         else:
             self.rx = 160.0
-            # Nahegehende Gefahren direkt entfernen, um Kettenkollisionen beim Respawn zu verhindern
+            self.car_speed = 0.0  # Auto steht nach Neustart still
             self.traffic = [t for t in self.traffic if abs(t["y"] - 185.0) > 70]
             self.pylons = [p for p in self.pylons if abs(p["y"] - 185.0) > 70]
             self.roadside_obstacles = [ro for ro in self.roadside_obstacles if abs(ro["y"] - 185.0) > 70]
@@ -62,14 +63,18 @@ class PulseRacerGame(BaseGame):
 
         current_base_speed = self.base_speed + (self.elapsed_time * 3.0)
 
-        self.distance_float += current_base_speed * dt
+        # Sanftes Beschleunigen nach einem Respawn
+        if self.car_speed < current_base_speed:
+            self.car_speed = min(current_base_speed, self.car_speed + current_base_speed * dt * 1.5)
+
+        self.distance_float += self.car_speed * dt
         current_dist = int(self.distance_float)
         if current_dist > self.last_dist:
             diff = current_dist - self.last_dist
             self.last_dist = current_dist
             self.add_score(diff)
 
-        self.road_scroll = (self.road_scroll + current_base_speed * dt) % 40
+        self.road_scroll = (self.road_scroll + self.car_speed * dt) % 40
 
         # Mittlere Pylonen auf den Trennlinien
         self.pylon_spawn_timer += dt
@@ -88,15 +93,14 @@ class PulseRacerGame(BaseGame):
             if p["y"] > 260 and p in self.pylons:
                 self.pylons.remove(p)
 
-        # Fahrbahnrand-Blockaden (Fussgängerinseln / Pylonen an den Rändern)
+        # Kanaldeckel / Wasserabläufe an den Rändern (immer paarweise links und rechts auf exakt gleicher Höhe)
         self.roadside_spawn_timer += dt
-        if self.roadside_spawn_timer >= 2.2:
+        if self.roadside_spawn_timer >= 2.4:
             self.roadside_spawn_timer = 0.0
-            side = random.choice(["left", "right", "both"])
-            if side in ["left", "both"]:
-                self.roadside_obstacles.append({"x": 75.0, "y": -30.0})
-            if side in ["right", "both"]:
-                self.roadside_obstacles.append({"x": 245.0, "y": -30.0})
+            spawn_y = -30.0
+            # Linker und rechter Ablauf auf exakt gleicher Y-Höhe
+            self.roadside_obstacles.append({"x": 76.0, "y": spawn_y})
+            self.roadside_obstacles.append({"x": 244.0, "y": spawn_y})
 
         for ro in self.roadside_obstacles[:]:
             ro["y"] += current_base_speed * dt
@@ -225,12 +229,13 @@ class PulseRacerGame(BaseGame):
             pygame.draw.polygon(surface, (255, 128, 0), [(px, py - 6), (px - 5, py + 6), (px + 5, py + 6)])
             pygame.draw.rect(surface, (255, 255, 255), (px - 3, py, 6, 2))
 
-        # Fahrbahnrand-Blockaden (Fussgängerinseln / Pylonen)
+        # Kanaldeckel / Wasserabläufe an den Fahrbahnrändern (Gleiche Höhe links und rechts)
         for ro in self.roadside_obstacles:
             rx, ry = int(ro["x"]), int(ro["y"])
-            pygame.draw.rect(surface, (120, 120, 130), (rx - 6, ry - 10, 12, 20), border_radius=3)
-            pygame.draw.polygon(surface, (255, 140, 0), [(rx, ry - 8), (rx - 4, ry + 2), (rx + 4, ry + 2)])
-            pygame.draw.rect(surface, (255, 255, 255), (rx - 2, ry + 4, 4, 2))
+            pygame.draw.circle(surface, (90, 95, 105), (rx, ry), 8)
+            pygame.draw.circle(surface, (40, 45, 55), (rx, ry), 6)
+            pygame.draw.line(surface, (130, 135, 145), (rx - 4, ry), (rx + 4, ry), 2)
+            pygame.draw.line(surface, (130, 135, 145), (rx, ry - 4), (rx, ry + 4), 2)
 
         # Spieler-Fahrzeug
         px, py = int(self.rx), 185
