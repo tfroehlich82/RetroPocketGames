@@ -20,6 +20,15 @@ def t(engine, key: str) -> str:
 
 
 class BaseGame:
+    CONTROLS = {  # noqa: RUF012
+        "left": [pygame.K_LEFT, pygame.K_a],
+        "right": [pygame.K_RIGHT, pygame.K_d],
+        "up": [pygame.K_UP, pygame.K_w],
+        "down": [pygame.K_DOWN, pygame.K_s],
+        "action": [pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_z],
+        "back": [pygame.K_ESCAPE, pygame.K_BACKSPACE, pygame.K_x, pygame.K_b]
+    }
+
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
@@ -27,7 +36,7 @@ class BaseGame:
             orig_handle = cls.__dict__["handle_input"]
             def wrapped_handle(self, *args, **kwargs):
                 BaseGame.handle_input(self)
-                if self.showing_intro or self.game_over:
+                if self.showing_intro or self.game_over or self.game_won:
                     return
                 return orig_handle(self, *args, **kwargs)
             cls.handle_input = wrapped_handle
@@ -66,6 +75,7 @@ class BaseGame:
         self.elapsed_time = 0.0
         self.showing_intro = True
         self._score_submitted = False
+        self.game_end_timer = 0.0
 
         lang = "English"
         if hasattr(self.engine, "settings") and self.engine.settings:
@@ -96,6 +106,26 @@ class BaseGame:
         except Exception:  # noqa: BLE001
             self.font = pygame.font.SysFont("sans-serif", 16)
             self.title_font = pygame.font.SysFont("sans-serif", 22)
+
+    def is_control_pressed(self, action: str) -> bool:
+        keys = self.CONTROLS.get(action, [])
+        inp = getattr(self.engine, "input", None)
+        if not inp:
+            return False
+        for key in keys:
+            if hasattr(inp, "is_key_down") and inp.is_key_down(key):
+                return True
+        return bool(action == "action" and getattr(inp, "mouse_clicked", False))
+
+    def is_control_just_pressed(self, action: str) -> bool:
+        keys = self.CONTROLS.get(action, [])
+        inp = getattr(self.engine, "input", None)
+        if not inp:
+            return False
+        for key in keys:
+            if hasattr(inp, "is_key_just_pressed") and inp.is_key_just_pressed(key):
+                return True
+        return bool(action == "action" and getattr(inp, "mouse_clicked", False))
 
     @property
     def difficulty_factor(self) -> float:
@@ -135,52 +165,29 @@ class BaseGame:
         if not inp:
             return
 
-        back_pressed = False
-        if hasattr(inp, "is_back_pressed") and callable(inp.is_back_pressed):
-            back_pressed = inp.is_back_pressed()
-        elif hasattr(inp, "is_key_just_pressed"):
-            back_pressed = inp.is_key_just_pressed(
-                pygame.K_ESCAPE
-            ) or inp.is_key_just_pressed(pygame.K_BACKSPACE)
-
-        if back_pressed or (
-                hasattr(inp, "is_key_just_pressed")
-                and inp.is_key_just_pressed(pygame.K_ESCAPE)
+        if self.is_control_just_pressed("back") or (
+            hasattr(inp, "is_key_just_pressed") and inp.is_key_just_pressed(pygame.K_ESCAPE)
         ):
             self.active = False
             return
 
         if self.showing_intro:
-            if (
-                    hasattr(inp, "is_key_just_pressed")
-                    and (
-                            inp.is_key_just_pressed(pygame.K_SPACE)
-                            or inp.is_key_just_pressed(pygame.K_RETURN)
-                            or inp.is_key_just_pressed(pygame.K_z)
-                            or inp.is_key_just_pressed(pygame.K_UP)
-                    )
-            ) or getattr(inp, "mouse_clicked", False):
+            if self.is_control_just_pressed("action") or self.is_control_just_pressed("up"):
                 self.showing_intro = False
                 self.play_sound("confirm")
                 if hasattr(inp, "mouse_clicked"):
                     inp.mouse_clicked = False
-        elif self.game_over and (
-                (
-                        hasattr(inp, "is_key_just_pressed")
-                        and (
-                                inp.is_key_just_pressed(pygame.K_ESCAPE)
-                                or inp.is_key_just_pressed(pygame.K_RETURN)
-                                or inp.is_key_just_pressed(pygame.K_SPACE)
-                        )
-                )
-                or getattr(inp, "mouse_clicked", False)
+        elif (
+            (self.game_over or self.game_won)
+            and self.game_end_timer >= 3.0
+            and (self.is_control_just_pressed("action") or self.is_control_just_pressed("back"))
         ):
             self.active = False
 
     def update(self, dt: float) -> None:
-        if self.showing_intro or self.game_over or self.game_won:
-            # Einmaliges Übertragen beim Übergang zu Game Over / Game Won
-            if (self.game_over or self.game_won) and not self._score_submitted:
+        if self.game_over or self.game_won:
+            self.game_end_timer += dt
+            if not self._score_submitted:
                 self._score_submitted = True
                 if (
                     hasattr(self, "engine")
@@ -192,6 +199,8 @@ class BaseGame:
                     self.engine.highscores.submit_score(
                         self.game_name, self.score, level, time_played
                     )
+            return
+        if self.showing_intro:
             return
         if not self.paused:
             self.elapsed_time += dt
@@ -253,24 +262,21 @@ class BaseGame:
         go_surf = self.title_font.render(t(self.engine, "game_over"), True, (255, 50, 80))
         surface.blit(go_surf, (160 - go_surf.get_width() // 2, 26))
 
-        # Final Score mit Level und Zeit des aktuellen Laufs
         final_str = f"{t(self.engine, 'final_score')}: {self.score} (Lvl {getattr(self, 'level', 1)}, {round(self.elapsed_time, 1)}s)"
         score_surf = self.font.render(final_str, True, (255, 255, 255))
         surface.blit(score_surf, (30, 50))
 
-        # Besten Lauf direkt vom Highscore-Manager abrufen
         best_run = {"score": self.score, "level": getattr(self, "level", 1), "time": round(self.elapsed_time, 1)}
         runs = []
         if hasattr(self.engine, "highscores") and self.engine.highscores:
             best_run = self.engine.highscores.get_best_run(self.game_name)
             runs = self.engine.highscores.get_runs(self.game_name)
 
-        # High Score mit Level und Zeit aus dem best_run anzeigen
         high_str = f"{t(self.engine, 'high_score')}: {best_run['score']} (Lvl {best_run.get('level', 1)}, {best_run.get('time', 0.0)}s)"
         high_txt = self.font.render(high_str, True, (0, 255, 200))
         surface.blit(high_txt, (30, 68))
 
-        history_title = self.font.render("LAST 3 RUNS (Score / Lvl / Time):", True, (255, 215, 0))
+        history_title = self.font.render("TOP 3 BEST RUNS (Score / Lvl / Time):", True, (255, 215, 0))
         surface.blit(history_title, (30, 92))
 
         y_offset = 110
@@ -284,7 +290,10 @@ class BaseGame:
                 surface.blit(run_txt, (30, y_offset))
                 y_offset += 18
 
-        if int(pygame.time.get_ticks() / 300) % 2 == 0:
+        if self.game_end_timer < 3.0:
+            lock_txt = self.font.render(f"Please wait... ({max(0, 3 - int(self.game_end_timer))}s)", True, (255, 100, 100))
+            surface.blit(lock_txt, (160 - lock_txt.get_width() // 2, 196))
+        elif int(pygame.time.get_ticks() / 300) % 2 == 0:
             exit_surf = self.font.render(t(self.engine, "back_hint"), True, (0, 255, 200))
             surface.blit(exit_surf, (160 - exit_surf.get_width() // 2, 196))
 
@@ -308,14 +317,17 @@ class BaseGame:
         if hasattr(self.engine, "highscores") and self.engine.highscores:
             best_score = max(
                 self.score,
-                self.engine.highscores.scores.get(self.game_name, self.score),
+                self.engine.highscores.scores.get(self.game_name, {}).get("all_time", self.score),
             )
         high_txt = self.font.render(
             f"{t(self.engine, 'high_score')}: {best_score}", True, (255, 215, 0)
         )
         surface.blit(high_txt, (160 - high_txt.get_width() // 2, 125))
 
-        if int(pygame.time.get_ticks() / 300) % 2 == 0:
+        if self.game_end_timer < 3.0:
+            lock_txt = self.font.render(f"Please wait... ({max(0, 3 - int(self.game_end_timer))}s)", True, (255, 100, 100))
+            surface.blit(lock_txt, (160 - lock_txt.get_width() // 2, 155))
+        elif int(pygame.time.get_ticks() / 300) % 2 == 0:
             exit_surf = self.font.render(
                 t(self.engine, "back_hint"), True, (255, 255, 255)
             )

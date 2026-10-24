@@ -94,22 +94,14 @@ class HighScoreManager:
         current_best = entry.get("all_time", 0)
 
         runs = entry.get("runs", [])
-
-        # Verhindere Duplikate: Aktualisiere bestehenden 0.0s-Eintrag mit demselben Score statt einen neuen hinzuzufügen
-        if runs and runs[0]["score"] == score and runs[0]["time"] == 0.0 and time_played > 0.0:
-            runs[0]["level"] = level
-            runs[0]["time"] = round(time_played, 1)
-        elif runs and runs[0]["score"] == score and runs[0]["level"] == level:
-            if time_played > runs[0]["time"]:
-                runs[0]["time"] = round(time_played, 1)
-        else:
-            new_run = {
-                "score": score,
-                "level": level,
-                "time": round(time_played, 1)
-            }
-            runs.insert(0, new_run)
-            entry["runs"] = runs[:3]  # Maximal die letzten 3 Durchläufe speichern
+        new_run = {
+            "score": score,
+            "level": level,
+            "time": round(time_played, 1)
+        }
+        runs.append(new_run)
+        runs = sorted(runs, key=lambda r: (r.get("score", 0), -r.get("time", 0.0)), reverse=True)
+        entry["runs"] = runs[:3]
 
         updated = False
         if score >= current_best:
