@@ -33,7 +33,7 @@ jobs:
         run: ruff check .
 
       - name: Build Executable
-        run: pyinstaller --noconsole --onefile --name pocket-games pocket_games/main.py
+        run: pyinstaller --noconsole --onefile --name pocket-games --add-data "pocket_games/data:pocket_games/data" pocket_games/main.py
 
       - name: Package Linux Archive
         run: tar -czvf pocket-games-linux.tar.gz dist/pocket-games README.md
@@ -64,7 +64,7 @@ jobs:
           pip install . pyinstaller ruff
 
       - name: Build Executable
-        run: pyinstaller --noconsole --onefile --name pocket-games pocket_games/main.py
+        run: pyinstaller --noconsole --onefile --name pocket-games --add-data "pocket_games/data;pocket_games/data" pocket_games/main.py
 
       - name: Package Windows Archive
         shell: pwsh
