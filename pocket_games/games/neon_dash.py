@@ -1,5 +1,5 @@
 # ==========================================
-# NEON DASH v1.3
+# NEON DASH v1.4
 # A fast-paced cyberpunk endless runner featuring 5 challenging stages and distinct visual scenarios
 # (Cyber Neon, Matrix Grid, Sunset Highway, Deep Abyss, Quantum Core). Each level is tuned for an
 # engaging run. The game starts with easy obstacles. As you advance through levels,
@@ -98,8 +98,8 @@ class NeonDashGame(BaseGame):
         self._spawn_obstacle()
 
     def _get_current_speed(self) -> float:
-        base = 180.0 + (self.level - 1) * 18.0
-        return base + (self.level_timer * 0.08)
+        base = 200.0 + (self.level - 1) * 24.0
+        return base + (self.level_timer * 0.1)
 
     def _spawn_obstacle(self) -> None:
         group_x = 330.0
