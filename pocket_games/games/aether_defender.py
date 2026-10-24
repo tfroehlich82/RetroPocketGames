@@ -1,7 +1,7 @@
 # ==========================================
-# AETHER DEFENDER v1.0
+# AETHER DEFENDER v1.1
 # A fast-paced action game in a cyber-core design.
-# Skillfully switch between 3 distinct color states (Cyan, Magenta, and Yellow)
+# Skillfully switch between 2 distinct color states (Cyan and Magenta)
 # to intercept incoming enemies of the matching color. A smoothly increasing
 # difficulty curve ensure long-lasting and engaging gameplay.
 # ==========================================
@@ -19,16 +19,13 @@ class AetherDefenderGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Aether Defender")
         self.px = 160.0
-        self.color_state = 0  # 0: Cyan, 1: Magenta, (ab 30s auch 2: Yellow)
+        self.color_state = 0  # 0: Cyan, 1: Magenta (2 Farben reichen völlig)
         self.enemies = []
         self.particles = []
         self.spawn_timer = 0.0
         self.time_counter = 0.0
-
-    @property
-    def max_colors(self) -> int:
-        # Nach 30 Sekunden schaltet das Spiel auf 3 Farben um
-        return 3 if self.elapsed_time >= 30.0 else 2
+        self.lives = 3         # Spieler startet mit 3 Leben
+        self.invulnerable_timer = 0.0  # Kurze Unverwundbarkeit nach Treffer
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -45,10 +42,10 @@ class AetherDefenderGame(BaseGame):
             or inp.mouse_clicked
             or inp.is_key_just_pressed(pygame.K_UP)
         ):
-            limit = self.max_colors
-            self.color_state = (self.color_state + 1) % limit
+            # Nur 2 Farbzustände (0 und 1)
+            self.color_state = (self.color_state + 1) % 2
             self.play_sound("bounce")
-            colors_list = [(0, 255, 255), (255, 40, 150), (255, 220, 0)]
+            colors_list = [(0, 255, 255), (255, 40, 150)]
             curr_col = colors_list[self.color_state]
             for _ in range(6):
                 ang = random.uniform(0, math.pi * 2)
@@ -71,9 +68,8 @@ class AetherDefenderGame(BaseGame):
         self.time_counter += dt
         self.spawn_timer += dt
 
-        # Falls der Spieler bei 3 Farben war und durch Reset/Moduswechsel außerhalb liegt, korrigieren
-        if self.color_state >= self.max_colors:
-            self.color_state = 0
+        if self.invulnerable_timer > 0:
+            self.invulnerable_timer -= dt
 
         for p in self.particles[:]:
             p["x"] += p["vx"] * dt
@@ -86,13 +82,12 @@ class AetherDefenderGame(BaseGame):
         if self.spawn_timer > dynamic_spawn_interval:
             self.spawn_timer = 0.0
             speed_boost = min(45.0, self.elapsed_time * 0.8)
-            # Feinde basieren auf der aktuellen Anzahl aktiver Farben
-            limit = self.max_colors
+            # Nur noch Feinde in 2 Farben (0 oder 1)
             self.enemies.append(
                 {
                     "x": random.randint(30, 290),
                     "y": -15,
-                    "color": random.randint(0, limit - 1),
+                    "color": random.randint(0, 1),
                     "speed": random.uniform(70, 105) + speed_boost,
                 }
             )
@@ -120,11 +115,24 @@ class AetherDefenderGame(BaseGame):
                             }
                         )
                 else:
-                    self.game_over = True
-                    self.play_sound("gameover")
+                    if self.invulnerable_timer <= 0:
+                        self.lives -= 1
+                        self.enemies.remove(e)
+                        if self.lives <= 0:
+                            self.game_over = True
+                            self.play_sound("gameover")
+                        else:
+                            self.invulnerable_timer = 1.5  # 1.5s Unverwundbarkeit nach Treffer
+                            self.play_sound("bounce")
 
             if e["y"] > 250:
                 self.enemies.remove(e)
+
+    def render_ui(self, surface: pygame.Surface) -> None:
+        super().render_ui(surface)
+        # Leben anzeigen
+        lives_txt = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 80))
+        surface.blit(lives_txt, (230, 5))
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((8, 6, 18))
@@ -138,20 +146,21 @@ class AetherDefenderGame(BaseGame):
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
         color_map = [
-            (0, 240, 255),  # Cyan
+            (0, 240, 255),   # Cyan
             (255, 40, 150),  # Magenta
-            (255, 220, 0),  # Yellow (ab 30s)
         ]
         p_color = color_map[self.color_state]
         px, py = int(self.px), 205
 
-        pygame.draw.polygon(
-            surface, p_color, [(px, py - 14), (px - 14, py + 10), (px + 14, py + 10)]
-        )
-        pygame.draw.rect(
-            surface, (255, 255, 255), (px - 4, py - 2, 8, 8), border_radius=2
-        )
-        pygame.draw.circle(surface, p_color, (px, py + 12), 5)
+        # Blinken bei Unverwundbarkeit
+        if self.invulnerable_timer <= 0 or int(pygame.time.get_ticks() / 100) % 2 == 0:
+            pygame.draw.polygon(
+                surface, p_color, [(px, py - 14), (px - 14, py + 10), (px + 14, py + 10)]
+            )
+            pygame.draw.rect(
+                surface, (255, 255, 255), (px - 4, py - 2, 8, 8), border_radius=2
+            )
+            pygame.draw.circle(surface, p_color, (px, py + 12), 5)
 
         for e in self.enemies:
             ex, ey = int(e["x"]), int(e["y"])
@@ -159,10 +168,5 @@ class AetherDefenderGame(BaseGame):
             pygame.draw.circle(surface, e_color, (ex, ey), 11)
             pygame.draw.circle(surface, (255, 255, 255), (ex, ey), 5)
             pygame.draw.circle(surface, e_color, (ex, ey), 15, 1)
-
-        # Dezenten Hinweis anzeigen, wenn die 3. Farbe aktiv ist
-        if self.elapsed_time >= 30.0:
-            mode_txt = self.font.render("3-COLOR MODE", True, (255, 220, 0))
-            surface.blit(mode_txt, (320 - mode_txt.get_width() - 10, 5))
 
         self.render_ui(surface)
