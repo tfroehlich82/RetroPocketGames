@@ -1,10 +1,8 @@
 # ==========================================
-# GRAVITY SLING v1.1
+# GRAVITY SLING v1.2
 # Actively pilot your space probe through gravity-dense star systems.
 # Utilize full 4-way vector thrusters for precision control while
 # leveraging planetary gravitational pull to perform slingshot maneuvers.
-# Collect crystals, avoid planetary crashes, and navigate through
-# multiple escalating sectors with tactical rest breaks.
 # ==========================================
 from __future__ import annotations
 
@@ -26,6 +24,7 @@ class GravitySlingGame(BaseGame):
         self.crystals_collected = 0
         self.rest_timer = 0.0
         self.invulnerable_timer = 0.0
+        self.time_left = 40.0
         self.planets: list[dict] = []
         self.crystals: list[dict] = []
         self.particles: list[dict] = []
@@ -33,59 +32,60 @@ class GravitySlingGame(BaseGame):
 
     def _setup_level(self) -> None:
         self.planets = []
+        self.time_left = 40.0
         planet_configs = [
             [
                 {
                     "x": 160,
                     "y": 120,
                     "r": 18,
-                    "gravity_r": 65,
+                    "gravity_r": 70,
                     "color": (80, 140, 255),
-                    "strength": 7500.0,
+                    "strength": 8500.0,
                 }
             ],
             [
                 {
                     "x": 110,
                     "y": 90,
-                    "r": 16,
+                    "r": 15,
                     "gravity_r": 55,
                     "color": (80, 140, 255),
-                    "strength": 8000.0,
+                    "strength": 7000.0,
                 },
                 {
                     "x": 210,
                     "y": 150,
-                    "r": 16,
-                    "gravity_r": 55,
-                    "color": (255, 120, 80),
-                    "strength": 8000.0,
+                    "r": 18,
+                    "gravity_r": 75,
+                    "color": (255, 100, 70),
+                    "strength": 11000.0,
                 },
             ],
             [
                 {
                     "x": 90,
                     "y": 80,
-                    "r": 15,
+                    "r": 14,
                     "gravity_r": 50,
                     "color": (80, 140, 255),
-                    "strength": 8500.0,
+                    "strength": 7500.0,
                 },
                 {
                     "x": 230,
                     "y": 90,
-                    "r": 15,
-                    "gravity_r": 50,
+                    "r": 16,
+                    "gravity_r": 60,
                     "color": (255, 120, 80),
-                    "strength": 8500.0,
+                    "strength": 9500.0,
                 },
                 {
                     "x": 160,
                     "y": 170,
-                    "r": 16,
-                    "gravity_r": 55,
-                    "color": (160, 80, 255),
-                    "strength": 9000.0,
+                    "r": 18,
+                    "gravity_r": 80,
+                    "color": (180, 80, 255),
+                    "strength": 13000.0,
                 },
             ],
         ]
@@ -128,7 +128,7 @@ class GravitySlingGame(BaseGame):
             return
 
         inp = self.engine.input
-        thrust = 180.0
+        thrust = 190.0
         dt = 0.016
 
         pushed = False
@@ -164,6 +164,12 @@ class GravitySlingGame(BaseGame):
 
         if self.rest_timer > 0:
             self.rest_timer -= dt
+            return
+
+        self.time_left -= dt
+        if self.time_left <= 0:
+            self.handle_damage()
+            self.time_left = 40.0
             return
 
         if self.invulnerable_timer > 0.0:
@@ -230,12 +236,21 @@ class GravitySlingGame(BaseGame):
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
         for p in self.planets:
+            # Gravitationsfeld-Radius mit Transparenz-Effekt bzw. feinem Ring
             pygame.draw.circle(
-                surface, (20, 40, 70), (p["x"], p["y"]), p["gravity_r"], 1
+                surface, (p["color"][0]//3, p["color"][1]//3, p["color"][2]//3), (p["x"], p["y"]), p["gravity_r"], 1
             )
+            # Planet Basis und Schichten (verbessertes Aussehen)
+            pygame.draw.circle(surface, (15, 25, 45), (p["x"], p["y"]), p["r"] + 2)
             pygame.draw.circle(surface, p["color"], (p["x"], p["y"]), p["r"])
+            # Oberflächen-Details / Krater / Schatten
             pygame.draw.circle(
-                surface, (255, 255, 255), (p["x"], p["y"]), p["r"] - 3, 1
+                surface, (255, 255, 255), (p["x"] - 3, p["y"] - 3), max(2, p["r"] // 3), 1
+            )
+            pygame.draw.arc(
+                surface, (10, 15, 30),
+                pygame.Rect(p["x"] - p["r"], p["y"] - p["r"], p["r"] * 2, p["r"] * 2),
+                0, 3.14, 2
             )
 
         for c in self.crystals:
@@ -247,13 +262,13 @@ class GravitySlingGame(BaseGame):
             pygame.draw.circle(surface, (255, 215, 0), (px, py), 6)
             pygame.draw.circle(surface, (255, 255, 255), (px, py), 2)
 
-        # Info-Leiste unten (Hintergrund-Panel + Text für Sektor, Kristalle und Leben)
+        # Info-Leiste unten
         pygame.draw.rect(
             surface, (10, 12, 22, 220), (10, 215, 300, 20), border_radius=4
         )
 
         info_txt = self.font.render(
-            f"LIVES: {self.lives} | SEC: {self.level} | GEMS: {self.crystals_collected}/4",
+            f"L: {self.lives} | SEC: {self.level} | GEMS: {self.crystals_collected}/4 | TIME: {max(0, int(self.time_left))}s",
             True,
             (0, 255, 200),
         )
