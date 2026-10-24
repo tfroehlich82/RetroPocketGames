@@ -1,10 +1,7 @@
 # ==========================================
-# ORBITAL DEFENSE v1.1
-# Protect the central reactor core from incoming meteors.
-# The game features an accessible start that progressively
-# scales in difficulty over time. Advancing through levels
-# upgrades your defense systems (faster rotation, powerful dual shields)
-# while enemy attackers gain advanced tracking intelligence.
+# ORBITAL DEFENSE v1.2
+# Protect the central reactor core from incoming meteors,
+# collect goodies, and survive advanced hazards.
 # ==========================================
 from __future__ import annotations
 
@@ -21,11 +18,13 @@ class OrbitalDefenseGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Orbital Defense")
         self.angle = 0.0
-        self.reactor_hp = 3  # Reaktor startet mit 3 Lebenspunkten
-        self.max_reactor_hp = 3
+        self.reactor_hp = 3
+        self.max_reactor_hp = 5
         self.meteors = []
+        self.goodies = []
         self.particles = []
         self.spawn_timer = 0.0
+        self.goodie_spawn_timer = 0.0
         self.time_counter = 0.0
 
     @property
@@ -51,6 +50,7 @@ class OrbitalDefenseGame(BaseGame):
 
         self.time_counter += dt
         self.spawn_timer += dt
+        self.goodie_spawn_timer += dt
 
         for p in self.particles[:]:
             p["x"] += p["vx"] * dt
@@ -59,6 +59,7 @@ class OrbitalDefenseGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
+        # Spawn Interval für Meteore / Gefahren
         spawn_interval = max(
             0.3, 1.6 - (self.time_counter * 0.018) - (self.level * 0.08)
         )
@@ -68,18 +69,38 @@ class OrbitalDefenseGame(BaseGame):
             a = random.uniform(0, math.pi * 2)
 
             is_smart = self.level >= 2 and random.random() < (0.15 * self.level)
+            is_heavy = self.level >= 2 and random.random() < 0.2  # Meteor +2 Gefahr
 
             self.meteors.append(
                 {
                     "x": 160 + math.cos(a) * 190,
                     "y": 120 + math.sin(a) * 190,
                     "angle": a,
-                    "size": random.randint(6, 10),
+                    "size": random.randint(10, 14) if is_heavy else random.randint(6, 9),
                     "rot": random.uniform(1, 3),
                     "smart": is_smart,
-                    "speed": random.uniform(75.0, 95.0) + (self.level * 6.0),
+                    "heavy": is_heavy,
+                    "damage": 2 if is_heavy else 1,
+                    "speed": random.uniform(65.0, 85.0) + (self.level * 5.0),
                 }
             )
+
+        # Goodies (z.B. +1 Leben / HP) spawn
+        if self.goodie_spawn_timer > 12.0:
+            self.goodie_spawn_timer = 0.0
+            a = random.uniform(0, math.pi * 2)
+            self.goodies.append(
+                {
+                    "x": 160 + math.cos(a) * 170,
+                    "y": 120 + math.sin(a) * 170,
+                    "angle": a,
+                    "speed": 50.0,
+                }
+            )
+
+        # Reaktor- und Schild-Größenberechnung (Reaktor wird mit jedem Level größer, Schilde kleiner)
+        reactor_radius = int(12 + (self.level - 1) * 3)
+        shield_radius = max(5.0, 9.0 - (self.level - 1) * 1.5)
 
         shield_rad = math.radians(self.angle)
         sx, sy = 160 + math.cos(shield_rad) * 42, 120 + math.sin(shield_rad) * 42
@@ -93,6 +114,25 @@ class OrbitalDefenseGame(BaseGame):
                 120 + math.sin(shield_rad2) * 42,
             )
 
+        # Goodies verarbeiten
+        for g in self.goodies[:]:
+            dx = 160.0 - g["x"]
+            dy = 120.0 - g["y"]
+            dist = math.hypot(dx, dy)
+            g["x"] += (dx / dist) * g["speed"] * dt if dist > 0 else 0
+            g["y"] += (dy / dist) * g["speed"] * dt if dist > 0 else 0
+
+            if check_circle_collision(g["x"], g["y"], 6.0, sx, sy, shield_radius) or \
+               (has_dual_shield and check_circle_collision(g["x"], g["y"], 6.0, sx2, sy2, shield_radius)):
+                self.goodies.remove(g)
+                self.reactor_hp = min(self.max_reactor_hp, self.reactor_hp + 1)
+                self.play_sound("confirm")
+                self.add_score(50)
+            elif check_circle_collision(g["x"], g["y"], 6.0, 160.0, 120.0, float(reactor_radius)):
+                self.goodies.remove(g)
+                self.reactor_hp = min(self.max_reactor_hp, self.reactor_hp + 1)
+                self.play_sound("score")
+
         for m in self.meteors[:]:
             if m.get("smart"):
                 dx = 160.0 - m["x"]
@@ -104,16 +144,16 @@ class OrbitalDefenseGame(BaseGame):
             m["y"] -= math.sin(m["angle"]) * m["speed"] * dt
 
             hit_shield1 = check_circle_collision(
-                m["x"], m["y"], float(m["size"]), sx, sy, 10.0
+                m["x"], m["y"], float(m["size"]), sx, sy, shield_radius
             )
             hit_shield2 = has_dual_shield and check_circle_collision(
-                m["x"], m["y"], float(m["size"]), sx2, sy2, 10.0
+                m["x"], m["y"], float(m["size"]), sx2, sy2, shield_radius
             )
 
             if hit_shield1 or hit_shield2:
                 impact_x, impact_y = m["x"], m["y"]
                 self.meteors.remove(m)
-                pts = 30 if m.get("smart") else 20
+                pts = 40 if m.get("heavy") else (30 if m.get("smart") else 20)
                 self.add_score(pts)
                 self.play_sound("bounce")
 
@@ -132,14 +172,14 @@ class OrbitalDefenseGame(BaseGame):
                     )
 
             elif check_circle_collision(
-                m["x"], m["y"], float(m["size"]), 160.0, 120.0, 14.0
+                m["x"], m["y"], float(m["size"]), 160.0, 120.0, float(reactor_radius)
             ):
-                # Meteor trifft den Reaktor direkt
+                # Meteor trifft den Reaktor direkt (Heavy Meteor zieht 2 HP ab)
                 self.meteors.remove(m)
-                self.reactor_hp -= 1
+                damage = m.get("damage", 1)
+                self.reactor_hp -= damage
                 self.play_sound("hit")
 
-                # Explosionspartikel am Kern
                 for _ in range(15):
                     ang = random.uniform(0, math.pi * 2)
                     spd = random.uniform(30, 90)
@@ -169,10 +209,12 @@ class OrbitalDefenseGame(BaseGame):
         for p in self.particles:
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
-        pulse = (math.sin(self.time_counter * 6) + 1) * 0.5
-        core_rad = int(12 + pulse * 4)
+        reactor_radius = int(12 + (self.level - 1) * 3)
+        shield_radius = int(max(5, 9 - (self.level - 1) * 1.5))
 
-        # Farbe des Kerns ändert sich leicht, wenn HP niedrig sind
+        pulse = (math.sin(self.time_counter * 6) + 1) * 0.5
+        core_rad = int(reactor_radius + pulse * 2)
+
         core_col = (0, 220, 255) if self.reactor_hp > 1 else (255, 80, 80)
         pygame.draw.circle(
             surface,
@@ -182,14 +224,14 @@ class OrbitalDefenseGame(BaseGame):
             2,
         )
         pygame.draw.circle(surface, core_col, (160, 120), core_rad)
-        pygame.draw.circle(surface, (255, 255, 255), (160, 120), 5)
+        pygame.draw.circle(surface, (255, 255, 255), (160, 120), 4)
 
         pygame.draw.circle(surface, (30, 60, 100), (160, 120), 42, 1)
 
-        shield_rad = math.radians(self.angle)
-        sx, sy = 160 + math.cos(shield_rad) * 42, 120 + math.sin(shield_rad) * 42
-        pygame.draw.circle(surface, (255, 215, 0), (int(sx), int(sy)), 9)
-        pygame.draw.circle(surface, (255, 255, 255), (int(sx), int(sy)), 4)
+        shield_rad_angle = math.radians(self.angle)
+        sx, sy = 160 + math.cos(shield_rad_angle) * 42, 120 + math.sin(shield_rad_angle) * 42
+        pygame.draw.circle(surface, (255, 215, 0), (int(sx), int(sy)), shield_radius)
+        pygame.draw.circle(surface, (255, 255, 255), (int(sx), int(sy)), max(2, shield_radius - 4))
 
         if self.level >= 3:
             shield_rad2 = math.radians(self.angle + 180.0)
@@ -197,18 +239,22 @@ class OrbitalDefenseGame(BaseGame):
                 160 + math.cos(shield_rad2) * 42,
                 120 + math.sin(shield_rad2) * 42,
             )
-            pygame.draw.circle(surface, (0, 255, 200), (int(sx2), int(sy2)), 9)
-            pygame.draw.circle(surface, (255, 255, 255), (int(sx2), int(sy2)), 4)
+            pygame.draw.circle(surface, (0, 255, 200), (int(sx2), int(sy2)), shield_radius)
+            pygame.draw.circle(surface, (255, 255, 255), (int(sx2), int(sy2)), max(2, shield_radius - 4))
+
+        for g in self.goodies:
+            gx, gy = int(g["x"]), int(g["y"])
+            pygame.draw.circle(surface, (50, 255, 50), (gx, gy), 7)
+            pygame.draw.circle(surface, (255, 255, 255), (gx, gy), 3)
 
         for m in self.meteors:
             mx, my = int(m["x"]), int(m["y"])
-            col = (255, 80, 40) if m.get("smart") else (180, 50, 40)
+            col = (255, 50, 150) if m.get("heavy") else ((255, 80, 40) if m.get("smart") else (180, 50, 40))
             pygame.draw.circle(surface, col, (mx, my), m["size"])
-            pygame.draw.circle(surface, (255, 120, 0), (mx, my), m["size"] - 3)
+            pygame.draw.circle(surface, (255, 120, 0), (mx, my), max(2, m["size"] - 3))
 
-        # HUD: Level und Reaktor-HP anzeigen
         lvl_txt = self.font.render(
-            f"LVL {self.level} | CORE HP: {self.reactor_hp}/3", True, (200, 220, 255)
+            f"LVL {self.level} | CORE HP: {self.reactor_hp}/{self.max_reactor_hp}", True, (200, 220, 255)
         )
         surface.blit(lvl_txt, (160 - lvl_txt.get_width() // 2, 10))
 
