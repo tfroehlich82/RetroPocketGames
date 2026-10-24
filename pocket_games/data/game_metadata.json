@@ -278,5 +278,33 @@
             "gameplay": "Switch polarity at the right\nmoment (Cyan/Magenta).",
             "controls": "D-Pad: Move | Space: Switch polarity"
         }
+    },
+    "Cyber Flipper": {
+        "de": {
+            "desc": "Ein temporeiches Arcade-Flipper-Spiel auf einem 320x240-Bildschirm. Nutze die Flipper-Arme, um den Ball im Spiel zu halten, triff Cyber-Bumper für Bonuspunkte und verwalte deine 3 Bälle geschickt, um den Highscore zu knacken.",
+            "goal": "",
+            "gameplay": "",
+            "controls": ""
+        },
+        "en": {
+            "desc": "A fast-paced arcade pinball game optimized for the 320x240 display. Use the flippers to keep the ball in play, hit cyber bumpers for bonus points, and manage your 3 balls wisely to set a new high score.",
+            "goal": "",
+            "gameplay": "",
+            "controls": ""
+        }
+    },
+    "Pixel Platformer": {
+        "de": {
+            "desc": "Ein klassisches Jump-and-Run-Abenteuer über mehrere Level. Springe auf Gegner, schieße Projektile mit freigeschalteten Power-ups ab, sammle Punkte und passe auf deine 3 Leben auf, während du dich bis zum Levelende vorarbeitest.",
+            "goal": "",
+            "gameplay": "",
+            "controls": ""
+        },
+        "en": {
+            "desc": "A classic platform adventure across multiple levels. Stomp on enemies, shoot projectiles with unlocked power-ups, collect points, and protect your 3 lives as you navigate through challenging stages.",
+            "goal": "",
+            "gameplay": "",
+            "controls": ""
+        }
     }
 }

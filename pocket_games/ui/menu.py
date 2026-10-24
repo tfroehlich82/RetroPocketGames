@@ -21,6 +21,7 @@ class MainMenu:
         from pocket_games.games.chrono_shift import ChronoShiftGame
         from pocket_games.games.circuit_breaker import CircuitBreakerGame
         from pocket_games.games.crypto_decrypt import CryptoDecryptGame
+        from pocket_games.games.cyber_grid_chomp import CyberGridChompGame
         from pocket_games.games.cyber_snake import CyberSnakeGame
         from pocket_games.games.glitch_runner import GlitchRunnerGame
         from pocket_games.games.gravity_sling import GravitySlingGame
@@ -29,6 +30,7 @@ class MainMenu:
         from pocket_games.games.neon_dash import NeonDashGame
         from pocket_games.games.orbital_defense import OrbitalDefenseGame
         from pocket_games.games.pixel_drop import PixelDropGame
+        from pocket_games.games.pixel_platformer import PixelPlatformerGame
         from pocket_games.games.pulse_racer import PulseRacerGame
         from pocket_games.games.quantum_maze import QuantumMazeGame
         from pocket_games.games.retro_pong import RetroPongGame
@@ -56,6 +58,8 @@ class MainMenu:
             ("Gravity Sling", GravitySlingGame),
             ("Glitch Runner", GlitchRunnerGame),
             ("Aether Defender", AetherDefenderGame),
+            ("Cyber Grid Chomp", CyberGridChompGame),
+            ("Pixel Platformer", PixelPlatformerGame),
         ]
 
         self.menu_items = self.games + [
