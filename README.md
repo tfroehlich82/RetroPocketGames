@@ -378,6 +378,16 @@ The handheld features a unified dual-input scheme:
 
   * **Touch:** Tap screen controls to move and switch polarity.
 
+### 21. Cyber Grid Chomp
+
+* **Goal:** Clear every data bit across five escalating neon sectors without being caught by the hunting phantoms.
+
+* **Gameplay:** Pac-Man style maze chase. Each sector adds more phantoms, faster movement, and smarter pathfinding. Overclock pills temporarily turn the phantoms into prey, and every sector adds a fresh challenge.
+
+* **Controls:**
+
+  * **D-Pad / WASD:** Steer the chomper through the maze.
+
 ---
 
 ## ⚙️ Settings & Hall of Fame
