@@ -369,37 +369,27 @@ class BaseGame:
         title_surf = self.title_font.render(self.game_name.upper(), True, (0, 255, 200))
         surface.blit(title_surf, (160 - title_surf.get_width() // 2, 18))
 
-        y = 48
-        desc_lbl = self.font.render(t(self.engine, "desc_lbl"), True, (255, 215, 0))
-        surface.blit(desc_lbl, (22, y))
-        y += 15
-        desc_txt = self.font.render(self.description, True, (220, 220, 220))
-        surface.blit(desc_txt, (22, y))
-        y += 22
-
-        goal_lbl = self.font.render(t(self.engine, "goal_lbl"), True, (255, 215, 0))
-        surface.blit(goal_lbl, (22, y))
-        y += 15
-        goal_txt = self.font.render(self.goal, True, (220, 220, 220))
-        surface.blit(goal_txt, (22, y))
-        y += 22
-
-        gp_lbl = self.font.render(t(self.engine, "gp_lbl"), True, (255, 215, 0))
-        surface.blit(gp_lbl, (22, y))
-        y += 15
-        gp_txt = self.font.render(self.gameplay, True, (220, 220, 220))
-        surface.blit(gp_txt, (22, y))
-        y += 22
-
-        ctrl_lbl = self.font.render(t(self.engine, "ctrl_lbl"), True, (255, 215, 0))
-        surface.blit(ctrl_lbl, (22, y))
-        y += 15
-        ctrl_txt = self.font.render(self.controls, True, (0, 255, 150))
-        surface.blit(ctrl_txt, (22, y))
+        y = 46
+        y = self._draw_intro_block(surface, y, t(self.engine, "desc_lbl"), self.description, (220, 220, 220))
+        y = self._draw_intro_block(surface, y, t(self.engine, "goal_lbl"), self.goal, (220, 220, 220))
+        y = self._draw_intro_block(surface, y, t(self.engine, "gp_lbl"), self.gameplay, (220, 220, 220))
+        self._draw_intro_block(surface, y, t(self.engine, "ctrl_lbl"), self.controls, (0, 255, 150))
 
         if int(pygame.time.get_ticks() / 250) % 2 == 0:
             prompt_txt = self.font.render(t(self.engine, "press_start"), True, (255, 255, 255))
-            surface.blit(prompt_txt, (160 - prompt_txt.get_width() // 2, 205))
+            surface.blit(prompt_txt, (160 - prompt_txt.get_width() // 2, 216))
+
+    def _draw_intro_block(self, surface: pygame.Surface, y: int, label: str, text: str, color: tuple[int, int, int]) -> int:
+        label_surf = self.font.render(label, True, (255, 215, 0))
+        surface.blit(label_surf, (22, y))
+        y += 13
+        for line in (text or "").split("\n"):
+            if not line:
+                continue
+            line_surf = self.font.render(line, True, color)
+            surface.blit(line_surf, (22, y))
+            y += 12
+        return y + 4
 
     def render_game_over(self, surface: pygame.Surface) -> None:
         """
