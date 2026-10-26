@@ -2,8 +2,8 @@
     "Pixel Drop": {
         "de": {
             "desc": "Klassisches Tetris-Puzzle mit fallenden Steinen.",
-            "goal": "Staple Blï¿½cke sauber und rï¿½ume Reihen ab.",
-            "gameplay": "Alle 10 gerï¿½umten Reihen steigt das\nLevel und die Geschwindigkeit.",
+            "goal": "Staple Blöcke sauber und r?ume Reihen ab.",
+            "gameplay": "Alle 10 geräumten Reihen steigt das\nLevel und die Geschwindigkeit.",
             "controls": "D-Pad: Bewegen / Drehen / Soft Drop"
         },
         "en": {
@@ -17,7 +17,7 @@
         "de": {
             "desc": "Digitales Logik- und Stromnetz-Puzzle.",
             "goal": "Verbinde alle Knotenpunkte mit Strom.",
-            "gameplay": "Klicke auf Knoten, um den Stromkreis zu schlieï¿½en.",
+            "gameplay": "Klicke auf Knoten, um den Stromkreis zu schliessen.",
             "controls": "Maus / Touch oder D-Pad zum Umschalten"
         },
         "en": {
@@ -31,7 +31,7 @@
         "de": {
             "desc": "Rasanter Cyberpunk-Endless-Runner.",
             "goal": "Weiche Hindernissen aus.",
-            "gameplay": "Springe ï¿½ber Spikes und Blockaden.\nSteigende Geschwindigkeit.",
+            "gameplay": "Springe über Spikes und Blockaden.\nSteigende Geschwindigkeit.",
             "controls": "Leertaste / D-Pad Oben / Touch (Springen)"
         },
         "en": {
@@ -44,7 +44,7 @@
     "Byte Hopper": {
         "de": {
             "desc": "Vertikale Jump-and-Run-Plattform-Action.",
-            "goal": "Springe ï¿½ber Speicherregister so hoch wie mï¿½glich.",
+            "goal": "Springe über Speicherregister so hoch wie möglich.",
             "gameplay": "Nutze statische, horizontal und vertikal\nschwingende Plattformen.",
             "controls": "D-Pad: Bewegen / Oben: Springen"
         },
@@ -86,8 +86,8 @@
     "Retro Pong 2077": {
         "de": {
             "desc": "High-Tech-Evolution des Arcade-Klassikers.",
-            "goal": "Schlage den Energieball zurï¿½ck und besiege den Gegner.",
-            "gameplay": "Schnelle Ballwechsel und prï¿½zise Paddel-Action.",
+            "goal": "Schlage den Energieball zurück und besiege den Gegner.",
+            "gameplay": "Schnelle Ballwechsel und präzise Paddel-Action.",
             "controls": "D-Pad Oben / Unten (Paddel bewegen)"
         },
         "en": {
@@ -100,7 +100,7 @@
     "Bug Hunter": {
         "de": {
             "desc": "Schnelles Arcade-Such- und Tipp-Spiel.",
-            "goal": "Zertrï¿½mmere digitale Bugs vor Ablauf des Timers.",
+            "goal": "Zertrümmere digitale Bugs vor Ablauf des Timers.",
             "gameplay": "Reagiere blitzschnell auf erscheinende System-Bugs.",
             "controls": "Touch / Mausklick (Bugs antippen)"
         },
@@ -114,9 +114,9 @@
     "Cyber Snake": {
         "de": {
             "desc": "Klassisches Schlangen-Spiel im Cyber-Design.",
-            "goal": "Sammle Datenpakete, ohne Wï¿½nde zu treffen.",
-            "gameplay": "Steuere die Cyber-Schlange geschickt ï¿½ber das Raster.",
-            "controls": "D-Pad / WASD (Richtung ï¿½ndern)"
+            "goal": "Sammle Datenpakete, ohne Wände zu treffen.",
+            "gameplay": "Steuere die Cyber-Schlange geschickt über das Raster.",
+            "controls": "D-Pad / WASD (Richtung ?ndern)"
         },
         "en": {
             "desc": "Classic snake game in cyber design.",
@@ -128,7 +128,7 @@
     "Matrix Invaders": {
         "de": {
             "desc": "Vertikaler Cyberpunk-Space-Shooter.",
-            "goal": "Vernichte anstï¿½rmende Drohnen, Speeders und Tanks.",
+            "goal": "Vernichte anstürmende Drohnen, Speeders und Tanks.",
             "gameplay": "Nutze Laser-Upgrades und Energieschilde\ngegen den Breach.",
             "controls": "D-Pad: Bewegen | Space: Feuer"
         },
@@ -142,8 +142,8 @@
     "Bit Blaster": {
         "de": {
             "desc": "Klassisches Brick-Breaker-Spiel.",
-            "goal": "Zerstï¿½re alle Datensteine mit dem Energieball.",
-            "gameplay": "Fange den Ball mit dem Paddle ab und\nrï¿½ume das Feld.",
+            "goal": "Zerstöre alle Datensteine mit dem Energieball.",
+            "gameplay": "Fange den Ball mit dem Paddle ab und\nräume das Feld.",
             "controls": "D-Pad Links / Rechts (Paddle bewegen)"
         },
         "en": {
@@ -157,7 +157,7 @@
         "de": {
             "desc": "High-Speed-Autobahnrennen im Cyber-Space.",
             "goal": "Weiche entgegenkommendem Verkehr und\nHindernissen aus.",
-            "gameplay": "Manï¿½vriere mit Hï¿½chstgeschwindigkeit\ndurch den Verkehr.",
+            "gameplay": "Manövriere mit Höchstgeschwindigkeit\ndurch den Verkehr.",
             "controls": "D-Pad Links / Rechts (Lenken)"
         },
         "en": {
@@ -172,7 +172,7 @@
             "desc": "Logik-Code-Knacker-Puzzle.",
             "goal": "Errate die 4-stellige Sicherheitskombination.",
             "gameplay": "Kombiniere Ziffern vor Ablauf des System-Lockouts.",
-            "controls": "D-Pad: Ziffern wï¿½hlen | Enter: Bestï¿½tigen"
+            "controls": "D-Pad: Ziffern wählen | Enter: Bestätigen"
         },
         "en": {
             "desc": "Logic code-breaking puzzle.",
@@ -184,8 +184,8 @@
     "Kernel Panic": {
         "de": {
             "desc": "System-Verteidigungsspiel gegen Speicherlecks.",
-            "goal": "Flicke fallende Memory-Leaks, bevor der RAM ï¿½berlï¿½uft.",
-            "gameplay": "Klicke auf abstï¿½rzende Code-Blï¿½cke (ERR, NULL).",
+            "goal": "Flicke fallende Memory-Leaks, bevor der RAM überläuft.",
+            "gameplay": "Klicke auf abstürzende Code-Blöcke (ERR, NULL).",
             "controls": "Touch / Mausklick (Lecks patchen)"
         },
         "en": {
@@ -198,8 +198,8 @@
     "Orbital Defense": {
         "de": {
             "desc": "Planetares Verteidigungsspiel.",
-            "goal": "Schï¿½tze den Reaktor-Kern vor\neintreffenden Meteoren.",
-            "gameplay": "Rotiere den Energieschild prï¿½zise,\num Weltraummï¿½ll abzuwehren.",
+            "goal": "Schätze den Reaktor-Kern vor\neintreffenden Meteoren.",
+            "gameplay": "Rotiere den Energieschild präzise,\num Weltraummüll abzuwehren.",
             "controls": "D-Pad Links / Rechts (Schild rotieren)"
         },
         "en": {
@@ -213,7 +213,7 @@
         "de": {
             "desc": "High-Speed-Zeitparadoxon-Spiel.",
             "goal": "Sammle Fragmente und meide deinen\neigenen Echo-Trail.",
-            "gameplay": "Jede Bewegung hinterlï¿½sst ein\ngefï¿½hrliches Zeit-Echo.",
+            "gameplay": "Jede Bewegung hinterlässt ein\ngefährliches Zeit-Echo.",
             "controls": "D-Pad / WASD (Navigation)"
         },
         "en": {
@@ -225,10 +225,10 @@
     },
     "Sonic Pulse": {
         "de": {
-            "desc": "Rhythmus-Timing-Prï¿½zisionsspiel.",
+            "desc": "Rhythmus-Timing-Präzisionsspiel.",
             "goal": "Triff kollabierende Energie-Ringe\nim exakten Moment.",
-            "gameplay": "Baue Combos auf und halte die\nSystemintegritï¿½t aufrecht.",
-            "controls": "Leertaste / A-Button / Klick (Puls auslï¿½sen)"
+            "gameplay": "Baue Combos auf und halte die\nSystemintegrität aufrecht.",
+            "controls": "Leertaste / A-Button / Klick (Puls auslösen)"
         },
         "en": {
             "desc": "Rhythm timing precision game.",
@@ -240,7 +240,7 @@
     "Gravity Sling": {
         "de": {
             "desc": "Astrodynamisches Physik-Puzzle.",
-            "goal": "Manï¿½vriere durch Gravitationsfelder.",
+            "goal": "Manövriere durch Gravitationsfelder.",
             "gameplay": "Nutze die Schwerkraft von Planeten,\num Kristalle zu sammeln.",
             "controls": "D-Pad / Touch (Schub geben)"
         },
@@ -254,8 +254,8 @@
     "Glitch Runner": {
         "de": {
             "desc": "Reaktionsschneller Plattform-Runner.",
-            "goal": "ï¿½berlebe den Plattform-Wechsel\nim Glitch-Modus.",
-            "gameplay": "Kurze Sprï¿½nge und schnelles\nTiming im digitalen Raster.",
+            "goal": "Überlebe den Plattform-Wechsel\nim Glitch-Modus.",
+            "gameplay": "Kurze Sprünge und schnelles\nTiming im digitalen Raster.",
             "controls": "D-Pad Oben / Space (Schnellstart-Sprung)"
         },
         "en": {
@@ -268,9 +268,9 @@
     "Aether Defender": {
         "de": {
             "desc": "Farbbasiertes Taktik-Shooter-Spiel.",
-            "goal": "Absorbiere feindliche Drohnen mit\npassender Schild-Polaritï¿½t.",
-            "gameplay": "Wechsle im richtigen Moment die\nPolaritï¿½t (Cyan/Magenta).",
-            "controls": "D-Pad: Bewegen | Space: Polaritï¿½t wechseln"
+            "goal": "Absorbiere feindliche Drohnen mit\npassender Schild-Polarität.",
+            "gameplay": "Wechsle im richtigen Moment die\nPolarität (Cyan/Magenta).",
+            "controls": "D-Pad: Bewegen | Space: Polarität wechseln"
         },
         "en": {
             "desc": "Color-based tactical shooter game.",
@@ -281,7 +281,7 @@
     },
     "Cyber Flipper": {
         "de": {
-            "desc": "Ein temporeiches Arcade-Flipper-Spiel auf einem 320x240-Bildschirm. Nutze die Flipper-Arme, um den Ball im Spiel zu halten, triff Cyber-Bumper fï¿½r Bonuspunkte und verwalte deine 3 Bï¿½lle geschickt, um den Highscore zu knacken.",
+            "desc": "Ein temporeiches Arcade-Flipper-Spiel auf einem 320x240-Bildschirm. Nutze die Flipper-Arme, um den Ball im Spiel zu halten, triff Cyber-Bumper f?r Bonuspunkte und verwalte deine 3 B?lle geschickt, um den Highscore zu knacken.",
             "goal": "",
             "gameplay": "",
             "controls": ""
@@ -295,8 +295,8 @@
     },
     "Cyber Grid Chomp": {
         "de": {
-            "desc": "Neon-Labyrinth im Pac-Man-Stil.\nFuenf Sektoren, immer schlimmer.",
-            "goal": "Sammle alle Datenbits pro Sektor\nund ueberlebe bis Sektor 5.",
+            "desc": "Neon-Labyrinth im Pac-Man-Stil.\nFünf Sektoren, immer schlimmer.",
+            "goal": "Sammle alle Datenbits pro Sektor\nund überlebe bis Sektor 5.",
             "gameplay": "Phantome jagen dich.\nOverclock-Pillen kehren sie um.",
             "controls": "D-Pad / WASD (Lenken)"
         },
@@ -310,8 +310,8 @@
     "Pixel Platformer": {
         "de": {
             "desc": "Super-Mario-Jump-and-Run.\n20 Level in vier Welten.",
-            "goal": "Erreiche die Fahne in allen\n20 Leveln und ueberlebe.",
-            "gameplay": "Stampfe Gegner, sammle Power-ups\nund Muenzen fuer Punkte.",
+            "goal": "Erreiche die Fahne in allen\n20 Leveln und überlebe.",
+            "gameplay": "Stampfe Gegner, sammle Power-ups\nund Münzen für Punkte.",
             "controls": "D-Pad/WASD: Laufen, A: Springen\nZ: Schiessen"
         },
         "en": {
