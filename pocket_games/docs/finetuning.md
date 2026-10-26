@@ -1,274 +1,465 @@
-# 🎮 Developer Documentation: Game Mechanics & Balancing Parameters
+# Fine-Tuning Guide
 
-This documentation serves as a reference manual for developers to fine-tune (balance) all 20 mini-games. 
+This document lists the parameters that control gameplay behavior (speed, gravity, jump strength, timers, spawn rates, difficulty scaling). Values are taken from the source files under `../games`. Change a value in its source file, then play the game to check the effect.
 
-It describes the key variables, physics parameters, and time-dependent formulas governing behavior and difficulty progression.
-
----
-
-## 📑 Table of Contents
-
-1. [Pixel Drop](#1-pixel-drop)
-2. [Circuit Breaker](#2-circuit-breaker)
-3. [Neon Dash](#3-neon-dash)
-4. [Byte Hopper](#4-byte-hopper)
-5. [Quantum Maze](#5-quantum-maze)
-6. [Sub-Zero Miner](#6-sub-zero-miner)
-7. [Retro Pong 2077](#7-retro-pong-2077)
-8. [Bug Hunter](#8-bug-hunter)
-9. [Cyber Snake](#9-cyber-snake)
-10. [Matrix Invaders](#10-matrix-invaders)
-11. [Bit Blaster](#11-bit-blaster)
-12. [Pulse Racer](#12-pulse-racer)
-13. [Crypto Decrypt](#13-crypto-decrypt)
-14. [Kernel Panic](#14-kernel-panic)
-15. [Orbital Defense](#15-orbital-defense)
-16. [Chrono Shift](#16-chrono-shift)
-17. [Sonic Pulse](#17-sonic-pulse)
-18. [Gravity Sling](#18-gravity-sling)
-19. [Glitch Runner](#19-glitch-runner)
-20. [Aether Defender](#20-aether-defender)
+> Status: this is the first version. It covers the games and modules listed below. The remaining games are still to be documented (see the last section).
 
 ---
 
-## 1. Pixel Drop
+## Core Engine (`../core`)
 
-Tetris-style block puzzle engine with block rotation, preview, line clears, and soft drop.
-
-* **Grid Dimensions:** 10 columns $\times$ 18 rows ($11 \times 11$ px cell size).
-* **Drop Speed Formula:** 
-  $$\text{Interval (s)} = \max\left(0.1, 0.6 - (\text{elapsed_time} \cdot 0.015)\right)$$
-* **Balancing Parameters:**
-  * `drop_speed_min`: $0.1\text{ s}$ (Hard cap on tick interval).
-  * `drop_speed_decay`: $0.015\text{ s/s}$ progression rate.
-  * Lines threshold for speed increase: 20 completed lines.
+| Parameter | File | Value | Effect |
+| :--- | :--- | :--- | :--- |
+| `VIRTUAL_WIDTH` / `VIRTUAL_HEIGHT` | `core/engine.py` | 320 x 240 | Native resolution. All game coordinates are in this space. |
+| `gravity` (physics helper) | `core/physics.py` | used per game | Vertical acceleration applied by `apply_gravity`. |
 
 ---
 
-## 2. Circuit Breaker
+## Aether Defender (`games/aether_defender.py`)
 
-Cyber-circuit board flow logic puzzle with dynamic routing checks and countdown timers.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Player horizontal speed | 190 px/s (`190 * 0.016` per frame) | Movement speed with left/right keys. |
+| Player clamp range | x in [25, 295] | Left and right limits. |
+| Starting lives | 3 | Lives before game over. |
+| Hit invulnerability | 1.5 s | Time the player is safe after losing a life. |
+| Spawn interval | `max(0.35, 0.9 - elapsed * 0.008)` s | Enemies spawn faster over time, down to 0.35 s. |
+| Enemy speed | `uniform(70, 105) + min(45, elapsed * 0.8)` px/s | Base fall speed plus a boost that caps at +45 px/s. |
+| Score per matching enemy | 40 | Points for catching an enemy of the active color. |
+| Color switch particles | 6 particles, speed 60 px/s, life 0.35 s | Visual feedback only. |
 
-* **Grid Dimensions:** 5 columns $\times$ 4 rows.
-* **Timer Formula:**
-  $$\text{Round Time (s)} = \max\left(5.0, 18.0 - (\text{elapsed_time} \cdot 0.1)\right)$$
-* **State Space:** 3 state configurations ($0, 1, 2$) per node.
-* **Balancing Parameters:**
-  * `timer_bonus`: $+5.0\text{ s}$ per successful circuit path completion.
-  * `node_click_sound`: Audio trigger parameters on state rotation.
-
----
-
-## 3. Neon Dash
-
-Cyberpunk endless runner featuring 8 visual scenarios, obstacle combinations, and uneven spacing.
-
-* **Scroll Speed Formula:**
-  $$v_{\text{obstacle}} = (135.0 + (\text{level} - 1) \cdot 18.0) + (\text{level_timer} \cdot 0.08) \quad [\text{px/s}]$$
-* **Spawn Interval Formula:**
-  $$t_{\text{spawn}} = \text{random.uniform}(1.3, 2.2) - (\text{level} \cdot 0.05) \quad [\text{s}]$$
-* **Balancing Parameters:**
-  * `level_duration`: Random $30.0 \text{ to } 40.0\text{ s}$ per level stage.
-  * `obstacle_combinations_min_level`: Level 6 (complex patterns introduced).
+Tuning tips: lowering the spawn floor (0.35) makes the late game harder. Raising the speed boost cap (45) changes the late-game pace.
 
 ---
 
-## 4. Byte Hopper
+## Pixel Platformer (`games/pixel_platformer.py`)
 
-Procedural vertical platformer with camera scrolling, gravity physics, smooth platforms, and data crystals.
+### Physics and Player
 
-* **Physics Parameters:**
-  * Gravity: $g = 520.0\text{ px/s}^2$
-  * Jump Velocity: $v_{y0} = -260.0\text{ px/s}$
-  * Horizontal Speed: $v_x = \pm 140.0\text{ px/s}$
-* **Balancing Parameters:**
-  * Platform vertical gap: $35\text{ px} \le \Delta y \le 55\text{ px}$.
-  * Data Crystal spawn probability and bonus value.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `gravity` | 950 px/s² | Downward acceleration. Higher values make jumps shorter and falls faster. |
+| `jump_speed` | -420 px/s | Initial jump velocity. Jump height is about v²/(2g), roughly 93 px. |
+| `move_speed` | 160 px/s | Horizontal walking speed. |
+| Stomp bounce | `pvy = -260` px/s | Upward bounce after stomping an enemy. |
+| Fireball speed | 320 px/s | Projectile speed of the fire flower. |
+| `STAR_DURATION` | 8.0 s | Duration of star invulnerability. |
+| `SPAWN_INVULNERABILITY` | 1.5 s | Safe time after a respawn or after the fire flower absorbs a hit. |
+| Starting lives | 3 | |
+| `PLAYER_W` / `PLAYER_H` | 16 / 20 px | Collision box size. |
 
----
+### Level Layout
 
-## 5. Quantum Maze
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `MAX_LEVELS` | 20 | Number of levels. |
+| `GROUND_Y` | 205 | Y position of the ground surface. |
+| `GOAL_X` | 300 | X position that completes the level. |
+| `FIRST_TIER_Y` / `TIER_HEIGHTS` | 150 / (150, 125, 100, 75) | Heights of floating platform tiers. |
+| `MAX_RISE` | 70 px | Maximum vertical gap between platform tiers, so each platform stays reachable with a jump. |
+| `LEVEL_SEED_BASE` | 7919 | Level `n` uses seed `7919 + n`, so every level is reproducible. |
 
-Top-down labyrinth game with tightening grid density and timed Quantum Shards.
+### Difficulty Scaling per Level
 
-* **Player Speed:** $95.0\text{ px/s}$ along cardinal axes.
-* **Grid Scaling:** Increases by $+1$ column/row every 10 cores collected (max grid size capped at $10 \times 10$).
-* **Balancing Parameters:**
-  * `timed_item_duration`: $10.0\text{ s}$ before Quantum Shards vanish.
-  * Item weights distribution: Cores ($40\%$), Fragments ($25\%$), Timed Shards ($20\%$), Traps ($15\%$).
+| Element | Formula | Effect |
+| :--- | :--- | :--- |
+| Pits | `min(3, (level - 1) // 4)` pits, width `min(56, 24 + level * 2)` | More and wider gaps in the ground. |
+| Floating platforms | `min(7, 3 + level // 4)` | More platforms at higher levels. |
+| Walker enemies | `min(5, 1 + level // 4)`, speed `40 + level * 3` px/s | More and faster patrol enemies. |
+| Flyer enemies | from level 6, `min(3, (level - 5) // 5 + 1)`, speed `50 + level * 2.5` px/s | Sine-wave flyers with ±18 px amplitude. |
+| Spikes | from level 11, `min(3, (level - 10) // 4 + 1)` | Ground hazards. |
+| Power-up order | `life, gun, star, life` (repeating) | Power-up type by level. |
 
----
+### Power-ups
 
-## 6. Sub-Zero Miner
+| Power-up | Effect |
+| :--- | :--- |
+| Life | +1 life. |
+| Gun (fire flower) | Enables shooting with Z. Absorbs one hit. |
+| Star | Invulnerability for `STAR_DURATION`. Enemies are destroyed on contact. |
 
-Ice cave resource mining simulator with stalactites, stalagmites, and oxygen depletion.
-
-* **Oxygen Depletion:**
-  * Base Decay Rate: $-7.5\% / \text{s}$
-  * Frost Hazard Contact Penalty: $-25.0\% / \text{s}$
-* **Balancing Parameters:**
-  * `drill_speed`: $90.0\text{ px/s}$.
-  * Oxygen replenishment percentage per gem/bubble.
-
----
-
-## 7. Retro Pong 2077
-
-Cyber Pong variant featuring rubber-ball physics and progressive speed scaling.
-
-* **Initial Ball Velocity:** $v_x = 95.0\text{ px/s}, v_y = 65.0\text{ px/s}$ (gentle start).
-* **Speed Escalation:**
-  $$\text{Velocity Multiplier} = 1.15 \quad (\text{triggered every 10 paddle contacts})$$
-* **Balancing Parameters:**
-  * `paddle_speed`: Vertical movement step ($4.5\text{ px/frame}$).
-  * `contact_threshold`: 10 paddle hits per speed increment.
+Scoring: stomping or star-killing an enemy gives 100 points. A fireball kill gives 150 points.
 
 ---
 
-## 8. Bug Hunter
+## Cyber Grid Chomp (`games/cyber_grid_chomp.py`)
 
-Fast-paced bug squishing arcade game with varied insect classes and spawn timers.
+### Player
 
-* **Target Profiles:**
-  * `Standard`: Speed $20.0\text{ px/s}$, $\text{HP} = 1$, Value $= 20$ pts.
-  * `Fast`: Speed $45.0\text{ px/s}$, $\text{HP} = 1$, Value $= 30$ pts.
-  * `Armored`: Speed $12.0\text{ px/s}$, $\text{HP} = 2$, Value $= 50$ pts.
-* **Balancing Parameters:**
-  * Spawn interval decay rate and minimum floor cap ($0.4\text{ s}$).
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `speed` | 80 px/s | Pac-Man movement speed along the lanes. |
+| Starting lives | 3 | |
+| `SPAWN_INVULNERABILITY` | 2.0 s | Safe time at game start and after a respawn. |
+| `pill_duration` | `max(4.0, 7.0 - 0.75 * idx)` s | Overclock duration. It shrinks from 7 s to a floor of 4 s across sectors. |
 
----
+### Phantoms
 
-## 9. Cyber Snake
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `PHANTOM_COUNTS` | (3, 3, 4, 4, 5) | Phantoms per sector. |
+| `phantom_speed` | `62 + 8 * idx` px/s | Normal chase speed. Rises with each sector. |
+| `chase_chance` | `min(1.0, 0.6 + 0.1 * idx)` | Probability that a phantom hunts the player at a junction. The rest move randomly. |
+| Flee speed (overclock) | 30 px/s | Phantoms slow down while fleeing during overclock. |
+| `PHANTOM_SPAWNS` | (7,1), (1,4), (13,4), (7,5), (11,7) | Tile spawn points. |
 
-Grid-based snake game with dynamic speed scaling and high-score feedback.
+### Level Structure
 
-* **Grid Size:** $10 \times 10\text{ px}$ cells ($32 \times 21$ playing field grid).
-* **Initial Step Speed:** $0.11\text{ s/step}$.
-* **Speed Escalation:**
-  $$\text{Interval} = \max(0.05, \text{Interval}_{\text{current}} - 0.002) \quad [\text{s/step}]$$
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `MAX_LEVELS` | 5 | Number of sectors. |
+| `LEVEL_SEED_BASE` | 4242 | Sector `n` uses seed `4242 + n`, so the layout and random choices are reproducible. |
+| `TILE_SIZE` | 20 px | Grid cell size. |
+| `POWER_PILL_TILES` | 4 fixed tiles | Overclock pill positions. |
 
----
-
-## 10. Matrix Invaders
-
-Classic Space Invaders grid formation with selective shooting, enemy HP scaling, bunkers, and 5 player HP.
-
-* **Player Velocity:** $220.0\text{ px/s}$.
-* **Player HP:** 5 lives at start.
-* **Formation Speed:** $25.0 + (\text{wave} \cdot 4.0)\text{ px/s}$.
-* **Balancing Parameters:**
-  * `enemy_hp`: 1 to 3 HP depending on enemy class (Drones, Speeders, Tanks, Elites) and wave level.
-  * `bunker_hp`: 3 hits before destruction (spawns from wave 2 onwards).
-  * `enemy_shoot_cooldown`: Random uniform $2.0 \text{ to } 5.0\text{ s}$ for capable units.
+Balance note: phantom speeds, chase chance, and pill duration are first-pass estimates. They have not been playtested.
 
 ---
 
-## 11. Bit Blaster
+## Gravity Sling (`games/gravity_sling.py`)
 
-Breakout-style brick breaker game using rubber-ball bounce dynamics and row color mapping.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `MAX_LEVELS` | 3 | Number of levels. |
+| `LEVEL_TIME` | 40.0 s | Time limit per level. |
+| `SPAWN_POS` | (50, 120) | Probe start position. |
+| `LEVEL_SEED_BASE` | 4099 | Level layouts are seeded. |
+| `BACKGROUND_SEED` | 2024 | Background stars and nebula are seeded. |
+| `EFFECT_SEED` | 77 | Particle and effect randomness is seeded. |
+| `PLANET_CONFIGS` | per planet: position, radius, gravity radius, strength | Planet size and pull. Strength values are estimates and have not been playtested. |
 
-* **Paddle Dimensions:** $50 \times 8\text{ px}$, movement speed $360.0\text{ px/s}$.
-* **Ball Speed Scaling:**
-  $$\text{Speed Modifier} = \min(1.8, 1.0 + (\text{elapsed_time} \cdot 0.02))$$
-
----
-
-## 12. Pulse Racer
-
-High-velocity racing title with AI lane-dodging and center-line pylon obstacles.
-
-* **Track Boundaries:** Left wall at $X = 70\text{ px}$, Right wall at $X = 250\text{ px}$.
-* **Pylon Spawn Interval:** Every $3.0\text{ s}$ on divider lines ($X \in \{130, 190\}$).
-* **Balancing Parameters:**
-  * AI lane-checking radius and blink warning timer ($1.0\text{ s}$ before lane switch).
-  * Base vehicle speed ($180.0\text{ px/s}$ base + elapsed time scaling).
+Crystal spawns are random but seeded, so each run is identical.
 
 ---
 
-## 13. Crypto Decrypt
+## Neon Dash (`games/neon_dash.py`)
 
-Mastermind-style terminal code-breaking logic puzzle with 8 attempts and reveal delay.
-
-* **Code Length:** 4 digits ($0\text{--}9$ value range).
-* **Max Attempts:** 8 tries per puzzle set.
-* **Balancing Parameters:**
-  * `reveal_delay`: $3.0\text{ s}$ initial code flash.
-  * High-contrast UI color mappings for accessibility.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `gravity` | 880 px/s² | Downward acceleration. |
+| `jump_speed` | -390 px/s | Jump velocity. |
+| `level_duration` | `uniform(30, 40)` s | Length of each level. |
 
 ---
 
-## 14. Kernel Panic
+## Cyber Flipper (`games/cyber_flipper.py`)
 
-Emergency memory leak patching game with increased spawn density and multi-click FATAL blocks.
-
-* **Memory Meter Capacity:** $0.0\%$ to $100.0\%$. Game Over on $100\%$.
-* **Balancing Parameters:**
-  * `fatal_clicks`: 2 to 3 successful clicks required to clear FATAL error blocks.
-  * Spawn interval decay based on score scaling.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `gravity` | 450 px/s² | Ball gravity. Lower values make the ball float longer. |
+| `ball_radius` | 5 px | Ball collision size. |
 
 ---
 
-## 15. Orbital Defense
+## Pixel Drop (`games/pixel_drop.py`)
 
-Rotational planetary shield defense game with progressive spawn rates, smart tracking meteors, and dual-shield upgrade.
-
-* **Shield Rotation Speed:** $5.0 + (\text{level} - 1) \cdot 0.8\text{ deg/frame}$.
-* **Upgrade Thresholds:** Dual-shield unlocked at Level 3 ($750\text{ score}$).
-* **Balancing Parameters:**
-  * Smart meteor steering interpolation factor ($1.5 \cdot \text{dt}$).
-  * Impact explosion particle count (10 particles per deflection at exact impact coordinates).
+The fall speed formula from the developer guide is `t_drop = max(0.1, 0.6 - lines_cleared * 0.015)` s. Verify this against the source before relying on it.
 
 ---
 
-## 16. Chrono Shift
+## Bit Blaster (`games/bit_blaster.py`)
 
-Temporal paradox navigation game with multi-level zones and moving glitch anomalies.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Starting lives | 3 | Lives before game over. |
+| `max_levels` | 20 | Number of levels. |
+| Paddle width | `max(45, 100 - (level - 1) * 3)` px | Paddle shrinks each level, down to 45 px. |
+| Keyboard paddle step | 7 px per frame | Paddle movement speed. |
+| Ball start speed | `100 + (level - 1) * 7` px/s | Base ball speed per level. |
+| Ball speed modifier | `min(1.6, 1.0 + elapsed_time * 0.004)` | Ball speeds up over time, capped at 1.6x. |
+| Block rows | `min(6, 4 + (level - 1) // 5)` | More rows at higher levels. Columns fixed at 7. |
+| Block HP | 2 for level 10+ in row 0 on even columns, else 1 | Multi-hit bricks. |
+| Score per brick | `25 * level` | Points for destroying a brick. |
+| Ball loss | ball top below y = 240 | Costs one life. |
 
-* **Movement Speed:** Acceleration $360.0 + (\text{level} \cdot 40.0)\text{ px/s}^2$.
-* **Anomaly Field:** Moving glitch hazards with bounce physics at boundaries.
-* **Balancing Parameters:**
-  * Level progression threshold: 4 fragments collected per zone (max 3 zones).
-  * Trail history length capped between $30 \text{ and } 50$ positions based on level.
-
----
-
-## 17. Sonic Pulse
-
-Rhythmic pulse expanding game with progressive tolerance ring.
-
-* **Pulse Expansion Speed:** Radial growth rate.
-* **Balancing Parameters:**
-  * Tolerance error margin tightening dynamically with score and level.
+Tuning tips: paddle width and the ball speed ramp together make later levels harder. Adjust the 3 px and 7 px/s steps to change the curve.
 
 ---
 
-## 18. Gravity Sling
+## Bug Hunter (`games/bug_hunter.py`)
 
-Space probe launching game utilizing active 4-way vector thrusters and $1/r^2$ gravitational pull.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Start time | 30 s | Starting timer. |
+| `max_time` | 60 s | Timer cap. |
+| Timer drain | `dt * (1.0 + elapsed_time * 0.015)` | Timer runs down faster over time. |
+| Spawn interval | starts at 1.0 s, -0.04 s every 6 s, floor 0.25 s | Spawn rate ramps up. |
+| Max bugs on screen | `min(18, 8 + score // 100)` | Higher score allows more bugs at once. |
+| Bug type weights | standard 40, fast 30, armored 20, glitch 10 | Spawn chance per type. |
+| Bug speed | standard 22, fast 52, armored 14, glitch 68 px/s | Speed per axis (`vx` and `vy` each use this value). |
+| Armored HP | 2 | Needs two clicks. |
+| Points per kill | glitch 75, armored 50, fast 30, standard 20 | Score per type. |
+| Time gain per kill | glitch 2.5 s, armored 2.0 s, fast 1.2 s, standard 1.0 s | Timer extension per kill, capped at `max_time`. |
+| Glitch direction change | 6% chance per frame, velocity ±20 px/s | Erratic movement. |
 
-* **Thrust Power:** $180.0\text{ px/s}^2$ across 4 cardinal directions.
-* **Space Damping:** Velocity multiplier $0.985$ per frame for precise maneuverability.
-* **Balancing Parameters:**
-  * Planetary gravity strength ($7000.0 \text{ to } 9000.0$).
-  * Crystal collection target: 4 crystals per sector across 3 escalating sectors.
-
----
-
-## 19. Glitch Runner
-
-Tactical cyber puzzle game on a digital grid against a real-time countdown timer.
-
-* **Grid Dimensions:** Scaled from $5 \times 5$ up to $8 \times 7$ based on level.
-* **Timer Limit:** $\max(10.0, 18.0 - (\text{level} \cdot 2.0))\text{ seconds}$ per sector.
-* **Balancing Parameters:**
-  * `glitch_interval`: Time between dynamic system corruption tile spawns.
-  * Sector target threshold: 3 successful extractions per level stage.
+Tuning tips: the drain multiplier and spawn floor set the late-game pressure. Time gains decide how forgiving the run is.
 
 ---
 
-## 20. Aether Defender
+## Byte Hopper (`games/byte_hopper.py`)
 
-Polarity-matching vertical space shooter where player shield state must match incoming laser colors.
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Gravity | 540 px/s² | Downward acceleration. |
+| Jump velocity | -310 px/s | Bounce velocity on landing. |
+| Horizontal speed | 175 px/s | Left/right movement. |
+| Platform width | 58 to 80 px | Random width per platform. |
+| Vertical gap | 45 to 58 px | Spacing between platform rows. |
+| Motion weights | static 65, horizontal 25, vertical 10 | Platform type chance. |
+| Moving platform speed | 4 to 10 rad/s (phase speed) | Oscillation speed. |
+| Moving platform range | horizontal 20 to 50 px, vertical 10 to 30 px | Oscillation amplitude. |
+| Overlap check | 45 px height band, 15 px horizontal margin | Prevents overlapping moving platforms. |
+| Coin chance | 25% per platform | Coin spawn. |
+| Crystal chance | 12% of non-coin platforms | Crystal spawn. |
+| Coin / crystal points | 50 / 150 | Score per pickup. |
+| Camera pull | when the player is less than 100 px below the camera top | Pushes the camera up, adds height score, and spawns new platforms. |
+| Game over | player falls more than 250 px below the camera | Ends the run. |
 
-* **Movement Speed:** $140.0\text{ px/s}$ along horizontal line $Y = 200\text{ px}$.
-* **Color States:** Cyan / Red polarity toggle states.
+Tuning tips: gravity and jump velocity set the reachable platform gap. Keep the vertical gap below the jump height (about v²/2g, roughly 110 px).
+
+---
+
+## Chrono Shift (`games/chrono_shift.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Starting lives | 3 | |
+| Acceleration | `360 + level * 40` per frame (dt 0.016) | Player thrust. |
+| Damping | `0.93 - level * 0.01` | Velocity decay per frame. Higher levels slide more. |
+| Arena bounds | x in [20, 300], y in [40, 220] | Leaving the bounds costs a life. |
+| Respawn invulnerability | 1.5 s | Safe time after losing a life. |
+| Spawn protection | 1.0 s | Safe time at game start. |
+| Anomaly count | `min(6, level + 2)` | Hazard count per zone. |
+| Anomaly speed | per axis `uniform(-45, 45) * (1 + 0.35 * level)` px/s | Hazard speed grows with zone. |
+| Trail length | `max(30, 50 - level * 5)` nodes | Shorter trail at higher zones. |
+| Trail self-collision | after the first 8 trail nodes | Crossing your own trail costs a life. |
+| Fragments per zone | 4 | Zone advance after 4 pickups (zones 1 to 3). |
+| Fragment points | `50 + level * 25` | Score per pickup. |
+
+Tuning tips: the damping and acceleration pair defines how slippery the controls feel. Trail length controls how much room the player has to move.
+
+---
+
+## Circuit Breaker (`games/circuit_breaker.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Grid width | `min(7, 5 + level // 5)` | Columns per level. |
+| Grid height | `min(5, 4 + level // 15)` | Rows per level. |
+| Number of states | `min(5, 3 + level // 10)` | Chip states to cycle through. |
+| Start timer | 18 s | Timer cap is also 18 s. |
+| Timer drain | `dt * (1.0 + (level - 1) * 0.12)` | Drain grows with level. |
+| Bonus time | `max(3.0, 6.0 - level * 0.4)` s | Added after each solved circuit, capped at 18 s. |
+| Level up | every 3 solved circuits | Advances `level`. |
+| Solve points | `250 + level * 50` | Score per solved circuit. |
+
+Tuning tips: the timer drain and bonus time define the pressure. The number of states controls how many clicks a chip needs.
+
+---
+
+## Crypto Decrypt (`games/crypto_decrypt.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| `code_length` | 4 | Digits in the secret code. |
+| `max_attempts` | 8 | Guesses before the code is revealed. |
+| Input lockout | 3.0 s at the start of each round | Blocks submitting guesses only. Digit editing still works. |
+| Solve score | `max(100, int(10000 / time_spent)) + attempts_left * 200` | Faster solves and remaining attempts score more. `time_spent` is at least 0.1 s. |
+
+Tuning tips: `max_attempts` and the lockout set the difficulty. The solve formula rewards speed and remaining attempts.
+
+---
+
+## Cyber Snake (`games/cyber_snake.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Grid cell size | 10 px | Each tile is 10 px. |
+| Board size | 32 columns x 24 rows | Playfield. Rows 0 to 2 are the HUD. |
+| Start move interval | 0.11 s | Time between snake moves. |
+| Speed-up per food | -0.002 s, floor 0.05 s | Snake accelerates each time it eats. |
+| Food points | 15 | Score per food. |
+
+Tuning tips: the per-food speed-up and the floor define the late-game speed. The floor of 0.05 s is the maximum speed.
+
+---
+
+## Glitch Runner (`games/glitch_runner.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Grid width | `min(8, 5 + level)` | Columns per sector. |
+| Grid height | `min(7, 5 + level // 2)` | Rows per sector. |
+| Time limit | `max(10, 18 - level * 2)` s (15 s in the constructor before the first setup) | Time per sector. |
+| Initial glitches | `level + 2` | Glitched tiles at sector start. |
+| Max glitched tiles | `level + 3` | When a new system glitch exceeds this count, one arbitrary existing glitch is removed. |
+| System glitch interval | `max(1.5, 4.0 - level * 0.8)` s | How often a new glitch appears. |
+| Sector clear score | `150 * level + int(time_remaining * 10)` | Points for reaching the exit. |
+| Sector advance | after 3 exits, up to level 3 | Level progression. |
+
+Tuning tips: the glitch interval and tile cap together set how much room the player has to route.
+
+---
+
+## Kernel Panic (`games/kernel_panic.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Spawn interval | `max(0.4, 1.1 - (score / 350) * 0.20)` s | Leaks spawn faster as score rises. |
+| Base fall speed | uniform 70 to 90 px/s | Random speed per leak. |
+| Speed multiplier | `1.2 + score / 600` | Leaks fall faster as score rises. |
+| Fatal chance | 15% when score > 250 | Spawn chance for fatal errors. |
+| Fatal clicks | 2 | Clicks needed to destroy a fatal error. |
+| Click reward | 25 (normal), 40 (fatal) | Score per destroyed leak. |
+| RAM relief | -6 per normal, -10 per fatal kill | Memory freed on kill. |
+| Escape penalty | +12 RAM (normal), +18 RAM (fatal) | Memory added when a leak escapes the bottom. |
+| Game over | RAM at 100% | Ends the run. |
+
+Tuning tips: the spawn and speed formulas are driven by score, so score tuning changes difficulty directly.
+
+---
+
+## Matrix Invaders (`games/matrix_invaders.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Player HP | 5 (max 5) | Hits before game over. |
+| Player speed | 220 px/s | Ship movement. |
+| Player bullet speed | 420 px/s | Shot speed. |
+| Weapon levels | 1 to 4 | 1 shot, 2 shots, 3 shots, then beam plus side shots. |
+| Shield duration | 8 s | Shield pickup lasts 8 s. It is consumed by the first enemy hit. |
+| Formation columns | `min(7, 4 + wave // 3)` | Invaders per row. |
+| Formation rows | `min(4, 2 + wave // 3)` | Number of rows. |
+| Formation speed | `20 + wave * 2` px/s | Horizontal march speed. |
+| Enemy HP | `base + wave // 4`, max 4 | Base HP: cyber lord 3, elite 2, tank 2, others 1. |
+| Enemy fire cooldown | uniform 1.8 to 4.5 s, minus `min(1.2, wave * 0.1)` | Shot frequency. |
+| Enemy bullet speed | `130 + wave * 10` px/s | Shot speed. |
+| Kamikaze dive | from wave 8, chance `0.001 * wave` per invader per frame, speed 140 px/s | Divers fall straight at the player. |
+| Bunkers | from wave 2, 3 HP each | Cover against enemy fire. |
+| Drop chance | 35% per kill | Chance that a weapon, shield or life pickup drops. |
+| Life drop limit | once per wave | A life pickup can drop only once per wave. |
+| Invader points | cyber lord 100, elite 60, tank 40, others 25 | Score per kill. |
+| Wave clear score | `400 * wave` | Bonus for clearing a wave. |
+| Rest between waves | 2 s | Pause before the next wave. |
+
+Note: the code comment near the life pickup says "max 3", but `max_player_hp` is 5. Check which value you want.
+
+---
+
+## Orbital Defense (`games/orbital_defense.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Reactor HP | 3 (max 5) | Core health. |
+| Level | `1 + score // 250` | Derived from score. |
+| Rotation speed | `5.0 + (level - 1) * 0.8` deg per frame | Shield turn speed. |
+| Spawn interval | `max(0.3, 1.6 - time * 0.018 - level * 0.08)` s | Meteor rate. |
+| Smart meteor chance | `0.15 * level` (level 2+) | Meteors that home in on the core. |
+| Heavy meteor chance | 20% (level 2+), damage 2 | Larger meteors that deal double damage. |
+| Meteor speed | uniform 65 to 85, plus `level * 5` px/s | Fall speed. |
+| Goodie spawn | every 12 s, speed 50 px/s | Heals one HP. |
+| Shield orbit radius | 42 px | Distance of the shield from the core. |
+| Shield size | `max(5, 9 - (level - 1) * 1.5)` px | Shields shrink per level. |
+| Reactor radius | `12 + (level - 1) * 3` px | Core grows per level. |
+| Dual shield | from level 3 | Second shield opposite the first. |
+| Points | heavy 40, smart 30, normal 20, goodie 50 | Score per event. |
+
+Tuning tips: shield size and rotation speed decide how hard it is to block. The spawn interval controls the meteor pressure over time.
+
+---
+
+## Pulse Racer (`games/pulse_racer.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Starting lives | 3 | |
+| Base speed | `180 + elapsed_time * 3.0` px/s | Road speed grows over time. |
+| Respawn acceleration | `base * dt * 1.5` | Car speeds back up after a crash. |
+| Distance score | 1 point per px | Score from distance driven. |
+| Lane centers | 100, 160, 220 px | Three lanes. |
+| Player steer clamp | x in [85, 235] | Steering limits. |
+| Steer speed | 190 px/s | Lateral movement. |
+| Pylon spawn | every 3 s | Divider obstacles. |
+| Roadside drain spawn | every 2.4 s | Paired drains at the edges. |
+| Traffic spawn interval | `max(0.45, 2.2 - elapsed_time * 0.03)` s | Traffic density grows over time. |
+| Cruiser net offset | 70 px/s slower than base | Slow traffic. |
+| Blocker net offset | 10 px/s slower | Slightly slower. |
+| Speedy net offset | 25 px/s slower | Medium traffic. |
+| Oncoming speed | `110 + elapsed_time * 2.0` px/s | Head-on traffic. |
+| Blink warning | 1.0 s | Time before an AI lane change. |
+| Lane change speed | 130 px/s | Sideways movement of traffic. |
+| Crash clear zone | ±70 px | Traffic near the player is removed on respawn. |
+
+Tuning tips: the net offsets and spawn interval set the traffic difficulty. The blink time sets how readable AI moves are.
+
+---
+
+## Quantum Maze (`games/quantum_maze.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Starting grid | 5 x 5 | Maze size. |
+| Grid growth | +1 column and row every 2nd level, max 10 | Larger mazes at higher levels. |
+| Level up | every 10 core shards | Advances `level`. |
+| Item weights | core 40, fragment 25, timed 20, trap 15 | Spawn chance per item. |
+| Timed shard lifetime | 10 s | Shard disappears after 10 s. |
+| Player speed | 95 px/s | Movement speed. |
+| Points | core 100, fragment 50, timed 200, trap -50 | Score per item. |
+| Items on the board | 5 | Active item count. |
+
+Tuning tips: the timed shard lifetime and grid growth set the difficulty. Trap points can make scores go negative.
+
+---
+
+## Retro Pong 2077 (`games/retro_pong.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Start ball velocity | (95, 65) px/s | Initial ball speed. |
+| Speed-up interval | every 10 paddle hits | Ball speed increases in steps. |
+| Speed-up factor | ×1.15 on both axes | Multiplier applied at each interval. |
+| Paddle keyboard speed | 4.5 px per frame | Paddle movement. |
+| Paddle clamp | y in [40, 210] | Paddle limits. |
+| Hit points | 10 per paddle hit | Score per return. |
+| Miss | ball passes the left edge | Ends the game. |
+
+Tuning tips: the speed-up factor and interval set the rally pace. The hit interval is the main difficulty lever.
+
+---
+
+## Sonic Pulse (`games/sonic_pulse.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Target radius | 40 px | Ring radius where the hit must land. |
+| Tolerance | `max(7.0, 28.0 - score * 0.015)` px | Hit window. Starts at ±28 px and narrows to a floor of ±7 px. |
+| Ring spawn delay | `max(0.45, 1.4 - level * 0.12)` s | Time between incoming rings. |
+| Ring speed | uniform 65 to 95 px/s, plus `(level - 1) * 12` | Inward speed of incoming rings. |
+| Ring start radius | 120 px | Rings start here and shrink toward the core. |
+| Miss on ring escape | -12 integrity, combo reset | A ring that reaches the core costs integrity. |
+| Wrong press | -10 integrity, combo reset | Pressing with no ring in the window. |
+| Integrity start | 100 | Game over at 0. |
+| Combo integrity reward | +5 every 3 combo hits | Recovers integrity on a streak. |
+| Hit points | `(25 + (level - 1) * 10) * min(combo, 5)` | Score per hit. Combo multiplier caps at 5. |
+| Level | `1 + score // 300` | Derived from score. |
+
+---
+
+## Sub-Zero Miner (`games/sub_zero_miner.py`)
+
+| Parameter | Value | Effect |
+| :--- | :--- | :--- |
+| Starting lives | 3 | |
+| Oxygen | 100 max | Oxygen empties over time. |
+| Oxygen drain | `5.0 + level * 1.8` per s | Drain rate grows with level. |
+| Hazard drain | 12 per s | Oxygen lost while touching an ice hazard. |
+| Spore drain | 35 per s | Oxygen lost while touching a toxic spore. |
+| Respawn invulnerability | 2.0 s | Safe time after losing a life. Oxygen resets to 100. |
+| Player speed | 110 px/s | Movement speed. |
+| Oxygen refill | +22 per gem | Oxygen restored on pickup. |
+| Gem points | 30 | Score per gem. |
+| Gems per level | 4 | Level up when all gems are collected. |
+| Hazards | 3 | Ice hazards per level. |
+| Toxic spores | `2 + min(level, 3)` | Spore count per level. |
+
+Tuning tips: the oxygen drain and hazard drain are the main pressure. The gem refill is the main recovery.
