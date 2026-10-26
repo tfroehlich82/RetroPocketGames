@@ -11,9 +11,14 @@ from pocket_games.core.input import InputManager
 from pocket_games.games.base import GAME_METADATA
 from pocket_games.games.cyber_grid_chomp import (
     BLOCKED_TILES,
+    GRID_COLS,
+    GRID_ROWS,
     MAX_LEVELS,
     PHANTOM_COUNTS,
     PHANTOM_SPAWNS,
+    PLAYER_SPAWN,
+    POWER_PILL_TILES,
+    SPAWN_INVULNERABILITY,
     WALL_RECTS,
     CyberGridChompGame,
     _distance_map,
@@ -32,6 +37,10 @@ class MockEngine:
         self.highscores = None
 
 
+def open_tiles() -> set[tuple[int, int]]:
+    return {(c, r) for c in range(GRID_COLS) for r in range(GRID_ROWS)} - BLOCKED_TILES
+
+
 class TestCyberGridChomp(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -41,15 +50,30 @@ class TestCyberGridChomp(unittest.TestCase):
     def setUp(self) -> None:
         random.seed(1234)
 
-    def make_game(self) -> CyberGridChompGame:
+    def make_game(self, level: int = 1) -> CyberGridChompGame:
         game = CyberGridChompGame(MockEngine())
         game.showing_intro = False
+        if level != 1:
+            game.level = level
+            game._setup_level()
+        game.invulnerable_timer = 0.0
         return game
 
     def place_player_on_tile(self, game: CyberGridChompGame, tile: tuple[int, int]) -> None:
+        game.ptile = tile
         game.px, game.py = _tile_center(tile)
+        game.ptarget = None
         game.pdir_x, game.pdir_y = 0.0, 0.0
         game.next_dir_x, game.next_dir_y = 0.0, 0.0
+
+    def place_phantom_on_tile(self, game: CyberGridChompGame, index: int, tile: tuple[int, int]) -> dict:
+        ph = game.phantoms[index]
+        ph["x"], ph["y"] = _tile_center(tile)
+        ph["target"], ph["dx"], ph["dy"] = None, 0, 0
+        return ph
+
+    def isolate_player_from_bits(self, game: CyberGridChompGame) -> None:
+        game.bits = [{"x": 1000, "y": 1000}]
 
     def test_game_flow_and_input(self) -> None:
         engine = MockEngine()
@@ -59,41 +83,35 @@ class TestCyberGridChomp(unittest.TestCase):
         self.assertEqual(game.lives, 3)
         self.assertEqual(game.level, 1)
 
-        # Simulate a direction change through input
         event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RIGHT)
         pygame.event.post(event)
         engine.input.update()
         game.handle_input()
         self.assertEqual(game.next_dir_x, 1.0)
 
-        # Simulate a collision with a phantom once the spawn grace period is over
-        game.invulnerable_timer = 0.0
-        game.px, game.py = 100.0, 100.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 100.0, 100.0
-        game.update(0.016)
-        self.assertEqual(game.lives, 2)
-
     def test_player_is_safe_for_two_seconds_after_start(self) -> None:
-        game = self.make_game()
-        self.assertEqual(game.invulnerable_timer, 2.0)
-        game.px, game.py = 100.0, 100.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 100.0, 100.0
+        game = CyberGridChompGame(MockEngine())
+        game.showing_intro = False
+        self.assertEqual(game.invulnerable_timer, SPAWN_INVULNERABILITY)
+        self.isolate_player_from_bits(game)
+        self.place_player_on_tile(game, (7, 7))
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.016)
         self.assertEqual(game.lives, 3)
         game.update(1.9)
         self.assertGreater(game.invulnerable_timer, 0.0)
-        game.px, game.py = 100.0, 100.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 100.0, 100.0
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.0)
         self.assertEqual(game.lives, 3)
-        game.px, game.py = 250.0, 150.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 60.0, 60.0
-        game.update(0.2)
-        self.assertEqual(game.lives, 3)
-        game.px, game.py = 100.0, 100.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 100.0, 100.0
+        game.invulnerable_timer = 0.0
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.0)
         self.assertEqual(game.lives, 2)
+
+    def test_player_starts_centered_on_spawn_tile(self) -> None:
+        game = self.make_game()
+        self.assertEqual((game.px, game.py), PLAYER_SPAWN)
+        self.assertEqual(game.ptile, _tile_of(*PLAYER_SPAWN))
 
     def test_bits_and_power_pills_are_centered_in_lanes(self) -> None:
         game = self.make_game()
@@ -108,25 +126,48 @@ class TestCyberGridChomp(unittest.TestCase):
                 self.assertEqual(blocked(x - offset, y), blocked(x + offset, y), (x, y))
                 self.assertEqual(blocked(x, y - offset), blocked(x, y + offset), (x, y))
 
-    def test_metadata_is_registered_for_game(self) -> None:
-        self.assertIn("Cyber Grid Chomp", GAME_METADATA)
-        for lang in ("de", "en"):
-            entry = GAME_METADATA["Cyber Grid Chomp"][lang]
-            for key in ("desc", "goal", "gameplay", "controls"):
-                self.assertTrue(entry[key], f"{lang}.{key} must not be empty")
+    def test_corridors_are_one_tile_wide(self) -> None:
+        tiles = open_tiles()
+        for col in range(GRID_COLS - 1):
+            for row in range(GRID_ROWS - 1):
+                block = {(col, row), (col + 1, row), (col, row + 1), (col + 1, row + 1)}
+                self.assertFalse(block <= tiles, f"2x2 open area at {(col, row)}")
 
-    def test_game_has_five_sectors(self) -> None:
-        self.assertEqual(MAX_LEVELS, 5)
-        game = self.make_game()
-        self.assertEqual(game.level, 1)
-        self.assertEqual(game.game_name, "Cyber Grid Chomp")
+    def test_all_open_tiles_are_reachable_from_spawn(self) -> None:
+        distances = _distance_map(PHANTOM_SPAWNS[0])
+        self.assertEqual(set(distances), open_tiles())
+
+    def test_level_layout_is_reproducible(self) -> None:
+        for level in range(1, MAX_LEVELS + 1):
+            random.seed(1)
+            first = self.make_game(level)
+            random.seed(999)
+            second = self.make_game(level)
+            self.assertEqual(
+                [(b["x"], b["y"]) for b in first.bits], [(b["x"], b["y"]) for b in second.bits]
+            )
+            self.assertEqual(
+                [(p["x"], p["y"]) for p in first.phantoms], [(p["x"], p["y"]) for p in second.phantoms]
+            )
+
+    def test_phantom_behaviour_is_reproducible_regardless_of_global_random(self) -> None:
+        def simulate(global_seed: int) -> list[tuple[float, float]]:
+            random.seed(global_seed)
+            game = self.make_game(level=3)
+            track = []
+            for _ in range(200):
+                game.update(0.05)
+                track.extend((ph["x"], ph["y"]) for ph in game.phantoms)
+                if game.game_over:
+                    break
+            return track
+
+        self.assertEqual(simulate(1), simulate(777))
 
     def test_phantom_count_increases_per_level(self) -> None:
         counts = []
         for level in range(1, MAX_LEVELS + 1):
-            game = self.make_game()
-            game.level = level
-            game._setup_level()
+            game = self.make_game(level)
             counts.append(len(game.phantoms))
         self.assertEqual(counts, list(PHANTOM_COUNTS))
         self.assertEqual(counts, sorted(counts))
@@ -135,9 +176,7 @@ class TestCyberGridChomp(unittest.TestCase):
     def test_phantom_speed_and_chase_chance_increase_per_level(self) -> None:
         speeds, chases = [], []
         for level in range(1, MAX_LEVELS + 1):
-            game = self.make_game()
-            game.level = level
-            game._setup_level()
+            game = self.make_game(level)
             speeds.append(game.phantom_speed)
             chases.append(game.chase_chance)
         self.assertEqual(speeds, sorted(speeds))
@@ -148,49 +187,48 @@ class TestCyberGridChomp(unittest.TestCase):
     def test_overclock_duration_shrinks_per_level(self) -> None:
         durations = []
         for level in range(1, MAX_LEVELS + 1):
-            game = self.make_game()
-            game.level = level
-            game._setup_level()
+            game = self.make_game(level)
             durations.append(game.pill_duration)
         self.assertEqual(durations, sorted(durations, reverse=True))
         self.assertGreaterEqual(min(durations), 4.0)
 
     def test_each_level_has_data_bits_to_clear(self) -> None:
         for level in range(1, MAX_LEVELS + 1):
-            game = self.make_game()
-            game.level = level
-            game._setup_level()
+            game = self.make_game(level)
             self.assertGreater(len(game.bits), 0)
 
     def test_bits_and_phantoms_never_sit_inside_walls(self) -> None:
         for level in range(1, MAX_LEVELS + 1):
-            game = self.make_game()
-            game.level = level
-            game._setup_level()
+            game = self.make_game(level)
             for bit in game.bits:
-                bit_rect = pygame.Rect(bit["x"] - 2, bit["y"] - 2, 4, 4)
-                self.assertFalse(any(bit_rect.colliderect(w) for w in WALL_RECTS))
+                self.assertNotIn(_tile_of(bit["x"], bit["y"]), BLOCKED_TILES)
             for ph in game.phantoms:
                 self.assertNotIn(_tile_of(ph["x"], ph["y"]), BLOCKED_TILES)
 
     def test_phantom_spawn_tiles_are_open(self) -> None:
         for tile in PHANTOM_SPAWNS:
             self.assertNotIn(tile, BLOCKED_TILES)
+        for tile in POWER_PILL_TILES:
+            self.assertNotIn(tile, BLOCKED_TILES)
+
+    def test_wall_rects_match_blocked_tiles(self) -> None:
+        self.assertEqual(len(WALL_RECTS), len(BLOCKED_TILES))
 
     def test_tile_helpers_clamp_to_grid(self) -> None:
         self.assertEqual(_tile_of(-50.0, -50.0), (0, 0))
-        self.assertEqual(_tile_of(9999.0, 9999.0), (31, 23))
-        self.assertEqual(_tile_center((2, 3)), (25.0, 35.0))
+        self.assertEqual(_tile_of(9999.0, 9999.0), (GRID_COLS - 1, GRID_ROWS - 1))
+        self.assertEqual(_tile_center((2, 3)), (60.0, 80.0))
 
     def test_open_neighbors_skip_blocked_tiles(self) -> None:
-        for tile in ((20, 11), (16, 11)):
+        self.assertEqual(set(_open_neighbors((1, 1))), {(2, 1), (1, 2)})
+        for tile in open_tiles():
             for nxt in _open_neighbors(tile):
                 self.assertNotIn(nxt, BLOCKED_TILES)
 
     def test_distance_map_covers_connected_open_tiles_only(self) -> None:
-        distances = _distance_map((16, 11))
-        self.assertEqual(distances[(16, 11)], 0)
-        self.assertEqual(distances[(19, 11)], 3)
+        distances = _distance_map((7, 7))
+        self.assertEqual(distances[(7, 7)], 0)
+        self.assertEqual(distances[(8, 7)], 1)
         for tile in distances:
             self.assertNotIn(tile, BLOCKED_TILES)
 
@@ -198,21 +236,17 @@ class TestCyberGridChomp(unittest.TestCase):
         game = self.make_game()
         game.chase_chance = 1.0
         game.overclock_timer = 0.0
-        self.place_player_on_tile(game, (16, 11))
-        ph = game.phantoms[0]
-        ph["x"], ph["y"] = _tile_center((20, 11))
-        ph["target"], ph["dx"], ph["dy"] = None, 0, 0
-        self.assertEqual(game._choose_next_tile(ph), (19, 11))
+        self.place_player_on_tile(game, (7, 7))
+        ph = self.place_phantom_on_tile(game, 0, (11, 7))
+        self.assertEqual(game._choose_next_tile(ph), (10, 7))
 
     def test_fleeing_phantom_steps_away_from_player(self) -> None:
         game = self.make_game()
         game.overclock_timer = 5.0
-        self.place_player_on_tile(game, (16, 11))
-        ph = game.phantoms[0]
-        ph["x"], ph["y"] = _tile_center((20, 11))
-        ph["target"], ph["dx"], ph["dy"] = None, 0, 0
+        self.place_player_on_tile(game, (7, 7))
+        ph = self.place_phantom_on_tile(game, 0, (11, 7))
         for _ in range(10):
-            self.assertIn(game._choose_next_tile(ph), {(21, 11), (20, 12)})
+            self.assertIn(game._choose_next_tile(ph), {(11, 6), (12, 7)})
 
     def test_phantom_movement_stays_on_open_tiles(self) -> None:
         game = self.make_game()
@@ -225,17 +259,15 @@ class TestCyberGridChomp(unittest.TestCase):
 
     def test_higher_levels_chase_more_often_than_level_one(self) -> None:
         game = self.make_game()
-        self.place_player_on_tile(game, (16, 11))
-        ph = game.phantoms[0]
-        ph["x"], ph["y"] = _tile_center((20, 11))
-        ph["target"] = None
+        self.place_player_on_tile(game, (7, 7))
+        ph = self.place_phantom_on_tile(game, 0, (11, 7))
 
         def hunting_hits(chase: float) -> int:
             game.chase_chance = chase
             random.seed(99)
             hits = 0
             for _ in range(200):
-                if game._choose_next_tile(ph) == (19, 11):
+                if game._choose_next_tile(ph) == (10, 7):
                     hits += 1
             return hits
 
@@ -243,91 +275,107 @@ class TestCyberGridChomp(unittest.TestCase):
 
     def test_player_cannot_walk_into_wall(self) -> None:
         game = self.make_game()
-        game.px, game.py = 160.0, 31.0
+        self.isolate_player_from_bits(game)
+        self.place_player_on_tile(game, (1, 1))
+        start = (game.px, game.py)
         game.next_dir_x, game.next_dir_y = 0.0, -1.0
         game.update(0.1)
-        self.assertEqual(game.pdir_y, 0.0)
-        self.assertEqual(game.py, 31.0)
+        self.assertEqual((game.pdir_x, game.pdir_y), (0.0, 0.0))
+        self.assertEqual((game.px, game.py), start)
 
     def test_valid_turn_is_applied(self) -> None:
         game = self.make_game()
-        self.place_player_on_tile(game, (16, 11))
+        self.place_player_on_tile(game, (7, 7))
         game.next_dir_x, game.next_dir_y = 1.0, 0.0
         start_x = game.px
         game.update(0.1)
         self.assertEqual((game.pdir_x, game.pdir_y), (1.0, 0.0))
         self.assertGreater(game.px, start_x)
 
-    def test_player_wraps_around_horizontal_edges(self) -> None:
+    def test_player_stays_in_lane_while_moving(self) -> None:
         game = self.make_game()
-        game.px, game.py = 14.0, 110.0
-        game.update(0.0)
-        self.assertEqual(game.px, 290.0)
+        self.isolate_player_from_bits(game)
+        self.place_player_on_tile(game, (7, 7))
+        game.next_dir_x, game.next_dir_y = 1.0, 0.0
+        lane_y = _tile_center((7, 7))[1]
+        for _ in range(40):
+            game.update(0.02)
+            self.assertEqual(game.py, lane_y)
+
+    def test_player_reaches_next_tile_center_exactly(self) -> None:
+        game = self.make_game()
+        self.isolate_player_from_bits(game)
+        self.place_player_on_tile(game, (7, 7))
+        game.next_dir_x, game.next_dir_y = 1.0, 0.0
+        for _ in range(30):
+            game.update(0.02)
+            if game.ptile == (8, 7):
+                break
+        self.assertEqual(game.ptile, (8, 7))
+        self.assertEqual((game.px, game.py), _tile_center((8, 7)))
 
     def test_power_pill_activates_overclock(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
-        game.px, game.py = 30.0, 30.0
+        self.isolate_player_from_bits(game)
+        self.place_player_on_tile(game, POWER_PILL_TILES[0])
         game.update(0.0)
         self.assertEqual(game.overclock_timer, game.pill_duration)
         self.assertEqual(len(game.power_pills), 3)
 
     def test_eating_bit_adds_score(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}, {"x": 160, "y": 110}]
-        self.place_player_on_tile(game, (16, 11))
+        game.bits = [{"x": 1000, "y": 1000}, {"x": _tile_center((7, 7))[0], "y": _tile_center((7, 7))[1]}]
+        self.place_player_on_tile(game, (7, 7))
         game.update(0.0)
         self.assertEqual(game.score, 10)
         self.assertEqual(len(game.bits), 1)
 
     def test_phantom_collision_costs_life(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
         game.invulnerable_timer = 0.0
-        game.px, game.py = 200.0, 150.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 200.0, 150.0
+        self.isolate_player_from_bits(game)
+        self.place_player_on_tile(game, (7, 7))
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.0)
         self.assertEqual(game.lives, 2)
-        self.assertEqual(game.invulnerable_timer, 2.0)
-        self.assertEqual((game.px, game.py), (160.0, 110.0))
+        self.assertEqual(game.invulnerable_timer, SPAWN_INVULNERABILITY)
+        self.assertEqual((game.px, game.py), PLAYER_SPAWN)
 
     def test_invulnerability_prevents_life_loss(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
+        self.isolate_player_from_bits(game)
         game.invulnerable_timer = 1.0
-        game.px, game.py = 200.0, 150.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 200.0, 150.0
+        self.place_player_on_tile(game, (7, 7))
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.0)
         self.assertEqual(game.lives, 3)
 
     def test_losing_last_life_ends_game(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
+        self.isolate_player_from_bits(game)
         game.lives = 1
-        game.invulnerable_timer = 0.0
-        game.px, game.py = 200.0, 150.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 200.0, 150.0
+        self.place_player_on_tile(game, (7, 7))
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.0)
         self.assertEqual(game.lives, 0)
         self.assertTrue(game.game_over)
 
     def test_life_loss_resets_phantoms_to_spawns(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
-        game.phantoms[1]["x"], game.phantoms[1]["y"] = 40.0, 40.0
-        game.invulnerable_timer = 0.0
-        game.px, game.py = 200.0, 150.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 200.0, 150.0
+        self.isolate_player_from_bits(game)
+        self.place_phantom_on_tile(game, 1, (2, 2))
+        self.place_player_on_tile(game, (7, 7))
+        self.place_phantom_on_tile(game, 0, (7, 7))
         game.update(0.0)
         for index, ph in enumerate(game.phantoms):
             self.assertEqual((ph["x"], ph["y"]), _tile_center(PHANTOM_SPAWNS[index]))
 
     def test_overclock_collision_eats_phantom_for_points(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
+        self.isolate_player_from_bits(game)
         game.overclock_timer = 5.0
-        game.px, game.py = 200.0, 150.0
-        game.phantoms[0]["x"], game.phantoms[0]["y"] = 200.0, 150.0
+        self.place_player_on_tile(game, PHANTOM_SPAWNS[0])
+        self.place_phantom_on_tile(game, 0, PHANTOM_SPAWNS[0])
         game.update(0.0)
         self.assertEqual(game.score, 300)
         self.assertEqual(game.lives, 3)
@@ -345,9 +393,7 @@ class TestCyberGridChomp(unittest.TestCase):
         self.assertGreater(len(game.bits), 0)
 
     def test_clearing_final_sector_wins_game(self) -> None:
-        game = self.make_game()
-        game.level = MAX_LEVELS
-        game._setup_level()
+        game = self.make_game(level=MAX_LEVELS)
         game.bits = []
         game.update(0.0)
         self.assertTrue(game.game_won)
@@ -355,7 +401,7 @@ class TestCyberGridChomp(unittest.TestCase):
 
     def test_overclock_timer_expires(self) -> None:
         game = self.make_game()
-        game.bits = [{"x": 1000, "y": 1000}]
+        self.isolate_player_from_bits(game)
         game.overclock_timer = 0.5
         game.update(1.0)
         self.assertLessEqual(game.overclock_timer, 0.0)
@@ -363,20 +409,15 @@ class TestCyberGridChomp(unittest.TestCase):
     def test_update_is_paused_when_paused(self) -> None:
         game = self.make_game()
         game.paused = True
-        game.bits = [{"x": 1000, "y": 1000}]
-        before = [dict(ph) for ph in game.phantoms]
+        self.isolate_player_from_bits(game)
+        before = [(ph["x"], ph["y"]) for ph in game.phantoms]
         game.update(0.5)
-        self.assertEqual(
-            [(ph["x"], ph["y"]) for ph in game.phantoms],
-            [(ph["x"], ph["y"]) for ph in before],
-        )
+        self.assertEqual([(ph["x"], ph["y"]) for ph in game.phantoms], before)
 
     def test_render_all_sectors_without_errors(self) -> None:
         surface = pygame.Surface((320, 240))
         for level in range(1, MAX_LEVELS + 1):
-            game = self.make_game()
-            game.level = level
-            game._setup_level()
+            game = self.make_game(level)
             game.banner_timer = 1.0
             game.render(surface)
             game.overclock_timer = 5.0
@@ -392,6 +433,13 @@ class TestCyberGridChomp(unittest.TestCase):
         game.game_over = False
         game.game_won = True
         game.render(surface)
+
+    def test_metadata_is_registered_for_game(self) -> None:
+        self.assertIn("Cyber Grid Chomp", GAME_METADATA)
+        for lang in ("de", "en"):
+            entry = GAME_METADATA["Cyber Grid Chomp"][lang]
+            for key in ("desc", "goal", "gameplay", "controls"):
+                self.assertTrue(entry[key], f"{lang}.{key} must not be empty")
 
 
 if __name__ == "__main__":

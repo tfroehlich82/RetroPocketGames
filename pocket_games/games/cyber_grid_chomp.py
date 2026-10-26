@@ -1,8 +1,9 @@
 # ==========================================
 # CYBER GRID CHOMP v1.1
 # A neon-infused cyberpunk Pac-Man clone optimized for 320x240.
-# Five escalating sectors, phantoms that hunt the player with
-# breadth-first pathfinding, and an overclock mode that flips the chase.
+# Five escalating sectors on a fixed single-lane maze, phantoms that hunt
+# the player with breadth-first pathfinding, and an overclock mode that
+# flips the chase. Every sector is deterministic and reproducible.
 # ==========================================
 from __future__ import annotations
 
@@ -16,87 +17,65 @@ from pocket_games.core.physics import check_circle_collision
 from pocket_games.games.base import BaseGame
 
 MAX_LEVELS = 5
-TILE_SIZE = 10
-GRID_COLS = 32
-GRID_ROWS = 24
-PLAYFIELD = pygame.Rect(15, 15, 290, 190)
-DIRECTIONS = ((1, 0), (-1, 0), (0, 1), (0, -1))
-PLAYER_SPAWN = (160.0, 110.0)
-SPAWN_INVULNERABILITY = 2.0
-MAX_LANE_SPAN = 20
-PHANTOM_COUNTS = (3, 3, 4, 4, 5)
-PHANTOM_SPAWNS = ((16, 7), (13, 13), (18, 13), (16, 14), (16, 13))
-PHANTOM_COLORS = ((255, 50, 80), (255, 150, 0), (0, 220, 255), (200, 50, 255), (120, 255, 60))
-WALL_RECTS = (
-    pygame.Rect(15, 15, 290, 10),
-    pygame.Rect(15, 195, 290, 10),
-    pygame.Rect(15, 15, 10, 190),
-    pygame.Rect(295, 15, 10, 190),
-    pygame.Rect(45, 45, 50, 20),
-    pygame.Rect(115, 45, 90, 20),
-    pygame.Rect(225, 45, 50, 20),
-    pygame.Rect(45, 85, 20, 50),
-    pygame.Rect(255, 85, 20, 50),
-    pygame.Rect(115, 85, 90, 20),
-    pygame.Rect(45, 155, 50, 20),
-    pygame.Rect(115, 155, 90, 20),
-    pygame.Rect(225, 155, 50, 20),
+TILE_SIZE = 20
+ORIGIN_X = 10
+ORIGIN_Y = 10
+LAYOUT = (
+    "###############",
+    "#........#....#",
+    "#.#.#.#.#.#.#.#",
+    "#..#..........#",
+    "#.#.#.#.#.#.#.#",
+    "#..........#..#",
+    "#.#.#.#.#.#.#.#",
+    "#....#........#",
+    "###############",
 )
+GRID_COLS = len(LAYOUT[0])
+GRID_ROWS = len(LAYOUT)
+DIRECTIONS = ((1, 0), (-1, 0), (0, 1), (0, -1))
+PLAYER_SPAWN_TILE = (7, 7)
+PLAYER_SPAWN = (160.0, 160.0)
+POWER_PILL_TILES = ((1, 1), (13, 1), (1, 7), (13, 7))
+SPAWN_INVULNERABILITY = 2.0
+LEVEL_SEED_BASE = 4242
+PHANTOM_COUNTS = (3, 3, 4, 4, 5)
+PHANTOM_SPAWNS = ((7, 1), (1, 4), (13, 4), (7, 5), (11, 7))
+PHANTOM_COLORS = ((255, 50, 80), (255, 150, 0), (0, 220, 255), (200, 50, 255), (120, 255, 60))
 
 
 def _tile_of(x: float, y: float) -> tuple[int, int]:
-    col = min(GRID_COLS - 1, max(0, int(x // TILE_SIZE)))
-    row = min(GRID_ROWS - 1, max(0, int(y // TILE_SIZE)))
+    col = min(GRID_COLS - 1, max(0, int((x - ORIGIN_X) // TILE_SIZE)))
+    row = min(GRID_ROWS - 1, max(0, int((y - ORIGIN_Y) // TILE_SIZE)))
     return col, row
 
 
 def _tile_center(tile: tuple[int, int]) -> tuple[float, float]:
-    return tile[0] * TILE_SIZE + TILE_SIZE / 2, tile[1] * TILE_SIZE + TILE_SIZE / 2
+    return (
+        ORIGIN_X + tile[0] * TILE_SIZE + TILE_SIZE / 2,
+        ORIGIN_Y + tile[1] * TILE_SIZE + TILE_SIZE / 2,
+    )
 
 
 def _build_blocked_tiles() -> frozenset[tuple[int, int]]:
-    blocked = set()
-    for col in range(GRID_COLS):
-        for row in range(GRID_ROWS):
-            tile_rect = pygame.Rect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            if not PLAYFIELD.contains(tile_rect) or any(tile_rect.colliderect(w) for w in WALL_RECTS):
-                blocked.add((col, row))
-    return frozenset(blocked)
+    return frozenset(
+        (col, row)
+        for row, line in enumerate(LAYOUT)
+        for col, cell in enumerate(line)
+        if cell == "#"
+    )
+
+
+def _build_wall_rects() -> tuple[pygame.Rect, ...]:
+    return tuple(
+        pygame.Rect(ORIGIN_X + col * TILE_SIZE, ORIGIN_Y + row * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        for col, row in sorted(BLOCKED_TILES, key=lambda t: (t[1], t[0]))
+    )
 
 
 BLOCKED_TILES = _build_blocked_tiles()
+WALL_RECTS = _build_wall_rects()
 _GLOW_CACHE: dict[tuple[int, tuple[int, int, int]], pygame.Surface] = {}
-
-
-def _player_fits(x: float, y: float) -> bool:
-    rect = pygame.Rect(int(x - 6), int(y - 6), 12, 12)
-    return rect.collidelist(WALL_RECTS) == -1
-
-
-def _free_span(fits, start: int, lowest: int, highest: int) -> tuple[int, int] | None:
-    if not fits(start):
-        return None
-    low = high = start
-    while low - 1 >= lowest and fits(low - 1):
-        low -= 1
-    while high + 1 <= highest and fits(high + 1):
-        high += 1
-    return low, high
-
-
-def _snap_to_lane(x: float, y: float) -> tuple[float, float]:
-    ix, iy = int(round(x)), int(round(y))
-    vertical = _free_span(lambda yy: _player_fits(ix, yy), iy, PLAYFIELD.top, PLAYFIELD.bottom)
-    horizontal = _free_span(lambda xx: _player_fits(xx, iy), ix, PLAYFIELD.left, PLAYFIELD.right)
-    if vertical is None or horizontal is None:
-        return x, y
-    v_span = vertical[1] - vertical[0]
-    h_span = horizontal[1] - horizontal[0]
-    if v_span <= h_span and v_span <= MAX_LANE_SPAN:
-        return x, (vertical[0] + vertical[1]) / 2
-    if h_span <= MAX_LANE_SPAN:
-        return (horizontal[0] + horizontal[1]) / 2, y
-    return x, y
 
 
 def _open_neighbors(tile: tuple[int, int]) -> list[tuple[int, int]]:
@@ -121,6 +100,14 @@ def _distance_map(start: tuple[int, int]) -> dict[tuple[int, int], int]:
     return distances
 
 
+def _step_towards(x: float, y: float, tx: float, ty: float, step: float) -> tuple[float, float, bool]:
+    dx, dy = tx - x, ty - y
+    dist = math.hypot(dx, dy)
+    if dist <= step:
+        return tx, ty, True
+    return x + dx / dist * step, y + dy / dist * step, False
+
+
 class CyberGridChompGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Cyber Grid Chomp")
@@ -131,9 +118,11 @@ class CyberGridChompGame(BaseGame):
         self.banner_timer = 0.0
         self.chomp_timer = 0.0
         self.facing = 0.0
-        self.speed = 90.0
+        self.speed = 80.0
 
         self.px, self.py = PLAYER_SPAWN
+        self.ptile = PLAYER_SPAWN_TILE
+        self.ptarget: tuple[int, int] | None = None
         self.pdir_x, self.pdir_y = 0.0, 0.0
         self.next_dir_x, self.next_dir_y = 0.0, 0.0
 
@@ -144,6 +133,7 @@ class CyberGridChompGame(BaseGame):
         self.phantom_speed = 62.0
         self.chase_chance = 0.6
         self.pill_duration = 7.0
+        self.rng = random.Random(LEVEL_SEED_BASE)
         self._player_dist: dict[tuple[int, int], int] = {}
         self._player_dist_tile: tuple[int, int] | None = None
 
@@ -154,26 +144,35 @@ class CyberGridChompGame(BaseGame):
         self.phantom_speed = 62.0 + 8.0 * idx
         self.chase_chance = min(1.0, 0.6 + 0.1 * idx)
         self.pill_duration = max(4.0, 7.0 - 0.75 * idx)
+        self.rng = random.Random(LEVEL_SEED_BASE + self.level)
+        self._player_dist_tile = None
 
-        self.px, self.py = PLAYER_SPAWN
-        self.pdir_x, self.pdir_y = 0.0, 0.0
-        self.next_dir_x, self.next_dir_y = 0.0, 0.0
+        self._reset_player()
         self.overclock_timer = 0.0
 
         self.bits = []
-        for x in range(35, 290, 20):
-            for y in range(35, 190, 20):
-                if _player_fits(x, y):
-                    bx, by = _snap_to_lane(x, y)
-                    self.bits.append({"x": bx, "y": by})
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
+                tile = (col, row)
+                if tile in BLOCKED_TILES or tile in POWER_PILL_TILES:
+                    continue
+                x, y = _tile_center(tile)
+                self.bits.append({"x": x, "y": y})
 
         self.power_pills = []
-        for px, py in ((35, 35), (285, 35), (35, 185), (285, 185)):
-            pill_x, pill_y = _snap_to_lane(px, py)
-            self.power_pills.append({"x": pill_x, "y": pill_y})
+        for tile in POWER_PILL_TILES:
+            x, y = _tile_center(tile)
+            self.power_pills.append({"x": x, "y": y})
 
         count = PHANTOM_COUNTS[min(idx, len(PHANTOM_COUNTS) - 1)]
         self.phantoms = [self._make_phantom(i) for i in range(count)]
+
+    def _reset_player(self) -> None:
+        self.px, self.py = PLAYER_SPAWN
+        self.ptile = PLAYER_SPAWN_TILE
+        self.ptarget = None
+        self.pdir_x, self.pdir_y = 0.0, 0.0
+        self.next_dir_x, self.next_dir_y = 0.0, 0.0
 
     def _make_phantom(self, index: int) -> dict:
         x, y = _tile_center(PHANTOM_SPAWNS[index % len(PHANTOM_SPAWNS)])
@@ -223,32 +222,38 @@ class CyberGridChompGame(BaseGame):
         if not self.bits and not self.game_over:
             self._advance_level()
 
+    def _steer_player(self) -> None:
+        nx, ny = self.next_dir_x, self.next_dir_y
+        if self.ptarget is not None:
+            if (nx, ny) != (0.0, 0.0) and (nx, ny) == (-self.pdir_x, -self.pdir_y):
+                self.ptarget = self.ptile
+                self.pdir_x, self.pdir_y = nx, ny
+            return
+
+        col, row = self.ptile
+        for dx, dy in ((nx, ny), (self.pdir_x, self.pdir_y)):
+            if (dx, dy) == (0.0, 0.0):
+                continue
+            nxt = (col + int(dx), row + int(dy))
+            if nxt in _open_neighbors(self.ptile):
+                self.pdir_x, self.pdir_y = dx, dy
+                self.ptarget = nxt
+                return
+        self.pdir_x, self.pdir_y = 0.0, 0.0
+
     def _move_player(self, dt: float) -> None:
-        if self.next_dir_x != 0 or self.next_dir_y != 0:
-            test_x = self.px + self.next_dir_x * self.speed * dt * 1.5
-            test_y = self.py + self.next_dir_y * self.speed * dt * 1.5
-            test_rect = pygame.Rect(int(test_x - 6), int(test_y - 6), 12, 12)
-            if not any(test_rect.colliderect(w) for w in self.walls):
-                self.pdir_x, self.pdir_y = self.next_dir_x, self.next_dir_y
-
-        new_x = self.px + self.pdir_x * self.speed * dt
-        new_y = self.py + self.pdir_y * self.speed * dt
-        player_rect = pygame.Rect(int(new_x - 6), int(new_y - 6), 12, 12)
-
-        if not any(player_rect.colliderect(w) for w in self.walls):
-            if self.pdir_x != 0 or self.pdir_y != 0:
-                self.chomp_timer += dt
-            self.px, self.py = new_x, new_y
-        else:
-            self.pdir_x, self.pdir_y = 0.0, 0.0
-
-        if self.px < 15:
-            self.px = 290.0
-        elif self.px > 295:
-            self.px = 20.0
+        self._steer_player()
+        if self.ptarget is None:
+            return
 
         if self.pdir_x != 0 or self.pdir_y != 0:
             self.facing = math.atan2(self.pdir_y, self.pdir_x)
+        tx, ty = _tile_center(self.ptarget)
+        self.px, self.py, arrived = _step_towards(self.px, self.py, tx, ty, self.speed * dt)
+        self.chomp_timer += dt
+        if arrived:
+            self.ptile = self.ptarget
+            self.ptarget = None
 
     def _collect_items(self) -> None:
         for b in self.bits[:]:
@@ -265,7 +270,7 @@ class CyberGridChompGame(BaseGame):
                 self.play_sound("confirm")
 
     def _player_distances(self) -> dict[tuple[int, int], int]:
-        tile = _tile_of(self.px, self.py)
+        tile = self.ptile
         if tile != self._player_dist_tile:
             self._player_dist = _distance_map(tile)
             self._player_dist_tile = tile
@@ -280,7 +285,7 @@ class CyberGridChompGame(BaseGame):
         distances = self._player_distances()
         known = [t for t in options if t in distances]
         fleeing = self.overclock_timer > 0
-        hunting = not fleeing and random.random() < self.chase_chance
+        hunting = not fleeing and self.rng.random() < self.chase_chance
 
         if fleeing and known:
             best = max(distances[t] for t in known)
@@ -291,7 +296,7 @@ class CyberGridChompGame(BaseGame):
         else:
             reverse = (current[0] - ph["dx"], current[1] - ph["dy"])
             pool = [t for t in options if t != reverse] or options
-        return random.choice(pool)
+        return self.rng.choice(pool)
 
     def _move_phantom(self, ph: dict, step: float) -> None:
         if ph["target"] is None:
@@ -337,10 +342,8 @@ class CyberGridChompGame(BaseGame):
             self.game_over = True
             self.play_sound("gameover")
             return
-        self.px, self.py = PLAYER_SPAWN
-        self.pdir_x, self.pdir_y = 0.0, 0.0
-        self.next_dir_x, self.next_dir_y = 0.0, 0.0
-        self.invulnerable_timer = 2.0
+        self._reset_player()
+        self.invulnerable_timer = SPAWN_INVULNERABILITY
         self._reset_phantoms()
 
     def _advance_level(self) -> None:
@@ -384,10 +387,15 @@ class CyberGridChompGame(BaseGame):
 
     def _draw_grid(self, surface: pygame.Surface) -> None:
         grid_color = (14, 18, 36)
-        for x in range(25, 300, 20):
-            pygame.draw.line(surface, grid_color, (x, 15), (x, 205))
-        for y in range(25, 200, 20):
-            pygame.draw.line(surface, grid_color, (15, y), (305, y))
+        left, top = ORIGIN_X, ORIGIN_Y
+        right = ORIGIN_X + GRID_COLS * TILE_SIZE
+        bottom = ORIGIN_Y + GRID_ROWS * TILE_SIZE
+        for col in range(GRID_COLS + 1):
+            x = left + col * TILE_SIZE
+            pygame.draw.line(surface, grid_color, (x, top), (x, bottom))
+        for row in range(GRID_ROWS + 1):
+            y = top + row * TILE_SIZE
+            pygame.draw.line(surface, grid_color, (left, y), (right, y))
 
     def _draw_walls(self, surface: pygame.Surface) -> None:
         pulse = (math.sin(pygame.time.get_ticks() / 400.0) + 1.0) / 2.0
@@ -430,7 +438,7 @@ class CyberGridChompGame(BaseGame):
             return
 
         cx, cy = int(self.px), int(self.py)
-        moving = self.pdir_x != 0 or self.pdir_y != 0
+        moving = self.ptarget is not None
         mouth = 0.15 + 0.5 * abs(math.sin(self.chomp_timer * 10.0)) if moving else 0.12
         radius = 8
 
