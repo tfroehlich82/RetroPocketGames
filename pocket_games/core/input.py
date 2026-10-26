@@ -4,6 +4,14 @@ import pygame
 
 
 class InputManager:
+    """
+    Summary of what the class does.
+    The InputManager class handles centralized input processing for game loops, managing events from keyboard, mouse, and joystick devices using pygame. It encapsulates state tracking for pressed keys, held buttons, and mouse position to provide convenient methods for checking specific input conditions like actions or navigation directions.
+
+    Detailed description of the class, its purpose, and usage.
+    This class is designed to abstract raw pygame event polling into manageable boolean checks. It initializes internal buffers for events, key states, and joystick mappings within its constructor. The update method processes the current frame's events to refresh input flags such as newly pressed keys or joystick buttons. Methods like is_key_just_pressed allow checking for new input states in a single frame cycle without processing stale data. Global exit and action states are handled by combining multiple potential inputs (e.g., Escape key, Enter key, or mouse click) into unified boolean responses suitable for game state transitions. The internal timer logic used for hold-to-exit functionality remains hidden from the public interface to prevent external dependencies on private timing mechanisms.
+
+    """
     def __init__(self) -> None:
         self.events: list[pygame.event.Event] = []
         self.keys_pressed: set[int] = set()
@@ -27,6 +35,18 @@ class InputManager:
             self.joysticks = []
 
     def update(self) -> None:
+        """
+        Updates the game loop event processing state based on input device events. Processes pygame event queue to handle mouse clicks, finger touches, key presses, and joystick button states, clearing previous temporary input sets and updating internal flags accordingly.
+
+        Parameters
+        ----------
+        self : instance
+            The instance of the class containing the game loop state and event buffers.
+
+        Returns
+        -------
+        None
+        """
         self.mouse_clicked = False
         self.events = pygame.event.get()
         self.keys_just_pressed.clear()
