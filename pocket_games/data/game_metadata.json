@@ -2,7 +2,7 @@
     "Pixel Drop": {
         "de": {
             "desc": "Klassisches Tetris-Puzzle mit fallenden Steinen.",
-            "goal": "Staple Blöcke sauber und r?ume Reihen ab.",
+            "goal": "Staple Blöcke sauber und räume Reihen ab.",
             "gameplay": "Alle 10 geräumten Reihen steigt das\nLevel und die Geschwindigkeit.",
             "controls": "D-Pad: Bewegen / Drehen / Soft Drop"
         },
@@ -17,7 +17,7 @@
         "de": {
             "desc": "Digitales Logik- und Stromnetz-Puzzle.",
             "goal": "Verbinde alle Knotenpunkte mit Strom.",
-            "gameplay": "Klicke auf Knoten, um den Stromkreis zu schliessen.",
+            "gameplay": "Klicke auf Knoten, um den Stromkreis\nzu schliessen.",
             "controls": "Maus / Touch oder D-Pad zum Umschalten"
         },
         "en": {
@@ -44,13 +44,13 @@
     "Byte Hopper": {
         "de": {
             "desc": "Vertikale Jump-and-Run-Plattform-Action.",
-            "goal": "Springe über Speicherregister so hoch wie möglich.",
+            "goal": "Springe über Speicherregister so hoch\nwie möglich.",
             "gameplay": "Nutze statische, horizontal und vertikal\nschwingende Plattformen.",
             "controls": "D-Pad: Bewegen / Oben: Springen"
         },
         "en": {
             "desc": "Vertical jump-and-run platform action.",
-            "goal": "Jump across memory registers as high as possible.",
+            "goal": "Jump across memory registers as high\nas possible.",
             "gameplay": "Use static, horizontally and vertically\noscillating platforms.",
             "controls": "D-Pad: Move / Up: Jump"
         }
@@ -59,7 +59,7 @@
         "de": {
             "desc": "Prozedural generiertes Sci-Fi-Labyrinth.",
             "goal": "Sammle Quantenkerne und Datenfragmente.",
-            "gameplay": "Nach 10 Kernen baut sich ein komplexeres Labyrinth auf.",
+            "gameplay": "Nach 10 Kernen baut sich ein komplexeres\nLabyrinth auf.",
             "controls": "D-Pad / Pfeiltasten (Bewegen)"
         },
         "en": {
@@ -86,7 +86,7 @@
     "Retro Pong 2077": {
         "de": {
             "desc": "High-Tech-Evolution des Arcade-Klassikers.",
-            "goal": "Schlage den Energieball zurück und besiege den Gegner.",
+            "goal": "Schlage den Energieball zurück und besiege\nden Gegner.",
             "gameplay": "Schnelle Ballwechsel und präzise Paddel-Action.",
             "controls": "D-Pad Oben / Unten (Paddel bewegen)"
         },
@@ -100,8 +100,8 @@
     "Bug Hunter": {
         "de": {
             "desc": "Schnelles Arcade-Such- und Tipp-Spiel.",
-            "goal": "Zertrümmere digitale Bugs vor Ablauf des Timers.",
-            "gameplay": "Reagiere blitzschnell auf erscheinende System-Bugs.",
+            "goal": "Zertrümmere digitale Bugs vor Ablauf des\nTimers.",
+            "gameplay": "Reagiere blitzschnell auf erscheinende\nSystem-Bugs.",
             "controls": "Touch / Mausklick (Bugs antippen)"
         },
         "en": {
@@ -115,7 +115,7 @@
         "de": {
             "desc": "Klassisches Schlangen-Spiel im Cyber-Design.",
             "goal": "Sammle Datenpakete, ohne Wände zu treffen.",
-            "gameplay": "Steuere die Cyber-Schlange geschickt über das Raster.",
+            "gameplay": "Steuere die Cyber-Schlange geschickt über\ndas Raster.",
             "controls": "D-Pad / WASD (Richtung ?ndern)"
         },
         "en": {
@@ -128,7 +128,7 @@
     "Matrix Invaders": {
         "de": {
             "desc": "Vertikaler Cyberpunk-Space-Shooter.",
-            "goal": "Vernichte anstürmende Drohnen, Speeders und Tanks.",
+            "goal": "Vernichte anstürmende Drohnen, Speeders\nund Tanks.",
             "gameplay": "Nutze Laser-Upgrades und Energieschilde\ngegen den Breach.",
             "controls": "D-Pad: Bewegen | Space: Feuer"
         },
@@ -171,7 +171,7 @@
         "de": {
             "desc": "Logik-Code-Knacker-Puzzle.",
             "goal": "Errate die 4-stellige Sicherheitskombination.",
-            "gameplay": "Kombiniere Ziffern vor Ablauf des System-Lockouts.",
+            "gameplay": "Kombiniere Ziffern vor Ablauf des\nSystem-Lockouts.",
             "controls": "D-Pad: Ziffern wählen | Enter: Bestätigen"
         },
         "en": {
@@ -184,13 +184,13 @@
     "Kernel Panic": {
         "de": {
             "desc": "System-Verteidigungsspiel gegen Speicherlecks.",
-            "goal": "Flicke fallende Memory-Leaks, bevor der RAM überläuft.",
-            "gameplay": "Klicke auf abstürzende Code-Blöcke (ERR, NULL).",
+            "goal": "Flicke fallende Memory-Leaks, bevor der\nRAM überläuft.",
+            "gameplay": "Klicke auf abstürzende\nCode-Blöcke (ERR, NULL).",
             "controls": "Touch / Mausklick (Lecks patchen)"
         },
         "en": {
             "desc": "System defense game against memory leaks.",
-            "goal": "Patch falling memory leaks before RAM overflows.",
+            "goal": "Patch falling memory leaks before RAM\noverflows.",
             "gameplay": "Click crashing code blocks (ERR, NULL).",
             "controls": "Touch / Mouse click (Patch leaks)"
         }
