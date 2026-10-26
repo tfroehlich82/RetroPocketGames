@@ -144,10 +144,31 @@ Crystal spawns are random but seeded, so each run is identical.
 
 ## Cyber Flipper (`games/cyber_flipper.py`)
 
+Five tables are defined in the `LEVELS` tuple. Each table has its own gravity, wall restitution, bumper ring, wall layout, and optionally raised decks (`ramps`, `upper_walls`, `upper_bumpers`). The ball is on one of two height layers. A `RampZone` moves the ball to the raised layer while its center is inside the zone. Outside all zones the ball is on the low layer. Only the bumpers and walls of the current layer collide. Table order is fixed, and reaching the table score target advances to the next table. Clearing table 5 wins.
+
 | Parameter | Value | Effect |
 | :--- | :--- | :--- |
-| `gravity` | 450 px/s² | Ball gravity. Lower values make the ball float longer. |
-| `ball_radius` | 5 px | Ball collision size. |
+| `BALLS_PER_GAME` | 3 | Balls per table. Balls reset when a table is cleared. |
+| `BALL_RADIUS` | 5 px | Ball collision size. |
+| `gravity` (per table) | 380 to 520 px/s² | Ball fall speed. Lower values float longer. Table 4 is lowest, table 5 is highest. |
+| `wall_restitution` (per table) | 0.55 to 0.65 | Wall bounciness. Lower values make the start calmer. |
+| `RampZone` | per table (x, y, w, h, layer) | Zones that switch the ball between the low and high layer. |
+| `score_target` (per table) | 1500, 2500, 3500, 4500, 6000 | Table score needed to advance. |
+| `FLIPPER_LENGTH` | 48 px | Flipper arm length. |
+| `FLIPPER_SPEED` | 18 rad/s | Swing speed from rest to active. |
+| `FLIPPER_ACTIVE_ANGLE` / `FLIPPER_REST_ANGLE` | -0.45 / 0.50 rad | Swing limits. |
+| `FLIPPER_KICK` | 260 px/s | Extra speed added when a rising flipper hits the ball. |
+| Flipper hit restitution | 0.6 | Bounce of the ball off a flipper, before the kick. |
+| `SUBSTEPS` | 4 | Physics substeps per frame. Higher values reduce tunnelling. |
+| `MAX_BALL_SPEED` | 700 px/s | Speed cap. |
+| `MAX_CHARGE` | 30 | Maximum plunger charge. |
+| `LAUNCH_BASE_SPEED` / `LAUNCH_SPEED_PER_CHARGE` | 260 px/s / 10 px/s per charge | Launch speed is `260 + charge * 10` px/s. Lower values make the first shot gentler. |
+| `BUMPER_RESTITUTION` | 0.9 | Bounce of the ball off a bumper. |
+| `BUMPER_BOOST` | ×1.08 per hit | Each bumper hit speeds the ball up slightly. |
+| Bumper points | 60 to 800 per hit | Per-table value (see `LEVELS`). Circuit Board uses 60 per bumper, Core Meltdown centre uses 800. |
+| Bumper radius | 7 to 16 px | Visual and collision size per bumper. |
+
+Tuning tips: lowering a table's `score_target` shortens the level. Raising `wall_restitution` or the bumper boost makes the ball harder to control. The plunger launch formula sets how far the ball travels up the lane. Raised decks are placed so the ball can reach them with a ramp entry, and they should stay clear of the flippers.
 
 ---
 
