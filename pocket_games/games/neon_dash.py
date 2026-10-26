@@ -98,13 +98,13 @@ class NeonDashGame(BaseGame):
         self._spawn_obstacle()
 
     def _get_current_speed(self) -> float:
-        base = 200.0 + (self.level - 1) * 24.0
+        base = 240.0 + (self.level - 1) * 26.0
         return base + (self.level_timer * 0.1)
 
     def _spawn_obstacle(self) -> None:
         group_x = 330.0
 
-        # Hilfsfunktion zur Bestimmung der erlaubten Elementtypen (Spike, Block, Tall Block)
+        # Helper to determine the allowed element types (spike, block, tall block)
         def get_random_element(allow_tall: bool = True) -> str:
             possible_types = ["spike", "block"]
             if allow_tall:
@@ -122,7 +122,7 @@ class NeonDashGame(BaseGame):
             combo_type = random.choice(combo_choices)
 
             if combo_type == "pair":
-                # Bei 2er-Blöcken dürfen tall blocks an beliebiger Position stehen
+                # For pair blocks, tall blocks may appear at any position
                 for i in range(2):
                     t = get_random_element(allow_tall=True)
                     w = 18 if t == "spike" else 22
@@ -138,7 +138,7 @@ class NeonDashGame(BaseGame):
                     )
                 return
             elif combo_type == "triple" and self.level >= 5:
-                # Bei 3er-Blöcken dürfen tall blocks nur in der Mitte (Index 1) stehen
+                # For triple blocks, tall blocks may only appear in the middle (index 1)
                 for i in range(3):
                     allow_tall = i == 1
                     t = get_random_element(allow_tall=allow_tall)
@@ -155,7 +155,7 @@ class NeonDashGame(BaseGame):
                     )
                 return
             elif combo_type == "quad" and self.level >= 7:
-                # Bei 4er-Blöcken dürfen tall blocks nur in der Mitte (Index 1 und 2) stehen
+                # For quad blocks, tall blocks may only appear in the middle (indices 1 and 2)
                 for i in range(4):
                     allow_tall = i in (1, 2)
                     t = get_random_element(allow_tall=allow_tall)
@@ -172,7 +172,7 @@ class NeonDashGame(BaseGame):
                     )
                 return
 
-        # Löcher erst ab Level 3
+        # Holes only from level 3
         if self.level >= 3 and random.random() < 0.25:
             self.obstacles.append(
                 {"x": group_x, "y": 200.0, "w": 45, "h": 10, "type": "gap"}

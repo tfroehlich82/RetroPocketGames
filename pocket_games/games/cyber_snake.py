@@ -21,7 +21,7 @@ class CyberSnakeGame(BaseGame):
         super().__init__(engine, game_name="Cyber Snake")
         self.grid_size = 10
         self.cols = 32
-        self.rows = 24  # Gesamtreihen; oberster Bereich (0-2) ist für das HUD reserviert
+        self.rows = 24  # Total rows; the top area (0-2) is reserved for the HUD
         self.reset_snake()
 
     def reset_snake(self) -> None:
@@ -72,7 +72,7 @@ class CyberSnakeGame(BaseGame):
 
             head = {"x": self.snake[0]["x"] + self.dir[0], "y": self.snake[0]["y"] + self.dir[1]}
 
-            # Wandkollision (unter Berücksichtigung des HUDs in Zeile 0-2) oder Selbstkollision
+            # Wall collision (taking the HUD in rows 0-2 into account) or self-collision
             if (
                 head["x"] < 0
                 or head["x"] >= self.cols

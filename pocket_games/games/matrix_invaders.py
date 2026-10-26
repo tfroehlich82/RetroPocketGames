@@ -49,7 +49,7 @@ class MatrixInvadersGame(BaseGame):
         self.enemy_bullets.clear()
         self.life_dropped_this_wave = False
 
-        # Begrenzte Anzahl an Spalten/Zeilen, um Überforderung zu verhindern
+        # Limit the number of columns/rows to prevent overwhelming the player
         cols = min(7, 4 + (self.wave // 3))
         rows = min(4, 2 + (self.wave // 3))
         start_x = max(25, 160 - (cols * 20))
@@ -58,7 +58,7 @@ class MatrixInvadersGame(BaseGame):
         spacing_y = 25
 
         for r in range(rows):
-            # Stärkere Gegnertypen in höheren Wellen statt zu viele Gegner
+            # Stronger enemy types in higher waves instead of too many enemies
             if r == 0 and self.wave >= 6:
                 b_type = "cyber_lord"
             elif r == 0 and self.wave >= 3:
@@ -205,7 +205,7 @@ class MatrixInvadersGame(BaseGame):
                     self.shield_timer = 8.0
                     self.add_score(150)
                 elif col["type"] == "life":
-                    # Leben dürfen nicht höher als der maximale player_hp-Wert (3) sein
+                    # Lives must not exceed the maximum player_hp value (3)
                     self.player_hp = min(self.max_player_hp, self.player_hp + 1)
                     self.add_score(200)
                 self.collectibles.remove(col)
@@ -215,7 +215,7 @@ class MatrixInvadersGame(BaseGame):
 
         edge_reached = False
         for bug in self.bugs:
-            # Ab Level 8: Kamikaze-Invader fallen direkt auf den Spieler herab
+            # From level 8: kamikaze invaders dive straight down at the player
             if self.wave >= 8 and not bug["is_diving"] and random.random() < 0.001 * self.wave:
                 bug["is_diving"] = True
 
@@ -229,7 +229,7 @@ class MatrixInvadersGame(BaseGame):
             if bug.get("can_shoot") and not bug["is_diving"]:
                 bug["shoot_cooldown"] -= dt
                 if bug["shoot_cooldown"] <= 0:
-                    # Verstärkte Feuerrate der Invader
+                    # Increased fire rate of the invaders
                     bug["shoot_cooldown"] = random.uniform(1.8, 4.5) - min(
                         1.2, self.wave * 0.1
                     )
@@ -286,7 +286,7 @@ class MatrixInvadersGame(BaseGame):
                         self.add_score(pts)
                         self.engine.audio.play("confirm")
 
-                        # Powerup-Drop Logik: "life" darf nur 1x pro Wave ausgeschüttet werden
+                        # Powerup drop logic: "life" may only drop once per wave
                         possible_types = ["weapon", "shield"]
                         if not self.life_dropped_this_wave:
                             possible_types.append("life")
@@ -341,7 +341,7 @@ class MatrixInvadersGame(BaseGame):
             elif col["type"] == "shield":
                 col_color = (50, 255, 100)
             else:
-                col_color = (255, 50, 180)  # Pink/Magenta für Leben +1
+                col_color = (255, 50, 180)  # Pink/Magenta for +1 life
             pygame.draw.circle(surface, col_color, (cx, cy), 8)
             pygame.draw.circle(surface, (255, 255, 255), (cx, cy), 3)
 

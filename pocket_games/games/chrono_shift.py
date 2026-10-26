@@ -33,7 +33,7 @@ class ChronoShiftGame(BaseGame):
         self.spawn_protection = 1.0
         self.invulnerable_timer = 0.0
 
-        # Korrigierte List Comprehension für die Quanten-Partikel
+        # Corrected list comprehension for the quantum particles
         self.quantum_particles = [
             {
                 "x": random.randint(0, 320),

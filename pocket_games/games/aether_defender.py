@@ -19,13 +19,13 @@ class AetherDefenderGame(BaseGame):
     def __init__(self, engine) -> None:
         super().__init__(engine, "Aether Defender")
         self.px = 160.0
-        self.color_state = 0  # 0: Cyan, 1: Magenta (2 Farben reichen völlig)
+        self.color_state = 0  # 0: Cyan, 1: Magenta (2 colors are plenty)
         self.enemies = []
         self.particles = []
         self.spawn_timer = 0.0
         self.time_counter = 0.0
-        self.lives = 3         # Spieler startet mit 3 Leben
-        self.invulnerable_timer = 0.0  # Kurze Unverwundbarkeit nach Treffer
+        self.lives = 3         # Player starts with 3 lives
+        self.invulnerable_timer = 0.0  # Brief invulnerability after a hit
 
     def handle_input(self) -> None:
         super().handle_input()
@@ -42,7 +42,7 @@ class AetherDefenderGame(BaseGame):
             or inp.mouse_clicked
             or inp.is_key_just_pressed(pygame.K_UP)
         ):
-            # Nur 2 Farbzustände (0 und 1)
+            # Only 2 color states (0 and 1)
             self.color_state = (self.color_state + 1) % 2
             self.play_sound("bounce")
             colors_list = [(0, 255, 255), (255, 40, 150)]
@@ -82,7 +82,7 @@ class AetherDefenderGame(BaseGame):
         if self.spawn_timer > dynamic_spawn_interval:
             self.spawn_timer = 0.0
             speed_boost = min(45.0, self.elapsed_time * 0.8)
-            # Nur noch Feinde in 2 Farben (0 oder 1)
+            # Only enemies in 2 colors (0 or 1)
             self.enemies.append(
                 {
                     "x": random.randint(30, 290),
@@ -122,7 +122,7 @@ class AetherDefenderGame(BaseGame):
                             self.game_over = True
                             self.play_sound("gameover")
                         else:
-                            self.invulnerable_timer = 1.5  # 1.5s Unverwundbarkeit nach Treffer
+                            self.invulnerable_timer = 1.5  # 1.5s invulnerability after a hit
                             self.play_sound("bounce")
 
             if e["y"] > 250:
@@ -130,7 +130,7 @@ class AetherDefenderGame(BaseGame):
 
     def render_ui(self, surface: pygame.Surface) -> None:
         super().render_ui(surface)
-        # Leben anzeigen
+        # Show lives
         lives_txt = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 80))
         surface.blit(lives_txt, (230, 5))
 
@@ -152,7 +152,7 @@ class AetherDefenderGame(BaseGame):
         p_color = color_map[self.color_state]
         px, py = int(self.px), 205
 
-        # Blinken bei Unverwundbarkeit
+        # Blink while invulnerable
         if self.invulnerable_timer <= 0 or int(pygame.time.get_ticks() / 100) % 2 == 0:
             pygame.draw.polygon(
                 surface, p_color, [(px, py - 14), (px - 14, py + 10), (px + 14, py + 10)]

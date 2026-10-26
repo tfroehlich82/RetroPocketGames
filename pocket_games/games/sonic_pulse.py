@@ -29,7 +29,7 @@ class SonicPulseGame(BaseGame):
 
     @property
     def current_tolerance(self) -> float:
-        # Startet sehr grosszügig (28.0) und verengt sich mit höherem Score und Level sanft
+        # Starts very generous (28.0) and narrows smoothly with higher score and level
         score_factor = self.score * 0.015
         return max(7.0, 28.0 - score_factor)
 
@@ -53,7 +53,7 @@ class SonicPulseGame(BaseGame):
                     self.play_sound("score")
                     hit_success = True
 
-                    # O2 / Integrity Belohnung bei Kette
+                    # O2 / integrity reward for a combo chain
                     if self.combo % 3 == 0:
                         self.integrity = min(100.0, self.integrity + 5.0)
 
@@ -106,31 +106,31 @@ class SonicPulseGame(BaseGame):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill((8, 12, 22))
 
-        # Hintergrund-Rasterringe
+        # Background grid rings
         for i in range(4):
             pygame.draw.circle(surface, (15, 25, 40), (160, 120), 30 + i * 30, 1)
 
         for p in self.particles:
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
-        # Aktuelles Toleranzfenster visualisieren
+        # Visualize the current tolerance window
         tol = self.current_tolerance
         target_r = 40.0
         pygame.draw.circle(surface, (40, 20, 50), (160, 120), int(target_r + tol), 1)
         pygame.draw.circle(surface, (40, 20, 50), (160, 120), max(1, int(target_r - tol)), 1)
 
-        # Haupt-Zielring
+        # Main target ring
         pygame.draw.circle(surface, (255, 100, 200), (160, 120), int(target_r), 2)
         pygame.draw.circle(surface, (255, 100, 200), (160, 120), 35, 1)
 
-        # Einlaufende Schallringe
+        # Incoming sound rings
         for r in self.rings:
             pygame.draw.circle(surface, (0, 240, 255), (160, 120), int(r["radius"]), 2)
 
         pygame.draw.circle(surface, (0, 200, 255), (160, 120), 16)
         pygame.draw.circle(surface, (255, 255, 255), (160, 120), 6)
 
-        # Integritäts-Leiste
+        # Integrity bar
         pygame.draw.rect(surface, (40, 20, 20), (20, 225, 280, 8), border_radius=3)
         bar_w = int(280 * (max(0.0, self.integrity) / 100.0))
         if bar_w > 0:

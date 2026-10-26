@@ -249,7 +249,7 @@ class SubZeroMinerGame(BaseGame):
                 1,
             )
 
-        # Blinkeffekt bei Unverwundbarkeit nach Lebenverlust
+        # Blink effect while invulnerable after losing a life
         if self.invulnerable_timer <= 0 or int(pygame.time.get_ticks() / 100) % 2 == 0:
             mx, my = int(self.rx), int(self.ry)
             pygame.draw.rect(

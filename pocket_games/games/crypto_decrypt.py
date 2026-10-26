@@ -107,7 +107,7 @@ class CryptoDecryptGame(BaseGame):
                 self.reset_game()
             return
 
-        # Warten auf Bestätigung des Spielers bei Code-Aufdeckung
+        # Wait for the player's confirmation when the code is revealed
         if self.revealing_code:
             if (
                 inp.is_key_just_pressed(pygame.K_RETURN)

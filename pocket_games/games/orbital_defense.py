@@ -59,7 +59,7 @@ class OrbitalDefenseGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
-        # Spawn Interval für Meteore / Gefahren
+        # Spawn interval for meteors / hazards
         spawn_interval = max(
             0.3, 1.6 - (self.time_counter * 0.018) - (self.level * 0.08)
         )
@@ -69,7 +69,7 @@ class OrbitalDefenseGame(BaseGame):
             a = random.uniform(0, math.pi * 2)
 
             is_smart = self.level >= 2 and random.random() < (0.15 * self.level)
-            is_heavy = self.level >= 2 and random.random() < 0.2  # Meteor +2 Gefahr
+            is_heavy = self.level >= 2 and random.random() < 0.2  # Meteor +2 danger
 
             self.meteors.append(
                 {
@@ -85,7 +85,7 @@ class OrbitalDefenseGame(BaseGame):
                 }
             )
 
-        # Goodies (z.B. +1 Leben / HP) spawn
+        # Goodies (e.g. +1 life / HP) spawn
         if self.goodie_spawn_timer > 12.0:
             self.goodie_spawn_timer = 0.0
             a = random.uniform(0, math.pi * 2)
@@ -98,7 +98,7 @@ class OrbitalDefenseGame(BaseGame):
                 }
             )
 
-        # Reaktor- und Schild-Größenberechnung (Reaktor wird mit jedem Level größer, Schilde kleiner)
+        # Reactor and shield size calculation (reactor grows with each level, shields shrink)
         reactor_radius = int(12 + (self.level - 1) * 3)
         shield_radius = max(5.0, 9.0 - (self.level - 1) * 1.5)
 
