@@ -52,6 +52,7 @@ class MainMenu:
         from pocket_games.games.chrono_shift import ChronoShiftGame
         from pocket_games.games.circuit_breaker import CircuitBreakerGame
         from pocket_games.games.crypto_decrypt import CryptoDecryptGame
+        from pocket_games.games.cyber_flipper import CyberFlipperGame
         from pocket_games.games.cyber_grid_chomp import CyberGridChompGame
         from pocket_games.games.cyber_snake import CyberSnakeGame
         from pocket_games.games.glitch_runner import GlitchRunnerGame
@@ -91,6 +92,7 @@ class MainMenu:
             ("Aether Defender", AetherDefenderGame),
             ("Cyber Grid Chomp", CyberGridChompGame),
             ("Pixel Platformer", PixelPlatformerGame),
+            ("Cyber Flipper", CyberFlipperGame),
         ]
 
         self.menu_items = self.games + [

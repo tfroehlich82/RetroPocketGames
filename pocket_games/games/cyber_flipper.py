@@ -1,96 +1,569 @@
 # ==========================================
 # CYBER FLIPPER v1.0
-# An advanced, polished cyberpunk arcade pinball game.
-# Featuring dynamic flipper physics, glowing neon bumpers,
-# particle effects, launcher spring, and 3 balls.
+# A virtual pinball table with five themed levels.
+# Each level has its own palette, gravity, bumper
+# layout, wall layout, raised decks and ramps.
+# Flippers, launcher and bumpers are simulated with
+# segment physics on two height layers.
 # ==========================================
 from __future__ import annotations
 
 import math
 import random
+from dataclasses import dataclass
 
 import pygame
 
 from pocket_games.games.base import BaseGame
 
+PLAYFIELD_LEFT = 20.0
+PLAYFIELD_RIGHT = 300.0
+PLAYFIELD_TOP = 22.0
+LANE_X = 280.0
+DRAIN_Y = 236.0
+FLIPPER_LENGTH = 48.0
+FLIPPER_THICKNESS = 3.0
+FLIPPER_SPEED = 18.0
+FLIPPER_REST_ANGLE = 0.5
+FLIPPER_ACTIVE_ANGLE = -0.45
+FLIPPER_KICK = 260.0
+LEFT_PIVOT = (95.0, 200.0)
+RIGHT_PIVOT = (225.0, 200.0)
+BALL_RADIUS = 5.0
+BALLS_PER_GAME = 3
+SUBSTEPS = 4
+MAX_BALL_SPEED = 700.0
+BUMPER_BOOST = 1.08
+BUMPER_RESTITUTION = 0.9
+LAUNCH_BASE_SPEED = 260.0
+LAUNCH_SPEED_PER_CHARGE = 10.0
+LAYER_LOW = 0
+LAYER_HIGH = 1
+MAX_CHARGE = 30.0
+PLUNGER_START = (290.0, 190.0)
+BANNER_DURATION = 2.0
+GRID_STEP = 20
+
+Color = tuple[int, int, int]
+Segment = tuple[tuple[float, float], tuple[float, float]]
+BumperSpec = tuple[float, float, float, int, Color]
+
+
+@dataclass(frozen=True)
+class RampZone:
+    """
+    A rectangular ramp area. While the ball center is inside it, the ball moves
+    to the height layer `to_layer` (0 for the playfield, 1 for the raised deck).
+    """
+
+    x: float
+    y: float
+    w: float
+    h: float
+    to_layer: int
+
+
+@dataclass(frozen=True)
+class FlipperLevel:
+    """
+    Static description of one pinball table: theme colors, physics values,
+    the score needed to clear it, and the bumper, wall, ramp and raised deck layout.
+    """
+
+    name: str
+    background: Color
+    grid: Color
+    wall: Color
+    accent: Color
+    gravity: float
+    wall_restitution: float
+    score_target: int
+    bumpers: tuple[BumperSpec, ...]
+    walls: tuple[Segment, ...]
+    ramps: tuple[RampZone, ...] = ()
+    upper_walls: tuple[Segment, ...] = ()
+    upper_bumpers: tuple[BumperSpec, ...] = ()
+
+
+FRAME_WALLS: tuple[Segment, ...] = (
+    ((PLAYFIELD_LEFT, PLAYFIELD_TOP), (PLAYFIELD_LEFT, 215.0)),
+    ((PLAYFIELD_LEFT, PLAYFIELD_TOP), (262.0, PLAYFIELD_TOP)),
+    ((262.0, PLAYFIELD_TOP), (300.0, 60.0)),
+    ((LANE_X, 60.0), (LANE_X, 215.0)),
+    ((PLAYFIELD_RIGHT, 60.0), (PLAYFIELD_RIGHT, 215.0)),
+)
+
+
+def _ring_bumpers(
+    cx: float, cy: float, radius: float, count: int, pts: int, color: Color
+) -> tuple[BumperSpec, ...]:
+    """
+    Builds a circle of bumpers around a center point.
+
+    :param cx: Center x coordinate of the ring.
+    :param cy: Center y coordinate of the ring.
+    :param radius: Distance of each bumper from the center.
+    :param count: Number of bumpers in the ring.
+    :param pts: Score awarded per bumper hit.
+    :param color: Neon color of the bumpers.
+    :return: Tuple of bumper specifications.
+    """
+    specs: list[BumperSpec] = []
+    for i in range(count):
+        ang = (math.pi * 2 / count) * i
+        specs.append((cx + math.cos(ang) * radius, cy + math.sin(ang) * radius, 9.0, pts, color))
+    return tuple(specs)
+
+
+LEVELS: tuple[FlipperLevel, ...] = (
+    FlipperLevel(
+        name="Neon Grid",
+        background=(8, 10, 20),
+        grid=(18, 26, 48),
+        wall=(0, 200, 255),
+        accent=(0, 255, 200),
+        gravity=450.0,
+        wall_restitution=0.6,
+        score_target=1500,
+        bumpers=(
+            (110.0, 70.0, 16.0, 150, (0, 255, 200)),
+            (190.0, 70.0, 16.0, 150, (255, 0, 120)),
+            (150.0, 115.0, 12.0, 300, (255, 215, 0)),
+        ),
+        walls=(
+            ((45.0, 140.0), (92.0, 196.0)),
+            ((255.0, 140.0), (208.0, 196.0)),
+        ),
+    ),
+    FlipperLevel(
+        name="Circuit Board",
+        background=(4, 14, 10),
+        grid=(10, 36, 24),
+        wall=(0, 255, 120),
+        accent=(180, 255, 120),
+        gravity=430.0,
+        wall_restitution=0.55,
+        score_target=2500,
+        bumpers=(
+            (70.0, 70.0, 7.0, 60, (0, 255, 120)),
+            (110.0, 70.0, 7.0, 60, (0, 255, 120)),
+            (150.0, 70.0, 7.0, 60, (0, 255, 120)),
+            (190.0, 70.0, 7.0, 60, (0, 255, 120)),
+            (230.0, 70.0, 7.0, 60, (0, 255, 120)),
+            (90.0, 105.0, 7.0, 60, (180, 255, 120)),
+            (130.0, 105.0, 7.0, 60, (180, 255, 120)),
+            (170.0, 105.0, 7.0, 60, (180, 255, 120)),
+            (210.0, 105.0, 7.0, 60, (180, 255, 120)),
+        ),
+        walls=(
+            ((40.0, 130.0), (90.0, 130.0)),
+            ((210.0, 130.0), (260.0, 130.0)),
+            ((150.0, 140.0), (150.0, 172.0)),
+        ),
+        ramps=(
+            RampZone(20.0, 90.0, 30.0, 40.0, LAYER_HIGH),
+            RampZone(250.0, 90.0, 28.0, 40.0, LAYER_LOW),
+        ),
+        upper_walls=(
+            ((22.0, 84.0), (60.0, 84.0)),
+            ((120.0, 60.0), (120.0, 84.0)),
+        ),
+        upper_bumpers=((70.0, 60.0, 7.0, 120, (180, 255, 120)),),
+    ),
+    FlipperLevel(
+        name="Data Stream",
+        background=(16, 4, 20),
+        grid=(44, 12, 56),
+        wall=(255, 0, 200),
+        accent=(0, 200, 255),
+        gravity=480.0,
+        wall_restitution=0.62,
+        score_target=3500,
+        bumpers=(
+            (60.0, 60.0, 12.0, 200, (255, 0, 200)),
+            (150.0, 50.0, 14.0, 250, (0, 200, 255)),
+            (240.0, 60.0, 12.0, 200, (255, 0, 200)),
+            (105.0, 100.0, 10.0, 300, (255, 255, 255)),
+            (195.0, 100.0, 10.0, 300, (255, 255, 255)),
+        ),
+        walls=(
+            ((30.0, 110.0), (120.0, 150.0)),
+            ((270.0, 110.0), (180.0, 150.0)),
+            ((150.0, 120.0), (150.0, 145.0)),
+        ),
+        ramps=(
+            RampZone(20.0, 40.0, 40.0, 36.0, LAYER_HIGH),
+            RampZone(240.0, 96.0, 40.0, 22.0, LAYER_LOW),
+        ),
+        upper_walls=(
+            ((20.0, 92.0), (96.0, 92.0)),
+            ((204.0, 92.0), (280.0, 92.0)),
+        ),
+        upper_bumpers=((150.0, 70.0, 10.0, 400, (0, 200, 255)),),
+    ),
+    FlipperLevel(
+        name="Vortex",
+        background=(10, 6, 24),
+        grid=(30, 20, 60),
+        wall=(180, 80, 255),
+        accent=(255, 215, 0),
+        gravity=380.0,
+        wall_restitution=0.65,
+        score_target=4500,
+        bumpers=_ring_bumpers(150.0, 110.0, 45.0, 6, 120, (180, 80, 255))
+        + ((150.0, 110.0, 10.0, 500, (255, 215, 0)),),
+        walls=(
+            ((60.0, 180.0), (100.0, 160.0)),
+            ((240.0, 180.0), (200.0, 160.0)),
+            ((120.0, 30.0), (92.0, 62.0)),
+            ((180.0, 30.0), (208.0, 62.0)),
+        ),
+    ),
+    FlipperLevel(
+        name="Core Meltdown",
+        background=(20, 6, 4),
+        grid=(60, 22, 10),
+        wall=(255, 90, 0),
+        accent=(255, 255, 0),
+        gravity=520.0,
+        wall_restitution=0.6,
+        score_target=6000,
+        bumpers=(
+            (80.0, 50.0, 10.0, 400, (255, 60, 0)),
+            (150.0, 40.0, 10.0, 400, (255, 160, 0)),
+            (220.0, 50.0, 10.0, 400, (255, 60, 0)),
+            (115.0, 95.0, 14.0, 250, (255, 255, 0)),
+            (185.0, 95.0, 14.0, 250, (255, 255, 0)),
+            (150.0, 140.0, 8.0, 800, (255, 255, 255)),
+        ),
+        walls=(
+            ((120.0, 75.0), (120.0, 120.0)),
+            ((180.0, 75.0), (180.0, 120.0)),
+            ((40.0, 150.0), (70.0, 120.0)),
+            ((260.0, 150.0), (230.0, 120.0)),
+        ),
+        ramps=(
+            RampZone(20.0, 60.0, 30.0, 60.0, LAYER_HIGH),
+            RampZone(250.0, 60.0, 30.0, 60.0, LAYER_LOW),
+        ),
+        upper_walls=(
+            ((50.0, 70.0), (120.0, 70.0)),
+            ((180.0, 70.0), (250.0, 70.0)),
+        ),
+        upper_bumpers=((150.0, 100.0, 8.0, 600, (255, 255, 255)),),
+    ),
+)
+
+
+def _clamp_channel(value: float) -> int:
+    """
+    Clamps a color channel to the valid 0-255 range.
+
+    :param value: Channel value, possibly out of range.
+    :return: Integer channel value between 0 and 255.
+    """
+    return max(0, min(255, int(value)))
+
+
+def shade(color: Color, factor: float) -> Color:
+    """
+    Scales the brightness of a color by a factor.
+
+    :param color: RGB color to scale.
+    :param factor: Multiplier applied to every channel.
+    :return: The darkened or brightened RGB color.
+    """
+    r, g, b = color
+    return _clamp_channel(r * factor), _clamp_channel(g * factor), _clamp_channel(b * factor)
+
+
+def brighten(color: Color, amount: int) -> Color:
+    """
+    Adds a fixed amount of brightness to every channel of a color.
+
+    :param color: RGB color to brighten.
+    :param amount: Value added to each channel, may be negative.
+    :return: The adjusted RGB color.
+    """
+    r, g, b = color
+    return _clamp_channel(r + amount), _clamp_channel(g + amount), _clamp_channel(b + amount)
+
+
+def closest_point_on_segment(
+    px: float, py: float, ax: float, ay: float, bx: float, by: float
+) -> tuple[float, float]:
+    """
+    Returns the point on the segment A-B that is closest to point P.
+
+    :param px: X coordinate of the point.
+    :param py: Y coordinate of the point.
+    :param ax: X coordinate of the segment start.
+    :param ay: Y coordinate of the segment start.
+    :param bx: X coordinate of the segment end.
+    :param by: Y coordinate of the segment end.
+    :return: The closest (x, y) point on the segment.
+    """
+    dx, dy = bx - ax, by - ay
+    length_sq = dx * dx + dy * dy
+    if length_sq == 0.0:
+        return ax, ay
+    t = ((px - ax) * dx + (py - ay) * dy) / length_sq
+    t = max(0.0, min(1.0, t))
+    return ax + dx * t, ay + dy * t
+
+
+def point_in_rect(px: float, py: float, x: float, y: float, w: float, h: float) -> bool:
+    """
+    Checks whether a point lies inside an axis-aligned rectangle.
+
+    :param px: X coordinate of the point.
+    :param py: Y coordinate of the point.
+    :param x: Left edge of the rectangle.
+    :param y: Top edge of the rectangle.
+    :param w: Width of the rectangle.
+    :param h: Height of the rectangle.
+    :return: True if the point is inside or on the rectangle.
+    """
+    return x <= px <= x + w and y <= py <= y + h
+
+
+def layer_at(ramps: tuple[RampZone, ...], px: float, py: float) -> int:
+    """
+    Determines the height layer at a position. The first zone that contains the
+    position decides the layer. Outside every zone the ball is on the low layer,
+    so leaving a raised deck makes the ball fall back to the playfield.
+
+    :param ramps: Ramp and deck zones of the active table.
+    :param px: X coordinate of the ball center.
+    :param py: Y coordinate of the ball center.
+    :return: LAYER_HIGH or LAYER_LOW.
+    """
+    for ramp in ramps:
+        if point_in_rect(px, py, ramp.x, ramp.y, ramp.w, ramp.h):
+            return ramp.to_layer
+    return LAYER_LOW
+
+
+def reflect_velocity(
+    vx: float, vy: float, nx: float, ny: float, restitution: float
+) -> tuple[float, float]:
+    """
+    Reflects a velocity off a surface with the given unit normal. Velocities
+    that already move away from the surface are returned unchanged.
+
+    :param vx: Velocity along x.
+    :param vy: Velocity along y.
+    :param nx: X component of the unit surface normal.
+    :param ny: Y component of the unit surface normal.
+    :param restitution: Bounciness factor, 0 absorbs and 1 is perfectly elastic.
+    :return: The reflected (vx, vy) velocity.
+    """
+    dot = vx * nx + vy * ny
+    if dot >= 0.0:
+        return vx, vy
+    return vx - (1.0 + restitution) * dot * nx, vy - (1.0 + restitution) * dot * ny
+
+
+def flipper_tip(side: int, angle: float) -> tuple[float, float]:
+    """
+    Computes the tip position of a flipper for a given swing angle.
+
+    :param side: -1 for the left flipper, 1 for the right flipper.
+    :param angle: Swing angle in radians, see FLIPPER_REST_ANGLE and FLIPPER_ACTIVE_ANGLE.
+    :return: The (x, y) position of the flipper tip.
+    """
+    px, py = LEFT_PIVOT if side < 0 else RIGHT_PIVOT
+    return px - side * FLIPPER_LENGTH * math.cos(angle), py + FLIPPER_LENGTH * math.sin(angle)
+
+
+def advance_flipper_angle(angle: float, active: bool, dt: float) -> float:
+    """
+    Moves a flipper angle towards its active or rest target at a fixed speed.
+
+    :param angle: Current swing angle in radians.
+    :param active: True if the flipper button is held.
+    :param dt: Elapsed time in seconds.
+    :return: The new swing angle.
+    """
+    target = FLIPPER_ACTIVE_ANGLE if active else FLIPPER_REST_ANGLE
+    step = FLIPPER_SPEED * dt
+    if angle < target:
+        return min(target, angle + step)
+    return max(target, angle - step)
+
 
 class CyberFlipperGame(BaseGame):
-    def __init__(self, engine) -> None:
+    """
+    Pinball game with five themed tables. The player controls two flippers and
+    a plunger, and must reach the score target of each table to advance.
+    """
+
+    def __init__(self, engine, rng: random.Random | None = None) -> None:
         super().__init__(engine, game_name="Cyber Flipper")
-        self.balls_left = 3
-        self.bx, self.by = 290.0, 180.0
+        self.rng = rng if rng is not None else random.Random(2077)
+        self.level_index = 0
+        self.level = 1
+        self.level_score = 0
+        self.balls_left = BALLS_PER_GAME
+        self.ball_radius = BALL_RADIUS
+        self.bx, self.by = PLUNGER_START
         self.bvx, self.bvy = 0.0, 0.0
-        self.gravity = 450.0
-        self.ball_radius = 5
+        self.ball_on_plunger = True
+        self.launcher_pulled = 0.0
         self.flipper_left_active = False
         self.flipper_right_active = False
-        self.launcher_pulled = 0.0
+        self.left_angle = FLIPPER_REST_ANGLE
+        self.right_angle = FLIPPER_REST_ANGLE
+        self.left_rising = False
+        self.right_rising = False
         self.particles: list[dict] = []
+        self.banner_timer = BANNER_DURATION
+        self.bumpers: list[dict] = []
+        self.upper_bumpers: list[dict] = []
+        self.walls: list[Segment] = []
+        self.upper_walls: list[Segment] = []
+        self.ramps: tuple[RampZone, ...] = ()
+        self.ball_layer = LAYER_LOW
+        self.gravity = 0.0
+        self.wall_restitution = 0.7
+        self.load_level(0)
 
-        # Stylische Neon-Bumper
-        self.bumpers = [
-            {
-                "x": 110,
-                "y": 70,
-                "r": 16,
-                "pts": 150,
-                "color": (0, 255, 200),
-                "flash": 0.0,
-            },
-            {
-                "x": 190,
-                "y": 70,
-                "r": 16,
-                "pts": 150,
-                "color": (255, 0, 120),
-                "flash": 0.0,
-            },
-            {
-                "x": 150,
-                "y": 115,
-                "r": 12,
-                "pts": 300,
-                "color": (255, 215, 0),
-                "flash": 0.0,
-            },
-        ]
+    @property
+    def table(self) -> FlipperLevel:
+        """
+        Returns the table definition of the current level.
+
+        :return: The active FlipperLevel.
+        """
+        return LEVELS[self.level_index]
+
+    def load_level(self, index: int) -> None:
+        """
+        Loads the table layout, physics and palette of a level and resets the ball.
+
+        :param index: Zero-based index into LEVELS.
+        """
+        self.level_index = index
+        self.level = index + 1
+        level = LEVELS[index]
+        self.gravity = level.gravity
+        self.wall_restitution = level.wall_restitution
+        self.bumpers = self._make_bumpers(level.bumpers)
+        self.upper_bumpers = self._make_bumpers(level.upper_bumpers)
+        self.walls = list(FRAME_WALLS) + list(level.walls)
+        self.upper_walls = list(level.upper_walls)
+        self.ramps = level.ramps
+        self.level_score = 0
+        self.particles = []
+        self.banner_timer = BANNER_DURATION
         self.reset_ball()
 
+    @staticmethod
+    def _make_bumpers(specs: tuple[BumperSpec, ...]) -> list[dict]:
+        """
+        Converts bumper specifications into mutable bumper state dictionaries.
+
+        :param specs: Bumper specifications of a table layer.
+        :return: List of bumper state dictionaries with flash timers.
+        """
+        return [
+            {
+                "x": x,
+                "y": y,
+                "r": r,
+                "pts": pts,
+                "color": color,
+                "flash": 0.0,
+            }
+            for x, y, r, pts, color in specs
+        ]
+
+    def active_bumpers(self) -> list[dict]:
+        """
+        Returns the bumpers on the height layer the ball currently occupies.
+
+        :return: Bumpers of the ball's layer.
+        """
+        return self.upper_bumpers if self.ball_layer == LAYER_HIGH else self.bumpers
+
+    def active_walls(self) -> list[Segment]:
+        """
+        Returns the frame walls plus the table walls of the ball's height layer.
+
+        :return: Wall segments that can collide with the ball right now.
+        """
+        if self.ball_layer == LAYER_HIGH:
+            return list(FRAME_WALLS) + list(self.upper_walls)
+        return list(FRAME_WALLS) + list(self.walls[len(FRAME_WALLS):])
+
     def reset_ball(self) -> None:
-        self.bx = 292.0
-        self.by = 190.0
+        """
+        Places a fresh ball in the plunger lane, ready to be launched.
+        """
+        self.bx, self.by = PLUNGER_START
         self.bvx = 0.0
         self.bvy = 0.0
         self.launcher_pulled = 0.0
+        self.ball_on_plunger = True
+        self.ball_layer = LAYER_LOW
 
     def handle_input(self) -> None:
+        """
+        Reads flipper and plunger input. Holding the plunger charges it, releasing
+        it launches the ball from the plunger lane.
+        """
         super().handle_input()
         if self.game_over:
             return
 
         inp = self.engine.input
         self.flipper_left_active = inp.is_left_pressed() or inp.is_key_down(pygame.K_z)
-        self.flipper_right_active = inp.is_right_pressed() or inp.is_key_down(
-            pygame.K_x
-        )
+        self.flipper_right_active = inp.is_right_pressed() or inp.is_key_down(pygame.K_x)
 
-        # Launcher-Mechanik im rechten Schusskanal (x > 280)
-        if self.bx > 280 and self.by > 150:
-            if inp.is_down_pressed() or inp.is_action_pressed():
-                self.launcher_pulled = min(30.0, self.launcher_pulled + 40.0 * 0.016)
-            elif (
-                inp.is_action_just_pressed() or inp.is_up_pressed()
-            ) and self.launcher_pulled > 0:
-                self.bvy = -350.0 - (self.launcher_pulled * 15.0)
-                self.launcher_pulled = 0.0
-                self.play_sound("confirm")
+        if not self.ball_on_plunger:
+            return
+        if inp.is_down_pressed() or inp.is_action_pressed():
+            self.launcher_pulled = min(MAX_CHARGE, self.launcher_pulled + 40.0 * 0.016)
+        elif (inp.is_action_just_pressed() or inp.is_up_pressed()) and self.launcher_pulled > 0:
+            self.bvy = -LAUNCH_BASE_SPEED - self.launcher_pulled * LAUNCH_SPEED_PER_CHARGE
+            self.launcher_pulled = 0.0
+            self.ball_on_plunger = False
+            self.play_sound("confirm")
 
     def update(self, dt: float) -> None:
+        """
+        Advances flippers, particles, bumper flashes and the ball physics.
+
+        :param dt: Elapsed time in seconds.
+        """
         super().update(dt)
         if self.game_over or self.paused:
             return
 
-        # Partikel aktualisieren
+        if self.banner_timer > 0:
+            self.banner_timer -= dt
+        self._update_particles(dt)
+        for b in self.bumpers:
+            if b["flash"] > 0:
+                b["flash"] -= dt
+
+        self._update_flippers(dt)
+
+        if not self.ball_on_plunger:
+            step = dt / SUBSTEPS
+            for _ in range(SUBSTEPS):
+                self._step_ball(step)
+
+        if self.by - self.ball_radius > DRAIN_Y:
+            self._drain_ball()
+        self._check_level_complete()
+
+    def _update_particles(self, dt: float) -> None:
+        """
+        Moves particles and removes the ones whose lifetime has expired.
+
+        :param dt: Elapsed time in seconds.
+        """
         for p in self.particles[:]:
             p["x"] += p["vx"] * dt
             p["y"] += p["vy"] * dt
@@ -98,144 +571,355 @@ class CyberFlipperGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
-        for b in self.bumpers:
-            if b["flash"] > 0:
-                b["flash"] -= dt
+    def _spawn_particles(self, x: float, y: float, color: Color, count: int, speed: float, life: float) -> None:
+        """
+        Spawns a burst of particles at a position with random directions.
 
-        if not (self.bx > 280 and self.by > 170 and self.bvy == 0):
-            self.bvy += self.gravity * dt
-            self.bx += self.bvx * dt
-            self.by += self.bvy * dt
+        :param x: Origin x coordinate.
+        :param y: Origin y coordinate.
+        :param color: Particle color.
+        :param count: Number of particles to spawn.
+        :param speed: Maximum particle speed in px/s.
+        :param life: Lifetime of each particle in seconds.
+        """
+        for _ in range(count):
+            ang = self.rng.uniform(0, math.pi * 2)
+            spd = self.rng.uniform(speed * 0.4, speed)
+            self.particles.append(
+                {
+                    "x": x,
+                    "y": y,
+                    "vx": math.cos(ang) * spd,
+                    "vy": math.sin(ang) * spd,
+                    "life": life,
+                    "color": color,
+                }
+            )
 
-        # Spielfeld-Wände
-        if self.bx - self.ball_radius < 25:
-            self.bx = 25 + self.ball_radius
-            self.bvx = -self.bvx * 0.8
-            self.play_sound("hit")
-        elif self.bx + self.ball_radius > 275 and not (self.by > 150):
-            self.bx = 275 - self.ball_radius
-            self.bvx = -self.bvx * 0.8
-            self.play_sound("hit")
-        elif self.bx + self.ball_radius > 310:
-            self.bx = 310 - self.ball_radius
-            self.bvx = -self.bvx * 0.8
+    def _update_flippers(self, dt: float) -> None:
+        """
+        Swings both flippers towards their target angles and records the rising state.
 
-        if self.by - self.ball_radius < 20:
-            self.by = 20 + self.ball_radius
-            self.bvy = -self.bvy * 0.8
-            self.play_sound("hit")
+        :param dt: Elapsed time in seconds.
+        """
+        new_left = advance_flipper_angle(self.left_angle, self.flipper_left_active, dt)
+        new_right = advance_flipper_angle(self.right_angle, self.flipper_right_active, dt)
+        self.left_rising = new_left < self.left_angle
+        self.right_rising = new_right < self.right_angle
+        self.left_angle = new_left
+        self.right_angle = new_right
 
-        # Flipper-Kollisionen unten (Links: 65-135, Rechts: 165-235)
-        if 190 <= self.by <= 210:
-            if self.flipper_left_active and 65 <= self.bx <= 135:
-                self.bvy = -400.0
-                self.bvx += 150.0
+    def _step_ball(self, dt: float) -> None:
+        """
+        Runs one physics substep: gravity, movement, then all collisions.
+
+        :param dt: Substep length in seconds.
+        """
+        self.bvy += self.gravity * dt
+        self.bx += self.bvx * dt
+        self.by += self.bvy * dt
+        self.ball_layer = layer_at(self.ramps, self.bx, self.by)
+
+        speed = math.hypot(self.bvx, self.bvy)
+        if speed > MAX_BALL_SPEED:
+            scale = MAX_BALL_SPEED / speed
+            self.bvx *= scale
+            self.bvy *= scale
+
+        self._collide_walls()
+        self._collide_flippers()
+        self._collide_bumpers()
+
+    def _collide_segment(
+        self,
+        ax: float,
+        ay: float,
+        bx_: float,
+        by_: float,
+        min_dist: float,
+        restitution: float,
+        kick: float = 0.0,
+    ) -> bool:
+        """
+        Pushes the ball out of a segment if it overlaps and reflects its velocity.
+
+        :param ax: X coordinate of the segment start.
+        :param ay: Y coordinate of the segment start.
+        :param bx_: X coordinate of the segment end.
+        :param by_: Y coordinate of the segment end.
+        :param min_dist: Minimum allowed distance between ball center and segment.
+        :param restitution: Bounciness of the surface.
+        :param kick: Extra speed added along the surface normal, used by flippers.
+        :return: True if a collision happened.
+        """
+        cx, cy = closest_point_on_segment(self.bx, self.by, ax, ay, bx_, by_)
+        dx, dy = self.bx - cx, self.by - cy
+        dist = math.hypot(dx, dy)
+        if dist >= min_dist:
+            return False
+        if dist < 1e-6:
+            nx, ny = 0.0, -1.0
+        else:
+            nx, ny = dx / dist, dy / dist
+        self.bx = cx + nx * min_dist
+        self.by = cy + ny * min_dist
+        self.bvx, self.bvy = reflect_velocity(self.bvx, self.bvy, nx, ny, restitution)
+        if kick:
+            self.bvx += nx * kick
+            self.bvy += ny * kick
+        return True
+
+    def _collide_walls(self) -> None:
+        """
+        Bounces the ball off all frame and table walls.
+        """
+        for (ax, ay), (bx_, by_) in self.active_walls():
+            if self._collide_segment(ax, ay, bx_, by_, self.ball_radius, self.wall_restitution):
+                self.play_sound("hit")
+
+    def _collide_flippers(self) -> None:
+        """
+        Bounces the ball off both flippers. A flipper that is swinging up adds a kick.
+        """
+        for side, angle, rising in (
+            (-1, self.left_angle, self.left_rising),
+            (1, self.right_angle, self.right_rising),
+        ):
+            px, py = LEFT_PIVOT if side < 0 else RIGHT_PIVOT
+            tx, ty = flipper_tip(side, angle)
+            kick = FLIPPER_KICK if rising else 0.0
+            if self._collide_segment(
+                px, py, tx, ty, self.ball_radius + FLIPPER_THICKNESS, 0.6, kick
+            ):
                 self.play_sound("select")
-                for _ in range(5):
-                    self.particles.append(
-                        {
-                            "x": self.bx,
-                            "y": self.by,
-                            "vx": random.uniform(-50, 50),
-                            "vy": random.uniform(-80, -20),
-                            "life": 0.3,
-                            "color": (0, 255, 200),
-                        }
-                    )
-            elif self.flipper_right_active and 165 <= self.bx <= 235:
-                self.bvy = -400.0
-                self.bvx -= 150.0
-                self.play_sound("select")
-                for _ in range(5):
-                    self.particles.append(
-                        {
-                            "x": self.bx,
-                            "y": self.by,
-                            "vx": random.uniform(-50, 50),
-                            "vy": random.uniform(-80, -20),
-                            "life": 0.3,
-                            "color": (255, 0, 120),
-                        }
-                    )
+                color = self.table.accent
+                self._spawn_particles(self.bx, self.by, color, 5, 80.0, 0.3)
 
-        # Bumper Kollisionen
-        for b in self.bumpers:
+    def _collide_bumpers(self) -> None:
+        """
+        Handles ball collisions with round bumpers, awarding points and boosting speed.
+        """
+        for b in self.active_bumpers():
             dist = math.hypot(self.bx - b["x"], self.by - b["y"])
-            if dist < self.ball_radius + b["r"]:
-                nx = (self.bx - b["x"]) / dist
-                ny = (self.by - b["y"]) / dist
-                self.bx = b["x"] + nx * (self.ball_radius + b["r"])
-                self.by = b["y"] + ny * (self.ball_radius + b["r"])
-                dot = self.bvx * nx + self.bvy * ny
-                self.bvx = (self.bvx - 2 * dot * nx) * 1.25
-                self.bvy = (self.bvy - 2 * dot * ny) * 1.25
-                self.add_score(b["pts"])
-                b["flash"] = 0.2
-                self.play_sound("score")
-                for _ in range(8):
-                    ang = random.uniform(0, math.pi * 2)
-                    spd = random.uniform(50, 120)
-                    self.particles.append(
-                        {
-                            "x": b["x"],
-                            "y": b["y"],
-                            "vx": math.cos(ang) * spd,
-                            "vy": math.sin(ang) * spd,
-                            "life": 0.4,
-                            "color": b["color"],
-                        }
-                    )
+            min_dist = self.ball_radius + b["r"]
+            if dist >= min_dist:
+                continue
+            nx = (self.bx - b["x"]) / dist if dist > 0 else 0.0
+            ny = (self.by - b["y"]) / dist if dist > 0 else -1.0
+            self.bx = b["x"] + nx * min_dist
+            self.by = b["y"] + ny * min_dist
+            self.bvx, self.bvy = reflect_velocity(self.bvx, self.bvy, nx, ny, BUMPER_RESTITUTION)
+            self.bvx *= BUMPER_BOOST
+            self.bvy *= BUMPER_BOOST
+            self._award(b["pts"])
+            b["flash"] = 0.2
+            self.play_sound("score")
+            self._spawn_particles(b["x"], b["y"], b["color"], 8, 120.0, 0.4)
 
-        # Ball verloren (Drain in der Mitte unten)
-        if self.by > 235:
-            if 115 <= self.bx <= 185:
-                self.balls_left -= 1
-                self.play_sound("gameover")
-                if self.balls_left <= 0:
-                    self.game_over = True
-                else:
-                    self.reset_ball()
-            else:
-                self.bvy = -200.0
-                self.bvx *= -0.7
+    def _award(self, points: int) -> None:
+        """
+        Adds points to the total score and to the current level score.
+
+        :param points: Points to award.
+        """
+        self.add_score(points)
+        self.level_score += points
+
+    def _drain_ball(self) -> None:
+        """
+        Handles a ball falling off the bottom of the table. Costs one ball, and
+        ends the game when no balls are left.
+        """
+        self.balls_left -= 1
+        self.play_sound("gameover")
+        if self.balls_left <= 0:
+            self.game_over = True
+        else:
+            self.reset_ball()
+
+    def _check_level_complete(self) -> None:
+        """
+        Advances to the next table once the level score target is reached. Clearing
+        the last table wins the game.
+        """
+        if self.level_score < self.table.score_target:
+            return
+        if self.level_index + 1 >= len(LEVELS):
+            self.game_won = True
+            return
+        self.balls_left = BALLS_PER_GAME
+        self.load_level(self.level_index + 1)
+        self.play_sound("confirm")
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((8, 10, 20))
+        """
+        Draws the themed table in layers: playfield, low walls and bumpers, the
+        ball if it is on the low layer, the raised deck, upper walls and bumpers,
+        the ball if it is on the high layer, flippers, plunger, particles and HUD.
 
-        pygame.draw.line(surface, (0, 200, 255), (25, 20), (25, 215), 3)
-        pygame.draw.line(surface, (0, 200, 255), (275, 20), (275, 150), 3)
-        pygame.draw.line(surface, (0, 200, 255), (25, 20), (150, 5), 3)
-        pygame.draw.line(surface, (0, 200, 255), (275, 20), (150, 5), 3)
-        pygame.draw.line(surface, (100, 100, 150), (280, 40), (280, 220), 2)
+        :param surface: The surface to draw on.
+        """
+        level = self.table
+        self._draw_playfield(surface, level)
+
+        self._draw_plunger(surface, level)
+        for segment in self.walls:
+            self._draw_wall(surface, segment, level)
+        for b in self.bumpers:
+            self._draw_bumper(surface, b, level)
+        if self.ball_layer == LAYER_LOW:
+            self._draw_ball(surface, level)
+
+        self._draw_deck(surface, level)
+        for segment in self.upper_walls:
+            self._draw_wall(surface, segment, level)
+        for b in self.upper_bumpers:
+            self._draw_bumper(surface, b, level)
+        if self.ball_layer == LAYER_HIGH:
+            self._draw_ball(surface, level)
 
         for p in self.particles:
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
-        for b in self.bumpers:
-            col = (255, 255, 255) if b["flash"] > 0 else b["color"]
-            pygame.draw.circle(surface, col, (b["x"], b["y"]), b["r"])
-            pygame.draw.circle(surface, (30, 30, 50), (b["x"], b["y"]), b["r"] - 5)
+        self._draw_flipper(surface, -1, self.left_angle, self.flipper_left_active)
+        self._draw_flipper(surface, 1, self.right_angle, self.flipper_right_active)
 
-        l_col = (0, 255, 255) if self.flipper_left_active else (80, 130, 160)
-        r_col = (255, 0, 150) if self.flipper_right_active else (160, 80, 130)
-        l_tip_y = 180 if self.flipper_left_active else 205
-        r_tip_y = 180 if self.flipper_right_active else 205
-
-        pygame.draw.line(surface, l_col, (65, 205), (125, l_tip_y), 6)
-        pygame.draw.line(surface, r_col, (175, 205), (235, r_tip_y), 6)
-
-        pygame.draw.circle(
-            surface, (255, 255, 255), (int(self.bx), int(self.by)), self.ball_radius
-        )
-        pygame.draw.circle(
-            surface, (0, 220, 255), (int(self.bx) - 1, int(self.by) - 1), 2
-        )
-
-        # Unten Info-Leiste
-        pygame.draw.rect(surface, (15, 20, 35), (10, 218, 300, 18), border_radius=4)
-        hud = self.font.render(
-            f"BALLS: {self.balls_left}  |  CYBER PINBALL", True, (0, 255, 200)
-        )
-        surface.blit(hud, (160 - hud.get_width() // 2, 220))
+        self._draw_hud(surface)
+        if self.banner_timer > 0:
+            banner = self.font.render(level.name.upper(), True, level.accent)
+            surface.blit(banner, (160 - banner.get_width() // 2, 110))
 
         self.render_ui(surface)
+
+    def _draw_playfield(self, surface: pygame.Surface, level: FlipperLevel) -> None:
+        """
+        Draws the playfield with a lit top-to-bottom gradient and a grid pattern.
+
+        :param surface: The surface to draw on.
+        :param level: The active table, providing the theme colors.
+        """
+        surface.fill(level.background)
+        span = DRAIN_Y - PLAYFIELD_TOP
+        for y in range(int(PLAYFIELD_TOP), int(DRAIN_Y), 2):
+            lift = int(24 * (1.0 - (y - PLAYFIELD_TOP) / span))
+            pygame.draw.line(
+                surface, brighten(level.background, lift), (PLAYFIELD_LEFT, y), (PLAYFIELD_RIGHT, y)
+            )
+        for x in range(int(PLAYFIELD_LEFT), int(PLAYFIELD_RIGHT), GRID_STEP):
+            pygame.draw.line(surface, level.grid, (x, PLAYFIELD_TOP), (x, DRAIN_Y), 1)
+        for y in range(int(PLAYFIELD_TOP), int(DRAIN_Y), GRID_STEP):
+            pygame.draw.line(surface, level.grid, (PLAYFIELD_LEFT, y), (PLAYFIELD_RIGHT, y), 1)
+
+    def _draw_wall(self, surface: pygame.Surface, segment: Segment, level: FlipperLevel) -> None:
+        """
+        Draws a rail as a metal guide with a drop shadow, a neon core and a highlight.
+
+        :param surface: The surface to draw on.
+        :param segment: The (start, end) points of the rail.
+        :param level: The active table, providing the theme colors.
+        """
+        (ax, ay), (bx_, by_) = segment
+        pygame.draw.line(surface, shade(level.background, 0.4), (ax + 2, ay + 3), (bx_ + 2, by_ + 3), 6)
+        pygame.draw.line(surface, shade(level.wall, 0.3), (ax, ay), (bx_, by_), 5)
+        pygame.draw.line(surface, level.wall, (ax, ay), (bx_, by_), 3)
+        pygame.draw.line(surface, brighten(level.wall, 90), (ax, ay - 1), (bx_, by_ - 1), 1)
+
+    def _draw_bumper(self, surface: pygame.Surface, b: dict, level: FlipperLevel) -> None:
+        """
+        Draws a pop bumper as a domed cap with a shadow, a rim and a specular highlight.
+
+        :param surface: The surface to draw on.
+        :param b: Bumper state dictionary.
+        :param level: The active table, providing the theme colors.
+        """
+        x, y, r = int(b["x"]), int(b["y"]), b["r"]
+        cap = (255, 255, 255) if b["flash"] > 0 else b["color"]
+        pygame.draw.circle(surface, shade(level.background, 0.4), (x + 2, y + 3), r + 2)
+        pygame.draw.circle(surface, shade(b["color"], 0.35), (x, y), r + 2)
+        pygame.draw.circle(surface, cap, (x, y), r)
+        pygame.draw.circle(surface, shade(cap, 0.3), (x, y), max(2, r - 4))
+        pygame.draw.circle(surface, brighten(cap, 110), (x - r // 3, y - r // 3), max(1, r // 4))
+
+    def _draw_deck(self, surface: pygame.Surface, level: FlipperLevel) -> None:
+        """
+        Draws every raised deck zone as a panel with a cast shadow on the playfield.
+
+        :param surface: The surface to draw on.
+        :param level: The active table, providing the theme colors.
+        """
+        for ramp in self.ramps:
+            if ramp.to_layer != LAYER_HIGH:
+                continue
+            rect = pygame.Rect(int(ramp.x), int(ramp.y), int(ramp.w), int(ramp.h))
+            pygame.draw.rect(surface, shade(level.background, 0.3), rect.move(4, 5))
+            pygame.draw.rect(surface, brighten(level.background, 22), rect)
+            pygame.draw.rect(surface, shade(level.wall, 0.5), rect, 1)
+            pygame.draw.line(surface, brighten(level.wall, 40), rect.topleft, rect.topright, 2)
+
+    def _draw_ball(self, surface: pygame.Surface, level: FlipperLevel) -> None:
+        """
+        Draws the steel ball with a glow, a floor shadow and a specular highlight.
+
+        :param surface: The surface to draw on.
+        :param level: The active table, providing the accent color.
+        """
+        x, y = int(self.bx), int(self.by)
+        r = self.ball_radius
+        pygame.draw.circle(surface, shade(level.accent, 0.35), (x, y), r + 2)
+        pygame.draw.circle(surface, (150, 160, 175), (x, y), r)
+        pygame.draw.circle(surface, (215, 222, 232), (x - 1, y - 1), r - 2)
+        pygame.draw.circle(surface, (255, 255, 255), (x - 2, y - 2), 1)
+
+    def _draw_plunger(self, surface: pygame.Surface, level: FlipperLevel) -> None:
+        """
+        Draws the plunger channel with its spring coils and the charge meter.
+
+        :param surface: The surface to draw on.
+        :param level: The active table, providing the accent color.
+        """
+        pygame.draw.rect(surface, (30, 34, 44), (282, 120, 16, 104))
+        pygame.draw.rect(surface, (90, 96, 110), (282, 120, 16, 104), 1)
+        for y in range(124, 220, 6):
+            pygame.draw.line(surface, (120, 126, 140), (284, y), (296, y), 1)
+        if self.ball_on_plunger and self.launcher_pulled > 0:
+            charge_h = int(60 * self.launcher_pulled / MAX_CHARGE)
+            pygame.draw.rect(surface, level.accent, (286, 214 - charge_h, 8, charge_h))
+
+    def _draw_flipper(self, surface: pygame.Surface, side: int, angle: float, active: bool) -> None:
+        """
+        Draws one flipper arm, brighter while the button is held.
+
+        :param surface: The surface to draw on.
+        :param side: -1 for the left flipper, 1 for the right flipper.
+        :param angle: Current swing angle in radians.
+        :param active: Whether the flipper button is held.
+        """
+        px, py = LEFT_PIVOT if side < 0 else RIGHT_PIVOT
+        tip = flipper_tip(side, angle)
+        if side < 0:
+            color = (0, 255, 255) if active else (80, 130, 160)
+        else:
+            color = (255, 0, 150) if active else (160, 80, 130)
+        pygame.draw.line(surface, (5, 5, 10), (px + 2, py + 3), (tip[0] + 2, tip[1] + 3), 7)
+        pygame.draw.line(surface, shade(color, 0.5), (px, py), tip, 7)
+        pygame.draw.line(surface, color, (px, py), tip, 5)
+        pygame.draw.line(surface, brighten(color, 90), (px, py - 1), (tip[0], tip[1] - 1), 1)
+        pygame.draw.circle(surface, (20, 20, 28), (int(tip[0]), int(tip[1])), 3)
+        pygame.draw.circle(surface, (60, 64, 74), (int(px), int(py)), 5)
+        pygame.draw.circle(surface, (230, 230, 240), (int(px), int(py)), 3)
+
+    def _draw_hud(self, surface: pygame.Surface) -> None:
+        """
+        Draws the status line with the table number and balls at the top right and
+        the table progress along the bottom edge. The total score is drawn by the base class.
+
+        :param surface: The surface to draw on.
+        """
+        status = self.font.render(
+            f"TABLE {self.level}/{len(LEVELS)}  BALLS {self.balls_left}", True, self.table.accent
+        )
+        surface.blit(status, (310 - status.get_width(), 5))
+        progress = self.font.render(
+            f"TABLE SCORE {self.level_score}/{self.table.score_target}", True, (200, 200, 220)
+        )
+        surface.blit(progress, (160 - progress.get_width() // 2, 226))

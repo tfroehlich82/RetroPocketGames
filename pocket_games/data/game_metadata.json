@@ -279,20 +279,6 @@
             "controls": "D-Pad: Move | Space: Switch polarity"
         }
     },
-    "Cyber Flipper": {
-        "de": {
-            "desc": "Ein temporeiches Arcade-Flipper-Spiel auf einem 320x240-Bildschirm. Nutze die Flipper-Arme, um den Ball im Spiel zu halten, triff Cyber-Bumper f?r Bonuspunkte und verwalte deine 3 B?lle geschickt, um den Highscore zu knacken.",
-            "goal": "",
-            "gameplay": "",
-            "controls": ""
-        },
-        "en": {
-            "desc": "A fast-paced arcade pinball game optimized for the 320x240 display. Use the flippers to keep the ball in play, hit cyber bumpers for bonus points, and manage your 3 balls wisely to set a new high score.",
-            "goal": "",
-            "gameplay": "",
-            "controls": ""
-        }
-    },
     "Cyber Grid Chomp": {
         "de": {
             "desc": "Neon-Labyrinth im Pac-Man-Stil.\nFünf Sektoren, immer schlimmer.",
@@ -319,6 +305,20 @@
             "goal": "Reach the flag in all 20 levels.\nSurvive the enemies and hazards.",
             "gameplay": "Stomp enemies, collect power-ups\nand coins for points.",
             "controls": "D-Pad/WASD: Move, A: Jump\nZ: Shoot"
+        }
+    },
+    "Cyber Flipper": {
+        "de": {
+            "desc": "Virtueller Flipper mit 5 Leveln.\nJedes Level hat ein eigenes Thema.",
+            "goal": "Erreiche das Punkteziel jedes Tisches\nund schaffe alle 5 Level.",
+            "gameplay": "Halte den Ball mit den Flippern im Spiel.\nBumper bringen Punkte und Tempo.",
+            "controls": "Z / X oder D-Pad: Flipper\nLeertaste: Plunger halten/loslassen"
+        },
+        "en": {
+            "desc": "Virtual pinball table with 5 levels.\nEach level has its own theme.",
+            "goal": "Reach each table's score target\nand clear all 5 levels.",
+            "gameplay": "Keep the ball alive with the flippers.\nBumpers give points and speed.",
+            "controls": "Z / X or D-Pad: Flippers\nSpace: Hold and release plunger"
         }
     }
 }

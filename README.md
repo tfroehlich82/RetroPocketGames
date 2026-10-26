@@ -402,6 +402,18 @@ The handheld features a unified dual-input scheme:
 
   * **Z:** Shoot fireballs (with fire flower).
 
+### 23. Cyber Flipper
+
+* **Goal:** Clear all five pinball tables by reaching each table's score target before you run out of balls.
+
+* **Gameplay:** Virtual pinball on a 320x240 table. Each of the five tables has its own theme, gravity, bumper ring and wall layout. Keep the ball alive with the flippers, hit bumpers for points, and launch the ball with the plunger. Three balls per table.
+
+* **Controls:**
+
+  * **Left / Right Flipper (Z / X or D-Pad Left / Right):** Swing the flippers.
+
+  * **Plunger (Space / Enter / D-Pad Down, hold and release):** Charge and launch the ball.
+
 ---
 
 ## ⚙️ Settings & Hall of Fame
