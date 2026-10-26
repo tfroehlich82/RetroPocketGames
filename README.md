@@ -388,6 +388,20 @@ The handheld features a unified dual-input scheme:
 
   * **D-Pad / WASD:** Steer the chomper through the maze.
 
+### 22. Pixel Platformer
+
+* **Goal:** Reach the flag at the end of each of the 20 levels, surviving enemies and hazards on the way.
+
+* **Gameplay:** Super Mario inspired platformer with 20 levels across grassland, caves, castles and sky stages. Stomp enemies, collect power-ups such as mushrooms, fire flowers and stars, and grab coins for points.
+
+* **Controls:**
+
+  * **D-Pad / WASD:** Move left and right.
+
+  * **Button A / Space / Up:** Jump.
+
+  * **Z:** Shoot fireballs (with fire flower).
+
 ---
 
 ## ⚙️ Settings & Hall of Fame

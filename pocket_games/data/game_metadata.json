@@ -295,30 +295,30 @@
     },
     "Cyber Grid Chomp": {
         "de": {
-            "desc": "Neon-Labyrinth im Pac-Man-Stil mit fuenf immer gefaehrlicheren Sektoren. Sammle alle Datenbits, meide die jagenden Phantome und aktiviere Overclock-Pillen, um sie zu jagen.",
-            "goal": "Leere alle Sektoren von Datenbits\nund ueberlebe bis Sektor 5.",
-            "gameplay": "Phantome verfolgen dich mit Pathfinding.\nOverclock dreht die Jagd um.",
-            "controls": "D-Pad / WASD (Lenken) | Overclock-Pillen sammeln"
+            "desc": "Neon-Labyrinth im Pac-Man-Stil.\nFuenf Sektoren, immer schlimmer.",
+            "goal": "Sammle alle Datenbits pro Sektor\nund ueberlebe bis Sektor 5.",
+            "gameplay": "Phantome jagen dich.\nOverclock-Pillen kehren sie um.",
+            "controls": "D-Pad / WASD (Lenken)"
         },
         "en": {
-            "desc": "Neon maze in classic Pac-Man style across five increasingly dangerous sectors. Collect every data bit, dodge the hunting phantoms, and grab overclock pills to turn the tables.",
-            "goal": "Clear every data bit in each sector\nand survive through sector 5.",
-            "gameplay": "Phantoms track you with pathfinding.\nOverclock flips the chase around.",
-            "controls": "D-Pad / WASD (Steer) | Grab overclock pills"
+            "desc": "Neon maze in Pac-Man style.\nFive ever more dangerous sectors.",
+            "goal": "Collect all data bits per sector\nand survive through sector 5.",
+            "gameplay": "Phantoms hunt you.\nOverclock pills flip the chase.",
+            "controls": "D-Pad / WASD (Steer)"
         }
     },
     "Pixel Platformer": {
         "de": {
-            "desc": "Ein klassisches Jump-and-Run-Abenteuer �ber mehrere Level. Springe auf Gegner, schie�e Projektile mit freigeschalteten Power-ups ab, sammle Punkte und passe auf deine 3 Leben auf, w�hrend du dich bis zum Levelende vorarbeitest.",
-            "goal": "",
-            "gameplay": "",
-            "controls": ""
+            "desc": "Super-Mario-Jump-and-Run.\n20 Level in vier Welten.",
+            "goal": "Erreiche die Fahne in allen\n20 Leveln und ueberlebe.",
+            "gameplay": "Stampfe Gegner, sammle Power-ups\nund Muenzen fuer Punkte.",
+            "controls": "D-Pad/WASD: Laufen, A: Springen\nZ: Schiessen"
         },
         "en": {
-            "desc": "A classic platform adventure across multiple levels. Stomp on enemies, shoot projectiles with unlocked power-ups, collect points, and protect your 3 lives as you navigate through challenging stages.",
-            "goal": "",
-            "gameplay": "",
-            "controls": ""
+            "desc": "Super Mario inspired platformer.\n20 levels across four worlds.",
+            "goal": "Reach the flag in all 20 levels.\nSurvive the enemies and hazards.",
+            "gameplay": "Stomp enemies, collect power-ups\nand coins for points.",
+            "controls": "D-Pad/WASD: Move, A: Jump\nZ: Shoot"
         }
     }
 }
