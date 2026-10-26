@@ -25,7 +25,7 @@ class PulseRacerGame(BaseGame):
         self.pylon_spawn_timer = 0.0
         self.roadside_spawn_timer = 0.0
         self.base_speed = 180.0
-        self.car_speed = 180.0  # Startet beschleunigt, nach Tod auf 0
+        self.car_speed = 180.0  # Starts accelerated, drops to 0 after death
         self.distance_float = 0.0
         self.last_dist = 0
         self.road_scroll = 0.0
@@ -39,7 +39,7 @@ class PulseRacerGame(BaseGame):
             self.game_over = True
         else:
             self.rx = 160.0
-            self.car_speed = 0.0  # Auto steht nach Neustart still
+            self.car_speed = 0.0  # Car stands still after restart
             self.traffic = [t for t in self.traffic if abs(t["y"] - 185.0) > 70]
             self.pylons = [p for p in self.pylons if abs(p["y"] - 185.0) > 70]
             self.roadside_obstacles = [ro for ro in self.roadside_obstacles if abs(ro["y"] - 185.0) > 70]
@@ -63,7 +63,7 @@ class PulseRacerGame(BaseGame):
 
         current_base_speed = self.base_speed + (self.elapsed_time * 3.0)
 
-        # Sanftes Beschleunigen nach einem Respawn
+        # Smooth acceleration after a respawn
         if self.car_speed < current_base_speed:
             self.car_speed = min(current_base_speed, self.car_speed + current_base_speed * dt * 1.5)
 
@@ -93,12 +93,12 @@ class PulseRacerGame(BaseGame):
             if p["y"] > 260 and p in self.pylons:
                 self.pylons.remove(p)
 
-        # Kanaldeckel / Wasserabläufe an den Rändern (immer paarweise links und rechts auf exakt gleicher Höhe)
+        # Channel covers / drains at the edges (always in pairs, left and right at exactly the same height)
         self.roadside_spawn_timer += dt
         if self.roadside_spawn_timer >= 2.4:
             self.roadside_spawn_timer = 0.0
             spawn_y = -30.0
-            # Linker und rechter Ablauf auf exakt gleicher Y-Höhe
+            # Left and right drains at exactly the same Y height
             self.roadside_obstacles.append({"x": 76.0, "y": spawn_y})
             self.roadside_obstacles.append({"x": 244.0, "y": spawn_y})
 
@@ -223,13 +223,13 @@ class PulseRacerGame(BaseGame):
             pygame.draw.line(surface, (255, 255, 255), (130, y_pos), (130, y_pos + 20), 2)
             pygame.draw.line(surface, (255, 255, 255), (190, y_pos), (190, y_pos + 20), 2)
 
-        # Mittlere Pylonen
+        # Middle pylons
         for p in self.pylons:
             px, py = int(p["x"]), int(p["y"])
             pygame.draw.polygon(surface, (255, 128, 0), [(px, py - 6), (px - 5, py + 6), (px + 5, py + 6)])
             pygame.draw.rect(surface, (255, 255, 255), (px - 3, py, 6, 2))
 
-        # Kanaldeckel / Wasserabläufe an den Fahrbahnrändern (Gleiche Höhe links und rechts)
+        # Channel covers / drains at the road edges (same height left and right)
         for ro in self.roadside_obstacles:
             rx, ry = int(ro["x"]), int(ro["y"])
             pygame.draw.circle(surface, (90, 95, 105), (rx, ry), 8)
@@ -237,14 +237,14 @@ class PulseRacerGame(BaseGame):
             pygame.draw.line(surface, (130, 135, 145), (rx - 4, ry), (rx + 4, ry), 2)
             pygame.draw.line(surface, (130, 135, 145), (rx, ry - 4), (rx, ry + 4), 2)
 
-        # Spieler-Fahrzeug
+        # Player vehicle
         px, py = int(self.rx), 185
         pygame.draw.rect(surface, (0, 255, 180), (px - 10, py - 14, 20, 28), border_radius=5)
         pygame.draw.rect(surface, (255, 255, 255), (px - 6, py - 6, 12, 10), border_radius=2)
         pygame.draw.circle(surface, (255, 0, 0), (px - 7, py + 12), 2)
         pygame.draw.circle(surface, (255, 0, 0), (px + 7, py + 12), 2)
 
-        # Andere Fahrzeuge
+        # Other vehicles
         for veh in self.traffic:
             vx, vy = int(veh["x"]), int(veh["y"])
             if veh["type"] == "barrier":
@@ -259,7 +259,7 @@ class PulseRacerGame(BaseGame):
                     pygame.draw.circle(surface, (255, 165, 0), (side_x, vy - 12), 2)
                     pygame.draw.circle(surface, (255, 165, 0), (side_x, vy + 12), 2)
 
-        # Leben-Anzeige oben rechts
+        # Lives display at the top right
         lives_txt = self.font.render(f"LIVES: {self.lives}", True, (255, 215, 0))
         surface.blit(lives_txt, (240, 5))
 

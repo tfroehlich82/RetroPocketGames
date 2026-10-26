@@ -94,7 +94,7 @@ class RetroPongGame(BaseGame):
             self.ball.x, self.ball.y = self.ball.rect.center
             self.paddle_hits += 1
 
-            # Alle 10 Kontakte den Ball aggressiver/schneller machen
+            # Make the ball more aggressive/faster every 10 paddle hits
             if self.paddle_hits % 10 == 0:
                 self.ball.vx *= 1.15
                 self.ball.vy *= 1.15

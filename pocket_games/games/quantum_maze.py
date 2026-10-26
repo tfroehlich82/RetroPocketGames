@@ -112,7 +112,7 @@ class QuantumMazeGame(BaseGame):
 
             p_rect = pygame.Rect(int(self.px), int(self.py), self.pw, self.ph)
             if not p_rect.colliderect(candidate.inflate(20, 20)) and not any(candidate.colliderect(w) for w in self.walls):
-                # Neuer Typ "timed" (Quantum Shard) der nach 10s verschwindet
+                # New "timed" type (quantum shard) that disappears after 10s
                 itype = random.choices(["core", "fragment", "timed", "trap"], weights=[40, 25, 20, 15])[0]
                 self.items.append(
                     {"rect": candidate, "cx": cx, "cy": cy, "type": itype, "timer": 10.0 if itype == "timed" else 0.0}
@@ -177,7 +177,7 @@ class QuantumMazeGame(BaseGame):
 
                     if self.collected_count % 10 == 0:
                         self.level += 1
-                        # Mit jedem 2. Level etwas enger gestalten, aber maximal so eng, dass der Spieler durchkommt (max 10 cols/rows)
+                        # Make the maze slightly narrower every 2nd level, but never so narrow that the player can't get through (max 10 cols/rows)
                         if self.level % 2 == 0 and self.grid_cols < 10:
                             self.grid_cols += 1
                             self.grid_rows += 1
@@ -187,7 +187,7 @@ class QuantumMazeGame(BaseGame):
                     self.add_score(50)
                     self.play_sound("score")
                 elif item["type"] == "timed":
-                    self.add_score(200)  # Extraschatz für zeitkritische Items
+                    self.add_score(200)  # Bonus treasure for time-critical items
                     self.play_sound("confirm")
                 elif item["type"] == "trap":
                     self.add_score(-50)

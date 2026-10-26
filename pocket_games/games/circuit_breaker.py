@@ -24,11 +24,11 @@ class CircuitBreakerGame(BaseGame):
         self._generate_circuit()
 
     def _generate_circuit(self) -> None:
-        # Rastergröße je nach Level anpassen (mehr Nodes ab Lvl 5 und Lvl 15)
+        # Adjust grid size per level (more nodes from Lvl 5 and Lvl 15)
         self.grid_w = min(7, 5 + (self.level // 5))
         self.grid_h = min(5, 4 + (self.level // 15))
 
-        # Anzahl möglicher Zahlen/Zustände ab Level 10 erhöhen
+        # Increase the number of possible values/states from level 10
         num_states = min(5, 3 + (self.level // 10))
 
         self.nodes.clear()
@@ -210,7 +210,7 @@ class CircuitBreakerGame(BaseGame):
                     (rx + chip_w // 2 - lbl.get_width() // 2, ry + chip_h // 2 - lbl.get_height() // 2),
                 )
 
-        # Level-Anzeige und Timer-Leiste
+        # Level display and timer bar
         lvl_info = self.font.render(f"CIRCUIT LEVEL {self.level} ({self.grid_w}x{self.grid_h})", True, (0, 255, 200))
         surface.blit(lvl_info, (160 - lvl_info.get_width() // 2, 8))
 

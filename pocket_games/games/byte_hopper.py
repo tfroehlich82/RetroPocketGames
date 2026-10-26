@@ -62,14 +62,14 @@ class ByteHopperGame(BaseGame):
                 else (random.uniform(10.0, 30.0) if motion_type == "vertical" else 0.0)
             )
 
-            # Effektiven Bewegungsbereich (Bounding Box) der neuen Plattform berechnen
+            # Calculate the effective movement range (bounding box) of the new platform
             eff_min_x = x - rng if motion_type == "horizontal" else x
             eff_max_x = x + w + rng if motion_type == "horizontal" else x + w
 
-            # Prüfen, ob Überschneidungen mit bereits existierenden nahegelegenen Plattformen vorliegen
+            # Check for overlaps with already existing nearby platforms
             overlapping = False
             for p in self.platforms:
-                # Nur Plattformen im gleichen Höhenbereich prüfen
+                # Only check platforms in the same height range
                 if abs(p["base_y"] - y) < 45:
                     p_motion = p["motion"]
                     p_w = p["rect"].w
@@ -77,7 +77,7 @@ class ByteHopperGame(BaseGame):
                     p_min_x = p["base_x"] - p_rng if p_motion == "horizontal" else p["base_x"]
                     p_max_x = p["base_x"] + p_w + p_rng if p_motion == "horizontal" else p["base_x"] + p_w
 
-                    # Wenn sich die Bewegungsräume horizontal zu stark überschneiden
+                    # If the movement ranges overlap too much horizontally
                     if not (eff_max_x < p_min_x - 15 or eff_min_x > p_max_x + 15):
                         overlapping = True
                         break
@@ -118,15 +118,15 @@ class ByteHopperGame(BaseGame):
         if self.game_over:
             return
 
-        # Physik
+        # Physics
         self.vy = apply_gravity(self.vy, 540.0, dt)
         self.px += self.vx * dt
         self.py += self.vy * dt
 
-        # Screen Wrap mit clamp
+        # Screen clamp (no wrap)
         self.px = clamp(self.px, 0.0, 320.0)
 
-        # Partikel aktualisieren
+        # Update particles
         for p in self.particles[:]:
             p["x"] += p["vx"] * dt
             p["y"] += p["vy"] * dt
@@ -134,7 +134,7 @@ class ByteHopperGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
-        # Bewegte Plattformen sanft aktualisieren
+        # Smoothly update moving platforms
         for p in self.platforms:
             p["offset"] += p["speed"] * dt
             if p["motion"] == "horizontal":
@@ -142,7 +142,7 @@ class ByteHopperGame(BaseGame):
             elif p["motion"] == "vertical":
                 p["rect"].y = int(p["base_y"] + math.sin(p["offset"]) * p["range"])
 
-        # Spieler-Kollision mit Plattformen
+        # Player collision with platforms
         player_rect = pygame.Rect(int(self.px) - 6, int(self.py) - 12, 12, 12)
         if self.vy > 0:
             for p in self.platforms:
@@ -185,7 +185,7 @@ class ByteHopperGame(BaseGame):
                             }
                         )
 
-        # Kamera nach oben mitziehen & neue Plattformen generieren
+        # Pull the camera upward & generate new platforms
         if self.py - self.camera_y < 100:
             diff = 100 - (self.py - self.camera_y)
             self.camera_y -= diff

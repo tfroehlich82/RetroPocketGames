@@ -236,14 +236,14 @@ class GravitySlingGame(BaseGame):
             pygame.draw.circle(surface, p["color"], (int(p["x"]), int(p["y"])), 2)
 
         for p in self.planets:
-            # Gravitationsfeld-Radius mit Transparenz-Effekt bzw. feinem Ring
+            # Gravity field radius with a transparency effect, i.e. a fine ring
             pygame.draw.circle(
                 surface, (p["color"][0]//3, p["color"][1]//3, p["color"][2]//3), (p["x"], p["y"]), p["gravity_r"], 1
             )
-            # Planet Basis und Schichten (verbessertes Aussehen)
+            # Planet base and layers (improved look)
             pygame.draw.circle(surface, (15, 25, 45), (p["x"], p["y"]), p["r"] + 2)
             pygame.draw.circle(surface, p["color"], (p["x"], p["y"]), p["r"])
-            # Oberflächen-Details / Krater / Schatten
+            # Surface details / craters / shadow
             pygame.draw.circle(
                 surface, (255, 255, 255), (p["x"] - 3, p["y"] - 3), max(2, p["r"] // 3), 1
             )
@@ -262,7 +262,7 @@ class GravitySlingGame(BaseGame):
             pygame.draw.circle(surface, (255, 215, 0), (px, py), 6)
             pygame.draw.circle(surface, (255, 255, 255), (px, py), 2)
 
-        # Info-Leiste unten
+        # Info bar at the bottom
         pygame.draw.rect(
             surface, (10, 12, 22, 220), (10, 215, 300, 20), border_radius=4
         )

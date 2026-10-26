@@ -24,11 +24,11 @@ class BugHunterGame(BaseGame):
         self.spawn_interval = 1.0
         self.difficulty_timer = 0.0
 
-        # Start-Timer (z.B. 30 Sekunden)
+        # Start timer (e.g. 30 seconds)
         self.time_left = 30.0
-        self.max_time = 60.0  # Obergrenze für den Timer
+        self.max_time = 60.0  # Upper limit for the timer
 
-        # Visuelle Hintergrund-Nodes
+        # Visual background nodes
         self.nodes = [
             {
                 "x": random.randint(20, 300),
@@ -92,8 +92,8 @@ class BugHunterGame(BaseGame):
                     if b["hp"] <= 0:
                         self.bugs.remove(b)
 
-                        # Punkte & Zeitzuwachs je nach Bug-Typ
-                        # Glitch & Armored geben mehr Zeit, Standard & Fast weniger
+                        # Points & time gain depending on bug type
+                        # Glitch & Armored give more time, Standard & Fast less
                         if b["type"] == "glitch":
                             points, time_gain = 75, 2.5
                         elif b["type"] == "armored":
@@ -136,7 +136,7 @@ class BugHunterGame(BaseGame):
         if not self.active or self.paused or self.game_over:
             return
 
-        # Dynamische Timer-Drain-Rate: Läuft mit fortschreitender Spielzeit (elapsed_time) schneller ab
+        # Dynamic timer drain rate: runs down faster as play time (elapsed_time) progresses
         drain_multiplier = 1.0 + (self.elapsed_time * 0.015)
         self.time_left -= dt * drain_multiplier
 
@@ -153,7 +153,7 @@ class BugHunterGame(BaseGame):
             self.spawn_interval -= 0.04
             self.difficulty_timer = 0.0
 
-        # Mit höherem Score werden mehr Käfer gleichzeitig gespawnt
+        # Higher score spawns more bugs at the same time
         max_bugs = min(18, 8 + int(self.score / 100))
         if self.spawn_timer >= self.spawn_interval and len(self.bugs) < max_bugs:
             self.spawn_timer = 0.0
@@ -235,7 +235,7 @@ class BugHunterGame(BaseGame):
                     (bx - 10, by - 16, int(20 * (b["hp"] / b["max_hp"])), 3),
                 )
 
-        # Timer-Balken und Anzeige oben im HUD
+        # Timer bar and display at the top of the HUD
         bar_w = int(120 * (self.time_left / self.max_time))
         bar_color = (0, 255, 120) if self.time_left > 10 else (255, 50, 50)
         pygame.draw.rect(surface, (30, 30, 40), (100, 6, 120, 10), border_radius=4)

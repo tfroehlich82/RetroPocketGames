@@ -69,7 +69,7 @@ class HighScoreScreen:
         game_keys = list(GAME_METADATA.keys())
         max_scroll = max(0, len(game_keys) - self.max_visible)
 
-        # Präzises, ereignisbasiertes Scrollen
+        # Precise, event-based scrolling
         if inp.is_key_just_pressed(pygame.K_UP) or inp.is_key_just_pressed(pygame.K_w):
             self.scroll_offset = max(0, self.scroll_offset - 1)
             self.engine.audio.play("select")
@@ -142,11 +142,11 @@ class HighScoreScreen:
             self.scroll_offset : self.scroll_offset + self.max_visible
         ]
 
-        # Tabellenzeilen rendern
+        # Render table rows
         for i, game_name in enumerate(visible_keys):
             row_y = start_y + i * item_h
 
-            # Alternierende Zeilenhintergründe für bessere Lesbarkeit
+            # Alternating row backgrounds for better readability
             if i % 2 == 0:
                 pygame.draw.rect(
                     surface,
@@ -170,12 +170,12 @@ class HighScoreScreen:
                         val.get("all_time", 0) if isinstance(val, dict) else int(val)
                     )
 
-            # Linke Spalte: Spielname (Trunkierung falls zu lang)
+            # Left column: game name (truncated if too long)
             display_name = game_name if len(game_name) <= 22 else f"{game_name[:20]}.."
             name_txt = self.font.render(display_name, True, (220, 230, 255))
             surface.blit(name_txt, (20, row_y))
 
-            # Rechte Spalte: Score (rechtsbündig an Position x = 285)
+            # Right column: score (right-aligned at x = 285)
             score_txt = self.font.render(
                 f"{score}", True, (0, 255, 180) if score > 0 else (120, 130, 150)
             )
