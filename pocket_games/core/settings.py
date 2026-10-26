@@ -10,6 +10,8 @@ LOG_FILE = DATA_PATH / "pocket_games.log"
 HIGHSCORE_FILE = DATA_PATH / "highscores.json"
 TRANSLATIONS_FILE = DATA_PATH / "translations.json"
 GAME_METADATA_FILE = DATA_PATH / "game_metadata.json"
+TUNING_DIR = DATA_PATH / "tuning"
+CYBER_FLIPPER_TUNING_FILE = TUNING_DIR / "cyber_flipper.json"
 
 
 class Settings:

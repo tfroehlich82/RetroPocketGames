@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pygame
 
 from pocket_games.core.settings import GAME_METADATA_FILE, TRANSLATIONS_FILE
+from pocket_games.core.tuning import load_tuning_file
 
 TRANSLATIONS = json.loads(TRANSLATIONS_FILE.read_text(encoding="iso-8859-1"))
 GAME_METADATA = json.loads(GAME_METADATA_FILE.read_text(encoding="iso-8859-1"))
@@ -141,9 +143,10 @@ class BaseGame:
                 return
             cls.render = wrapped_render
 
-    def __init__(self, engine, game_name: str) -> None:
+    def __init__(self, engine, game_name: str, tuning_file: Path | None = None) -> None:
         self.engine = engine
         self.game_name = game_name
+        self.tuning = load_tuning_file(tuning_file)
         self.active = True
         self.paused = False
         self.game_over = False

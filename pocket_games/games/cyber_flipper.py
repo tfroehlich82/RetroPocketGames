@@ -14,39 +14,17 @@ from dataclasses import dataclass
 
 import pygame
 
+from pocket_games.core.settings import CYBER_FLIPPER_TUNING_FILE
+from pocket_games.core.tuning import get_number, get_section, load_tuning_file
 from pocket_games.games.base import BaseGame
-
-PLAYFIELD_LEFT = 20.0
-PLAYFIELD_RIGHT = 300.0
-PLAYFIELD_TOP = 22.0
-LANE_X = 280.0
-DRAIN_Y = 236.0
-FLIPPER_LENGTH = 48.0
-FLIPPER_THICKNESS = 3.0
-FLIPPER_SPEED = 18.0
-FLIPPER_REST_ANGLE = 0.5
-FLIPPER_ACTIVE_ANGLE = -0.45
-FLIPPER_KICK = 260.0
-LEFT_PIVOT = (95.0, 200.0)
-RIGHT_PIVOT = (225.0, 200.0)
-BALL_RADIUS = 5.0
-BALLS_PER_GAME = 3
-SUBSTEPS = 4
-MAX_BALL_SPEED = 700.0
-BUMPER_BOOST = 1.08
-BUMPER_RESTITUTION = 0.9
-LAUNCH_BASE_SPEED = 260.0
-LAUNCH_SPEED_PER_CHARGE = 10.0
-LAYER_LOW = 0
-LAYER_HIGH = 1
-MAX_CHARGE = 30.0
-PLUNGER_START = (290.0, 190.0)
-BANNER_DURATION = 2.0
-GRID_STEP = 20
 
 Color = tuple[int, int, int]
 Segment = tuple[tuple[float, float], tuple[float, float]]
 BumperSpec = tuple[float, float, float, int, Color]
+LAYER_LOW = 0
+LAYER_HIGH = 1
+BANNER_DURATION = 2.0
+GRID_STEP = 20
 
 
 @dataclass(frozen=True)
@@ -85,13 +63,123 @@ class FlipperLevel:
     upper_bumpers: tuple[BumperSpec, ...] = ()
 
 
-FRAME_WALLS: tuple[Segment, ...] = (
-    ((PLAYFIELD_LEFT, PLAYFIELD_TOP), (PLAYFIELD_LEFT, 215.0)),
-    ((PLAYFIELD_LEFT, PLAYFIELD_TOP), (262.0, PLAYFIELD_TOP)),
-    ((262.0, PLAYFIELD_TOP), (300.0, 60.0)),
-    ((LANE_X, 60.0), (LANE_X, 215.0)),
-    ((PLAYFIELD_RIGHT, 60.0), (PLAYFIELD_RIGHT, 215.0)),
-)
+def _pair(value: object, default: tuple[float, float]) -> tuple[float, float]:
+    """
+    Converts a two-element JSON array into a float tuple.
+
+    :param value: Parsed JSON value, expected to be a list of two numbers.
+    :param default: Tuple returned when the value is missing or malformed.
+    :return: The coordinate pair as floats.
+    """
+    if isinstance(value, list) and len(value) == 2:
+        return float(value[0]), float(value[1])
+    return default
+
+
+def _segment(value: object) -> Segment:
+    """
+    Converts a JSON wall entry of the form [[x1, y1], [x2, y2]] into a segment.
+
+    :param value: Parsed JSON wall entry.
+    :return: The segment as a pair of coordinate pairs.
+    """
+    start, end = value
+    return _pair(start, (0.0, 0.0)), _pair(end, (0.0, 0.0))
+
+
+def _color(value: object, default: Color) -> Color:
+    """
+    Converts a JSON color array into an RGB tuple.
+
+    :param value: Parsed JSON value, expected to be a list of three integers.
+    :param default: Color returned when the value is missing or malformed.
+    :return: The RGB color as a tuple.
+    """
+    if isinstance(value, list) and len(value) == 3:
+        return int(value[0]), int(value[1]), int(value[2])
+    return default
+
+
+def _bumper(value: object) -> BumperSpec:
+    """
+    Converts a JSON bumper entry [x, y, radius, points, color] into a bumper specification.
+
+    :param value: Parsed JSON bumper entry.
+    :return: The bumper specification tuple.
+    """
+    x, y, r, pts, color = value
+    return float(x), float(y), float(r), int(pts), _color(color, (255, 255, 255))
+
+
+def _ramp(value: dict) -> RampZone:
+    """
+    Converts a JSON ramp object into a RampZone.
+
+    :param value: Parsed JSON ramp object with x, y, w, h and to_layer keys.
+    :return: The ramp zone.
+    """
+    return RampZone(
+        float(value["x"]),
+        float(value["y"]),
+        float(value["w"]),
+        float(value["h"]),
+        int(value["to_layer"]),
+    )
+
+
+def _frame_walls(data: dict) -> tuple[Segment, ...]:
+    """
+    Reads the static frame walls shared by every table.
+
+    :param data: The loaded tuning dictionary.
+    :return: The frame wall segments.
+    """
+    return tuple(_segment(entry) for entry in data.get("frame_walls", []))
+
+
+def _build_level(entry: dict) -> FlipperLevel:
+    """
+    Builds one FlipperLevel from its JSON object.
+
+    :param entry: Parsed JSON object describing a single table.
+    :return: The table definition.
+    """
+    bumpers = tuple(_bumper(b) for b in entry.get("bumpers", []))
+    ring = entry.get("ring_bumpers")
+    if ring:
+        bumpers = _ring_bumpers(
+            float(ring["cx"]),
+            float(ring["cy"]),
+            float(ring["radius"]),
+            int(ring["count"]),
+            int(ring["pts"]),
+            _color(ring["color"], (255, 255, 255)),
+        ) + bumpers
+    return FlipperLevel(
+        name=str(entry["name"]),
+        background=_color(entry.get("background"), (8, 10, 20)),
+        grid=_color(entry.get("grid"), (18, 26, 48)),
+        wall=_color(entry.get("wall"), (0, 200, 255)),
+        accent=_color(entry.get("accent"), (0, 255, 200)),
+        gravity=float(entry.get("gravity", 450.0)),
+        wall_restitution=float(entry.get("wall_restitution", 0.7)),
+        score_target=int(entry.get("score_target", 1500)),
+        bumpers=bumpers,
+        walls=tuple(_segment(w) for w in entry.get("walls", [])),
+        ramps=tuple(_ramp(r) for r in entry.get("ramps", [])),
+        upper_walls=tuple(_segment(w) for w in entry.get("upper_walls", [])),
+        upper_bumpers=tuple(_bumper(b) for b in entry.get("upper_bumpers", [])),
+    )
+
+
+def _build_levels(data: dict) -> tuple[FlipperLevel, ...]:
+    """
+    Builds all table definitions from the tuning dictionary.
+
+    :param data: The loaded tuning dictionary.
+    :return: The ordered tuple of tables.
+    """
+    return tuple(_build_level(entry) for entry in data.get("levels", []))
 
 
 def _ring_bumpers(
@@ -115,144 +203,36 @@ def _ring_bumpers(
     return tuple(specs)
 
 
-LEVELS: tuple[FlipperLevel, ...] = (
-    FlipperLevel(
-        name="Neon Grid",
-        background=(8, 10, 20),
-        grid=(18, 26, 48),
-        wall=(0, 200, 255),
-        accent=(0, 255, 200),
-        gravity=450.0,
-        wall_restitution=0.6,
-        score_target=1500,
-        bumpers=(
-            (110.0, 70.0, 16.0, 150, (0, 255, 200)),
-            (190.0, 70.0, 16.0, 150, (255, 0, 120)),
-            (150.0, 115.0, 12.0, 300, (255, 215, 0)),
-        ),
-        walls=(
-            ((45.0, 140.0), (92.0, 196.0)),
-            ((255.0, 140.0), (208.0, 196.0)),
-        ),
-    ),
-    FlipperLevel(
-        name="Circuit Board",
-        background=(4, 14, 10),
-        grid=(10, 36, 24),
-        wall=(0, 255, 120),
-        accent=(180, 255, 120),
-        gravity=430.0,
-        wall_restitution=0.55,
-        score_target=2500,
-        bumpers=(
-            (70.0, 70.0, 7.0, 60, (0, 255, 120)),
-            (110.0, 70.0, 7.0, 60, (0, 255, 120)),
-            (150.0, 70.0, 7.0, 60, (0, 255, 120)),
-            (190.0, 70.0, 7.0, 60, (0, 255, 120)),
-            (230.0, 70.0, 7.0, 60, (0, 255, 120)),
-            (90.0, 105.0, 7.0, 60, (180, 255, 120)),
-            (130.0, 105.0, 7.0, 60, (180, 255, 120)),
-            (170.0, 105.0, 7.0, 60, (180, 255, 120)),
-            (210.0, 105.0, 7.0, 60, (180, 255, 120)),
-        ),
-        walls=(
-            ((40.0, 130.0), (90.0, 130.0)),
-            ((210.0, 130.0), (260.0, 130.0)),
-            ((150.0, 140.0), (150.0, 172.0)),
-        ),
-        ramps=(
-            RampZone(20.0, 90.0, 30.0, 40.0, LAYER_HIGH),
-            RampZone(250.0, 90.0, 28.0, 40.0, LAYER_LOW),
-        ),
-        upper_walls=(
-            ((22.0, 84.0), (60.0, 84.0)),
-            ((120.0, 60.0), (120.0, 84.0)),
-        ),
-        upper_bumpers=((70.0, 60.0, 7.0, 120, (180, 255, 120)),),
-    ),
-    FlipperLevel(
-        name="Data Stream",
-        background=(16, 4, 20),
-        grid=(44, 12, 56),
-        wall=(255, 0, 200),
-        accent=(0, 200, 255),
-        gravity=480.0,
-        wall_restitution=0.62,
-        score_target=3500,
-        bumpers=(
-            (60.0, 60.0, 12.0, 200, (255, 0, 200)),
-            (150.0, 50.0, 14.0, 250, (0, 200, 255)),
-            (240.0, 60.0, 12.0, 200, (255, 0, 200)),
-            (105.0, 100.0, 10.0, 300, (255, 255, 255)),
-            (195.0, 100.0, 10.0, 300, (255, 255, 255)),
-        ),
-        walls=(
-            ((30.0, 110.0), (120.0, 150.0)),
-            ((270.0, 110.0), (180.0, 150.0)),
-            ((150.0, 120.0), (150.0, 145.0)),
-        ),
-        ramps=(
-            RampZone(20.0, 40.0, 40.0, 36.0, LAYER_HIGH),
-            RampZone(240.0, 96.0, 40.0, 22.0, LAYER_LOW),
-        ),
-        upper_walls=(
-            ((20.0, 92.0), (96.0, 92.0)),
-            ((204.0, 92.0), (280.0, 92.0)),
-        ),
-        upper_bumpers=((150.0, 70.0, 10.0, 400, (0, 200, 255)),),
-    ),
-    FlipperLevel(
-        name="Vortex",
-        background=(10, 6, 24),
-        grid=(30, 20, 60),
-        wall=(180, 80, 255),
-        accent=(255, 215, 0),
-        gravity=380.0,
-        wall_restitution=0.65,
-        score_target=4500,
-        bumpers=_ring_bumpers(150.0, 110.0, 45.0, 6, 120, (180, 80, 255))
-        + ((150.0, 110.0, 10.0, 500, (255, 215, 0)),),
-        walls=(
-            ((60.0, 180.0), (100.0, 160.0)),
-            ((240.0, 180.0), (200.0, 160.0)),
-            ((120.0, 30.0), (92.0, 62.0)),
-            ((180.0, 30.0), (208.0, 62.0)),
-        ),
-    ),
-    FlipperLevel(
-        name="Core Meltdown",
-        background=(20, 6, 4),
-        grid=(60, 22, 10),
-        wall=(255, 90, 0),
-        accent=(255, 255, 0),
-        gravity=520.0,
-        wall_restitution=0.6,
-        score_target=6000,
-        bumpers=(
-            (80.0, 50.0, 10.0, 400, (255, 60, 0)),
-            (150.0, 40.0, 10.0, 400, (255, 160, 0)),
-            (220.0, 50.0, 10.0, 400, (255, 60, 0)),
-            (115.0, 95.0, 14.0, 250, (255, 255, 0)),
-            (185.0, 95.0, 14.0, 250, (255, 255, 0)),
-            (150.0, 140.0, 8.0, 800, (255, 255, 255)),
-        ),
-        walls=(
-            ((120.0, 75.0), (120.0, 120.0)),
-            ((180.0, 75.0), (180.0, 120.0)),
-            ((40.0, 150.0), (70.0, 120.0)),
-            ((260.0, 150.0), (230.0, 120.0)),
-        ),
-        ramps=(
-            RampZone(20.0, 60.0, 30.0, 60.0, LAYER_HIGH),
-            RampZone(250.0, 60.0, 30.0, 60.0, LAYER_LOW),
-        ),
-        upper_walls=(
-            ((50.0, 70.0), (120.0, 70.0)),
-            ((180.0, 70.0), (250.0, 70.0)),
-        ),
-        upper_bumpers=((150.0, 100.0, 8.0, 600, (255, 255, 255)),),
-    ),
-)
+TUNING_FILE = CYBER_FLIPPER_TUNING_FILE
+_TUNING = load_tuning_file(TUNING_FILE)
+_PHYSICS = get_section(_TUNING, "physics")
+_PLAYFIELD = get_section(_TUNING, "playfield")
+
+PLAYFIELD_LEFT = get_number(_PLAYFIELD, "left", 20.0)
+PLAYFIELD_RIGHT = get_number(_PLAYFIELD, "right", 300.0)
+PLAYFIELD_TOP = get_number(_PLAYFIELD, "top", 22.0)
+LANE_X = get_number(_PLAYFIELD, "lane_x", 280.0)
+DRAIN_Y = get_number(_PLAYFIELD, "drain_y", 236.0)
+FLIPPER_LENGTH = get_number(_PHYSICS, "flipper_length", 48.0)
+FLIPPER_THICKNESS = get_number(_PHYSICS, "flipper_thickness", 3.0)
+FLIPPER_SPEED = get_number(_PHYSICS, "flipper_speed", 18.0)
+FLIPPER_REST_ANGLE = get_number(_PHYSICS, "flipper_rest_angle", 0.5)
+FLIPPER_ACTIVE_ANGLE = get_number(_PHYSICS, "flipper_active_angle", -0.45)
+FLIPPER_KICK = get_number(_PHYSICS, "flipper_kick", 260.0)
+LEFT_PIVOT = _pair(_PLAYFIELD.get("left_pivot"), (95.0, 200.0))
+RIGHT_PIVOT = _pair(_PLAYFIELD.get("right_pivot"), (225.0, 200.0))
+BALL_RADIUS = get_number(_PHYSICS, "ball_radius", 5.0)
+BALLS_PER_GAME = int(get_number(_PHYSICS, "balls_per_game", 3))
+SUBSTEPS = int(get_number(_PHYSICS, "substeps", 4))
+MAX_BALL_SPEED = get_number(_PHYSICS, "max_ball_speed", 700.0)
+BUMPER_BOOST = get_number(_PHYSICS, "bumper_boost", 1.08)
+BUMPER_RESTITUTION = get_number(_PHYSICS, "bumper_restitution", 0.9)
+LAUNCH_BASE_SPEED = get_number(_PHYSICS, "launch_base_speed", 260.0)
+LAUNCH_SPEED_PER_CHARGE = get_number(_PHYSICS, "launch_speed_per_charge", 10.0)
+MAX_CHARGE = get_number(_PHYSICS, "max_charge", 30.0)
+PLUNGER_START = _pair(_PLAYFIELD.get("plunger_start"), (290.0, 190.0))
+FRAME_WALLS = _frame_walls(_TUNING)
+LEVELS = _build_levels(_TUNING)
 
 
 def _clamp_channel(value: float) -> int:
@@ -399,7 +379,7 @@ class CyberFlipperGame(BaseGame):
     """
 
     def __init__(self, engine, rng: random.Random | None = None) -> None:
-        super().__init__(engine, game_name="Cyber Flipper")
+        super().__init__(engine, game_name="Cyber Flipper", tuning_file=TUNING_FILE)
         self.rng = rng if rng is not None else random.Random(2077)
         self.level_index = 0
         self.level = 1
@@ -809,6 +789,19 @@ class CyberFlipperGame(BaseGame):
             pygame.draw.line(surface, level.grid, (x, PLAYFIELD_TOP), (x, DRAIN_Y), 1)
         for y in range(int(PLAYFIELD_TOP), int(DRAIN_Y), GRID_STEP):
             pygame.draw.line(surface, level.grid, (PLAYFIELD_LEFT, y), (PLAYFIELD_RIGHT, y), 1)
+        self._draw_table_edge(surface, level)
+
+    def _draw_table_edge(self, surface: pygame.Surface, level: FlipperLevel) -> None:
+        """
+        Draws the thick front edge of the table at the drain side, giving the
+        playfield the look of a tilted glass cabinet seen from above.
+
+        :param surface: The surface to draw on.
+        :param level: The active table, providing the theme colors.
+        """
+        edge = pygame.Rect(int(PLAYFIELD_LEFT), int(DRAIN_Y), int(PLAYFIELD_RIGHT - PLAYFIELD_LEFT), 6)
+        pygame.draw.rect(surface, shade(level.background, 0.25), edge)
+        pygame.draw.line(surface, brighten(level.wall, 30), edge.topleft, edge.topright, 1)
 
     def _draw_wall(self, surface: pygame.Surface, segment: Segment, level: FlipperLevel) -> None:
         """
@@ -835,7 +828,8 @@ class CyberFlipperGame(BaseGame):
         x, y, r = int(b["x"]), int(b["y"]), b["r"]
         cap = (255, 255, 255) if b["flash"] > 0 else b["color"]
         pygame.draw.circle(surface, shade(level.background, 0.4), (x + 2, y + 3), r + 2)
-        pygame.draw.circle(surface, shade(b["color"], 0.35), (x, y), r + 2)
+        pygame.draw.circle(surface, shade(b["color"], 0.35), (x, y + 2), r + 2)
+        pygame.draw.circle(surface, shade(cap, 0.7), (x, y + 1), r + 1)
         pygame.draw.circle(surface, cap, (x, y), r)
         pygame.draw.circle(surface, shade(cap, 0.3), (x, y), max(2, r - 4))
         pygame.draw.circle(surface, brighten(cap, 110), (x - r // 3, y - r // 3), max(1, r // 4))

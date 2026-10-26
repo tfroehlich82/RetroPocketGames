@@ -144,7 +144,7 @@ Crystal spawns are random but seeded, so each run is identical.
 
 ## Cyber Flipper (`games/cyber_flipper.py`)
 
-Five tables are defined in the `LEVELS` tuple. Each table has its own gravity, wall restitution, bumper ring, wall layout, and optionally raised decks (`ramps`, `upper_walls`, `upper_bumpers`). The ball is on one of two height layers. A `RampZone` moves the ball to the raised layer while its center is inside the zone. Outside all zones the ball is on the low layer. Only the bumpers and walls of the current layer collide. Table order is fixed, and reaching the table score target advances to the next table. Clearing table 5 wins.
+All tuning values for this game live in `data/tuning/cyber_flipper.json`, so physics and tables can be changed without editing code. The `physics` and `playfield` objects hold the constants, `frame_walls` holds the outer rails, and `levels` holds the five tables. A `ring_bumpers` object expands into a circle of bumpers. Each table has its own gravity, wall restitution, bumper ring, wall layout, and optionally raised decks (`ramps`, `upper_walls`, `upper_bumpers`). The ball is on one of two height layers. A `RampZone` moves the ball to the raised layer while its center is inside the zone. Outside all zones the ball is on the low layer. Only the bumpers and walls of the current layer collide. Table order is fixed, and reaching the table score target advances to the next table. Clearing table 5 wins.
 
 | Parameter | Value | Effect |
 | :--- | :--- | :--- |

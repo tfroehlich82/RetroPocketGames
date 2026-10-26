@@ -205,7 +205,7 @@ class MatrixInvadersGame(BaseGame):
                     self.shield_timer = 8.0
                     self.add_score(150)
                 elif col["type"] == "life":
-                    # Lives must not exceed the maximum player_hp value (3)
+                    # Lives must not exceed the maximum player_hp value (5)
                     self.player_hp = min(self.max_player_hp, self.player_hp + 1)
                     self.add_score(200)
                 self.collectibles.remove(col)

@@ -2,6 +2,25 @@ from __future__ import annotations
 
 import pygame
 
+BACK_KEYS = (pygame.K_ESCAPE, pygame.K_BACKSPACE, pygame.K_x, pygame.K_b)
+LEFT_KEYS = (pygame.K_LEFT, pygame.K_a)
+RIGHT_KEYS = (pygame.K_RIGHT, pygame.K_d)
+UP_KEYS = (pygame.K_UP, pygame.K_w)
+DOWN_KEYS = (pygame.K_DOWN, pygame.K_s)
+ACTION_HELD_KEYS = (
+    pygame.K_SPACE,
+    pygame.K_RETURN,
+    pygame.K_KP_ENTER,
+    pygame.K_a,
+)
+ACTION_JUST_PRESSED_KEYS = (
+    pygame.K_SPACE,
+    pygame.K_RETURN,
+    pygame.K_KP_ENTER,
+    pygame.K_a,
+)
+START_HOLD_SECONDS = 3.0
+
 
 class InputManager:
     """
@@ -75,6 +94,12 @@ class InputManager:
             elif event.type == pygame.JOYBUTTONUP:
                 self.joystick_buttons_pressed.discard(event.button)
 
+    def _any_key_just_pressed(self, keys: tuple[int, ...]) -> bool:
+        return any(self.is_key_just_pressed(key) for key in keys)
+
+    def _any_key_down(self, keys: tuple[int, ...]) -> bool:
+        return any(self.is_key_down(key) for key in keys)
+
     def is_key_just_pressed(self, key: int) -> bool:
         return key in self.keys_just_pressed
 
@@ -97,12 +122,7 @@ class InputManager:
 
     def is_back_pressed(self) -> bool:
         # Button B / X / Esc / Backspace
-        return (
-            self.is_key_just_pressed(pygame.K_ESCAPE)
-            or self.is_key_just_pressed(pygame.K_BACKSPACE)
-            or self.is_key_just_pressed(pygame.K_x)
-            or self.is_key_just_pressed(pygame.K_b)
-        )
+        return self._any_key_just_pressed(BACK_KEYS)
 
     def is_global_exit_pressed(self) -> bool:
         # Global Exit: Start (Hold >3s) / Esc
@@ -116,7 +136,7 @@ class InputManager:
                 self._start_press_start_time = current_time
             else:
                 elapsed = (current_time - self._start_press_start_time) / 1000.0
-                if elapsed >= 3.0:
+                if elapsed >= START_HOLD_SECONDS:
                     self._start_press_start_time = None
                     return True
         else:
@@ -124,33 +144,24 @@ class InputManager:
         return False
 
     def is_left_pressed(self) -> bool:
-        return self.is_key_down(pygame.K_LEFT) or self.is_key_down(pygame.K_a)
+        return self._any_key_down(LEFT_KEYS)
 
     def is_right_pressed(self) -> bool:
-        return self.is_key_down(pygame.K_RIGHT) or self.is_key_down(pygame.K_d)
+        return self._any_key_down(RIGHT_KEYS)
 
     def is_up_pressed(self) -> bool:
-        return self.is_key_down(pygame.K_UP) or self.is_key_down(pygame.K_w)
+        return self._any_key_down(UP_KEYS)
 
     def is_down_pressed(self) -> bool:
-        return self.is_key_down(pygame.K_DOWN) or self.is_key_down(pygame.K_s)
+        return self._any_key_down(DOWN_KEYS)
 
     def is_action_pressed(self) -> bool:
         # Button A / Enter / Space
         return (
-            self.is_key_down(pygame.K_SPACE)
+            self._any_key_down(ACTION_HELD_KEYS)
             or self.is_key_just_pressed(pygame.K_RETURN)
-            or self.is_key_down(pygame.K_RETURN)
-            or self.is_key_down(pygame.K_KP_ENTER)
-            or self.is_key_down(pygame.K_a)
             or self.mouse_clicked
         )
 
     def is_action_just_pressed(self) -> bool:
-        return (
-            self.is_key_just_pressed(pygame.K_SPACE)
-            or self.is_key_just_pressed(pygame.K_RETURN)
-            or self.is_key_just_pressed(pygame.K_KP_ENTER)
-            or self.is_key_just_pressed(pygame.K_a)
-            or self.mouse_clicked
-        )
+        return self._any_key_just_pressed(ACTION_JUST_PRESSED_KEYS) or self.mouse_clicked

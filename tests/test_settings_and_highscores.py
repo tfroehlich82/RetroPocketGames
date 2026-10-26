@@ -87,8 +87,9 @@ class TestSettingsAndHighScores(unittest.TestCase):
         self.assertEqual(len(game_keys), 23)
         self.assertEqual(game_keys[0], "Pixel Drop")
         self.assertEqual(game_keys[1], "Circuit Breaker")
-        self.assertEqual(game_keys[-2], "Cyber Grid Chomp")
-        self.assertEqual(game_keys[-1], "Pixel Platformer")
+        self.assertEqual(game_keys[-3], "Cyber Grid Chomp")
+        self.assertEqual(game_keys[-2], "Pixel Platformer")
+        self.assertEqual(game_keys[-1], "Cyber Flipper")
 
     def test_highscore_screen_rendering(self) -> None:
         engine = MockEngine()
