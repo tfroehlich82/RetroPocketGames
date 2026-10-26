@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Generate Markdown developer documentation from docstrings and comments."""
 
 from __future__ import annotations
