@@ -6,8 +6,8 @@ import unittest
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 import pygame
 
-from pocket_games.games.cyber_flipper import CyberFlipperGame
 from pocket_games.games.base import GAME_METADATA
+from pocket_games.games.cyber_flipper import CyberFlipperGame
 from pocket_games.ui.menu import MainMenu
 
 

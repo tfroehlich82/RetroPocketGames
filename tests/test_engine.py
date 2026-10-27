@@ -249,7 +249,7 @@ class TestRunScene(unittest.TestCase):
                 raise ValueError("boom")
 
         with mock.patch.object(engine_module, "logger") as logger_mock:
-            with self.assertRaises(Exception):
+            with self.assertRaises(Exception):  # noqa: B017
                 eng.run_scene(BrokenScene)
             logger_mock.error.assert_called_once()
             self.assertIn("BrokenScene", logger_mock.error.call_args.args[0])
@@ -261,8 +261,8 @@ class TestRunScene(unittest.TestCase):
             def render(self, surface) -> None:
                 raise RuntimeError("render failed")
 
-        with mock.patch.object(engine_module, "logger"):
-            with self.assertRaises(Exception):
+        with mock.patch.object(engine_module, "logger"):  # noqa: SIM117
+            with self.assertRaises(Exception):  # noqa: B017
                 eng.run_scene(lambda engine: BrokenScoredScene(engine, frames=1))
         eng.highscores.submit_score.assert_not_called()
 

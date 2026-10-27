@@ -19,7 +19,7 @@ def load_tuning_file(path: Path | None) -> dict[str, Any]:
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
-        raise ValueError(f"Tuning file must contain a JSON object: {path}")
+        raise ValueError(f"Tuning file must contain a JSON object: {path}")  # noqa: TRY004
     return data
 
 
