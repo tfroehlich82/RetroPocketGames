@@ -4,11 +4,11 @@
 
 `def t(engine, key: str) -> str`
 
-Translates a specific key based on the language preference found in engine settings or defaults to English. Returns the localized value if available, otherwise returns the original key.
+Translates a specific key based on the language preference found in engine settings or defaults to English. If the key has no entry in the selected language, the English text is returned instead.
 
 :param engine: The object that may contain settings determining the translation language.
 :param key: The string identifier to look up in the translations dictionary.
-:return: The translated string for the key or the original key string itself.
+:return: The translated string for the key, the English fallback, or the original key string itself if no text exists at all.
 
 ## BaseGame
 

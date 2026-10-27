@@ -295,13 +295,13 @@
     },
     "Pixel Platformer": {
         "de": {
-            "desc": "Super-Mario-Jump-and-Run.\n20 Level in vier Welten.",
+            "desc": "Mario-Jump-and-Run.\n20 Level in vier Welten.",
             "goal": "Erreiche die Fahne in allen\n20 Leveln und überlebe.",
             "gameplay": "Stampfe Gegner, sammle Power-ups\nund Münzen für Punkte.",
             "controls": "D-Pad/WASD: Laufen, A: Springen\nZ: Schiessen"
         },
         "en": {
-            "desc": "Super Mario inspired platformer.\n20 levels across four worlds.",
+            "desc": "Mario inspired platformer.\n20 levels across four worlds.",
             "goal": "Reach the flag in all 20 levels.\nSurvive the enemies and hazards.",
             "gameplay": "Stomp enemies, collect power-ups\nand coins for points.",
             "controls": "D-Pad/WASD: Move, A: Jump\nZ: Shoot"

@@ -20,6 +20,11 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(settings.master_volume, 0.6)
         self.assertTrue(settings.fullscreen)
 
+    def test_load_without_master_volume_uses_default(self) -> None:
+        SETTINGS_FILE.write_text('{"sound_enabled": true}', encoding="utf-8")
+        settings = Settings()
+        self.assertEqual(settings.master_volume, 0.6)
+
     def test_save_and_load(self) -> None:
         settings = Settings()
         settings.sound_enabled = False

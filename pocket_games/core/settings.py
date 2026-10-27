@@ -75,7 +75,7 @@ class Settings:
             try:
                 data = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
                 self.sound_enabled = data.get("sound_enabled", True)
-                self.master_volume = data.get("master_volume", 0.8)
+                self.master_volume = data.get("master_volume", 0.6)
                 self.fullscreen = data.get("fullscreen", True)
                 self.language = data.get("language", "English")
             except Exception as e:  # noqa: BLE001

@@ -14,18 +14,18 @@ GAME_METADATA = json.loads(GAME_METADATA_FILE.read_text(encoding="iso-8859-1"))
 
 def t(engine, key: str) -> str:
     """
-    Translates a specific key based on the language preference found in engine settings or defaults to English. Returns the localized value if available, otherwise returns the original key.
+    Translates a specific key based on the language preference found in engine settings or defaults to English. If the key has no entry in the selected language, the English text is returned instead.
 
     :param engine: The object that may contain settings determining the translation language.
     :param key: The string identifier to look up in the translations dictionary.
-    :return: The translated string for the key or the original key string itself.
+    :return: The translated string for the key, the English fallback, or the original key string itself if no text exists at all.
     """
     lang = "English"
     if hasattr(engine, "settings") and engine.settings:
         lang = getattr(engine.settings, "language", "English")
     if lang not in TRANSLATIONS:
         lang = "English"
-    return TRANSLATIONS[lang].get(key, key)
+    return TRANSLATIONS[lang].get(key, TRANSLATIONS["English"].get(key, key))
 
 
 class BaseGame:

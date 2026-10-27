@@ -392,7 +392,7 @@ The handheld features a unified dual-input scheme:
 
 * **Goal:** Reach the flag at the end of each of the 20 levels, surviving enemies and hazards on the way.
 
-* **Gameplay:** Super Mario inspired platformer with 20 levels across grassland, caves, castles and sky stages. Stomp enemies, collect power-ups such as mushrooms, fire flowers and stars, and grab coins for points.
+* **Gameplay:** Mario inspired platformer with 20 levels across grassland, caves, castles and sky stages. Stomp enemies, collect power-ups such as mushrooms, fire flowers and stars, and grab coins for points.
 
 * **Controls:**
 
