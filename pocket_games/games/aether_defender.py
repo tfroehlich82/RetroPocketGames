@@ -12,19 +12,23 @@ import random
 
 import pygame
 
+from pocket_games.core.settings import AETHER_DEFENDER_TUNING_FILE
+from pocket_games.core.tuning import get_number, get_section
 from pocket_games.games.base import BaseGame
 
 
 class AetherDefenderGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, "Aether Defender")
+        super().__init__(engine, "Aether Defender", tuning_file=AETHER_DEFENDER_TUNING_FILE)
+        self._player = get_section(self.tuning, "player")
+        self._enemies_cfg = get_section(self.tuning, "enemies")
         self.px = 160.0
         self.color_state = 0  # 0: Cyan, 1: Magenta (2 colors are plenty)
         self.enemies = []
         self.particles = []
         self.spawn_timer = 0.0
         self.time_counter = 0.0
-        self.lives = 3         # Player starts with 3 lives
+        self.lives = int(get_number(self._player, "lives", 3))  # Player starts with 3 lives
         self.invulnerable_timer = 0.0  # Brief invulnerability after a hit
 
     def handle_input(self) -> None:
@@ -33,10 +37,13 @@ class AetherDefenderGame(BaseGame):
             return
 
         inp = self.engine.input
+        step = get_number(self._player, "speed", 190.0) * 0.016
+        min_x = get_number(self._player, "min_x", 25.0)
+        max_x = get_number(self._player, "max_x", 295.0)
         if inp.is_key_down(pygame.K_LEFT) or inp.is_key_down(pygame.K_a):
-            self.px = max(25, self.px - 190 * 0.016)
+            self.px = max(min_x, self.px - step)
         if inp.is_key_down(pygame.K_RIGHT) or inp.is_key_down(pygame.K_d):
-            self.px = min(295, self.px + 190 * 0.016)
+            self.px = min(max_x, self.px + step)
         if (
             inp.is_key_just_pressed(pygame.K_SPACE)
             or inp.mouse_clicked
@@ -47,7 +54,7 @@ class AetherDefenderGame(BaseGame):
             self.play_sound("bounce")
             colors_list = [(0, 255, 255), (255, 40, 150)]
             curr_col = colors_list[self.color_state]
-            for _ in range(6):
+            for _ in range(int(get_number(self._player, "particles_per_switch", 6))):
                 ang = random.uniform(0, math.pi * 2)
                 self.particles.append(
                     {
@@ -78,17 +85,29 @@ class AetherDefenderGame(BaseGame):
             if p["life"] <= 0:
                 self.particles.remove(p)
 
-        dynamic_spawn_interval = max(0.35, 0.9 - (self.elapsed_time * 0.008))
+        enemies_cfg = self._enemies_cfg
+        dynamic_spawn_interval = max(
+            get_number(enemies_cfg, "spawn_min_interval", 0.35),
+            get_number(enemies_cfg, "spawn_base_interval", 0.9)
+            - (self.elapsed_time * get_number(enemies_cfg, "spawn_ramp", 0.008)),
+        )
         if self.spawn_timer > dynamic_spawn_interval:
             self.spawn_timer = 0.0
-            speed_boost = min(45.0, self.elapsed_time * 0.8)
+            speed_boost = min(
+                get_number(enemies_cfg, "speed_boost_max", 45.0),
+                self.elapsed_time * get_number(enemies_cfg, "speed_ramp", 0.8),
+            )
             # Only enemies in 2 colors (0 or 1)
             self.enemies.append(
                 {
                     "x": random.randint(30, 290),
                     "y": -15,
                     "color": random.randint(0, 1),
-                    "speed": random.uniform(70, 105) + speed_boost,
+                    "speed": random.uniform(
+                        get_number(enemies_cfg, "speed_min", 70.0),
+                        get_number(enemies_cfg, "speed_max", 105.0),
+                    )
+                    + speed_boost,
                 }
             )
 
@@ -100,7 +119,7 @@ class AetherDefenderGame(BaseGame):
             if p_rect.colliderect(e_rect):
                 if e["color"] == self.color_state:
                     self.enemies.remove(e)
-                    self.add_score(40)
+                    self.add_score(int(get_number(self._enemies_cfg, "kill_score", 40)))
                     self.play_sound("score")
                     for _ in range(8):
                         ang = random.uniform(0, math.pi * 2)
@@ -122,7 +141,8 @@ class AetherDefenderGame(BaseGame):
                             self.game_over = True
                             self.play_sound("gameover")
                         else:
-                            self.invulnerable_timer = 1.5  # 1.5s invulnerability after a hit
+                            # Invulnerability after a hit (1.5 s by default)
+                            self.invulnerable_timer = get_number(self._player, "hit_invulnerability", 1.5)
                             self.play_sound("bounce")
 
             if e["y"] > 250:

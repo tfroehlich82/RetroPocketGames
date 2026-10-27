@@ -14,12 +14,16 @@ import random
 import pygame
 
 from pocket_games.core.physics import apply_gravity, clamp
+from pocket_games.core.settings import BYTE_HOPPER_TUNING_FILE
+from pocket_games.core.tuning import get_number, get_section
 from pocket_games.games.base import BaseGame
 
 
 class ByteHopperGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, "Byte Hopper")
+        super().__init__(engine, "Byte Hopper", tuning_file=BYTE_HOPPER_TUNING_FILE)
+        self._player = get_section(self.tuning, "player")
+        self._plat = get_section(self.tuning, "platforms")
         self.px, self.py = 160.0, 180.0
         self.vx, self.vy = 0.0, 0.0
         self.camera_y = 0.0
@@ -44,22 +48,42 @@ class ByteHopperGame(BaseGame):
         y = 140
         while y > -2000:
             self._spawn_platform(y)
-            y -= random.randint(45, 58)
+            y -= random.randint(
+                int(get_number(self._plat, "gap_min", 45)),
+                int(get_number(self._plat, "gap_max", 58)),
+            )
 
     def _spawn_platform(self, y: int) -> None:
         max_attempts = 10
+        plat = self._plat
+        weights = plat["motion_weights"]
         for _ in range(max_attempts):
-            w = random.randint(58, 80)
+            w = random.randint(int(get_number(plat, "width_min", 58)), int(get_number(plat, "width_max", 80)))
             x = random.randint(25, 295 - w)
 
             motion_type = random.choices(
-                ["static", "horizontal", "vertical"], weights=[65, 25, 10]
+                ["static", "horizontal", "vertical"],
+                weights=[weights["static"], weights["horizontal"], weights["vertical"]],
             )[0]
-            speed = random.uniform(4.0, 10.0) if motion_type != "static" else 0.0
+            speed = (
+                random.uniform(get_number(plat, "speed_min", 4.0), get_number(plat, "speed_max", 10.0))
+                if motion_type != "static"
+                else 0.0
+            )
             rng = (
-                random.uniform(20.0, 50.0)
+                random.uniform(
+                    get_number(plat, "horizontal_range_min", 20.0),
+                    get_number(plat, "horizontal_range_max", 50.0),
+                )
                 if motion_type == "horizontal"
-                else (random.uniform(10.0, 30.0) if motion_type == "vertical" else 0.0)
+                else (
+                    random.uniform(
+                        get_number(plat, "vertical_range_min", 10.0),
+                        get_number(plat, "vertical_range_max", 30.0),
+                    )
+                    if motion_type == "vertical"
+                    else 0.0
+                )
             )
 
             # Calculate the effective movement range (bounding box) of the new platform
@@ -70,7 +94,7 @@ class ByteHopperGame(BaseGame):
             overlapping = False
             for p in self.platforms:
                 # Only check platforms in the same height range
-                if abs(p["base_y"] - y) < 45:
+                if abs(p["base_y"] - y) < get_number(plat, "height_clearance", 45):
                     p_motion = p["motion"]
                     p_w = p["rect"].w
                     p_rng = p["range"]
@@ -78,13 +102,16 @@ class ByteHopperGame(BaseGame):
                     p_max_x = p["base_x"] + p_w + p_rng if p_motion == "horizontal" else p["base_x"] + p_w
 
                     # If the movement ranges overlap too much horizontally
-                    if not (eff_max_x < p_min_x - 15 or eff_min_x > p_max_x + 15):
+                    margin = get_number(plat, "overlap_margin", 15)
+                    if not (eff_max_x < p_min_x - margin or eff_min_x > p_max_x + margin):
                         overlapping = True
                         break
 
             if not overlapping or _ == max_attempts - 1:
-                has_coin = random.random() < 0.25
-                has_crystal = not has_coin and (random.random() < 0.12)
+                has_coin = random.random() < get_number(plat, "coin_chance", 0.25)
+                has_crystal = not has_coin and (
+                    random.random() < get_number(plat, "crystal_chance", 0.12)
+                )
 
                 self.platforms.append(
                     {
@@ -108,10 +135,11 @@ class ByteHopperGame(BaseGame):
 
         inp = self.engine.input
         self.vx = 0
+        move_speed = get_number(self._player, "move_speed", 175.0)
         if inp.is_left_pressed():
-            self.vx = -175
+            self.vx = -move_speed
         if inp.is_right_pressed():
-            self.vx = 175
+            self.vx = move_speed
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -119,7 +147,7 @@ class ByteHopperGame(BaseGame):
             return
 
         # Physics
-        self.vy = apply_gravity(self.vy, 540.0, dt)
+        self.vy = apply_gravity(self.vy, get_number(self._player, "gravity", 540.0), dt)
         self.px += self.vx * dt
         self.py += self.vy * dt
 
@@ -150,7 +178,7 @@ class ByteHopperGame(BaseGame):
                     player_rect.colliderect(p["rect"])
                     and abs(player_rect.bottom - p["rect"].top) < 12
                 ):
-                    self.vy = -310
+                    self.vy = get_number(self._player, "jump_speed", -310.0)
                     self.play_sound("bounce")
                     for _ in range(5):
                         self.particles.append(
@@ -166,12 +194,12 @@ class ByteHopperGame(BaseGame):
 
                 if p["has_coin"] and player_rect.colliderect(p["rect"]):
                     p["has_coin"] = False
-                    self.add_score(50)
+                    self.add_score(int(get_number(self._player, "coin_score", 50)))
                     self.play_sound("score")
 
                 if p["has_crystal"] and player_rect.colliderect(p["rect"]):
                     p["has_crystal"] = False
-                    self.add_score(150)
+                    self.add_score(int(get_number(self._player, "crystal_score", 150)))
                     self.play_sound("score")
                     for _ in range(8):
                         self.particles.append(
@@ -186,16 +214,23 @@ class ByteHopperGame(BaseGame):
                         )
 
         # Pull the camera upward & generate new platforms
-        if self.py - self.camera_y < 100:
-            diff = 100 - (self.py - self.camera_y)
+        camera_margin = get_number(self._player, "camera_margin", 100.0)
+        if self.py - self.camera_y < camera_margin:
+            diff = camera_margin - (self.py - self.camera_y)
             self.camera_y -= diff
             self.add_score(int(diff))
 
             highest_platform_y = min(p["rect"].y for p in self.platforms)
             if highest_platform_y > self.camera_y - 150:
-                self._spawn_platform(highest_platform_y - random.randint(45, 58))
+                self._spawn_platform(
+                    highest_platform_y
+                    - random.randint(
+                        int(get_number(self._plat, "gap_min", 45)),
+                        int(get_number(self._plat, "gap_max", 58)),
+                    )
+                )
 
-        if self.py - self.camera_y > 250:
+        if self.py - self.camera_y > get_number(self._player, "fall_death_depth", 250.0):
             self.game_over = True
             self.play_sound("gameover")
 

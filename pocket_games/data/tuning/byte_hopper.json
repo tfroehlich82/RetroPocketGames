@@ -1,0 +1,28 @@
+{
+  "player": {
+    "move_speed": 175.0,
+    "gravity": 540.0,
+    "jump_speed": -310.0,
+    "fall_death_depth": 250.0,
+    "camera_margin": 100.0,
+    "coin_score": 50,
+    "crystal_score": 150
+  },
+  "platforms": {
+    "gap_min": 45,
+    "gap_max": 58,
+    "width_min": 58,
+    "width_max": 80,
+    "coin_chance": 0.25,
+    "crystal_chance": 0.12,
+    "overlap_margin": 15,
+    "height_clearance": 45,
+    "motion_weights": {"static": 65, "horizontal": 25, "vertical": 10},
+    "speed_min": 4.0,
+    "speed_max": 10.0,
+    "horizontal_range_min": 20.0,
+    "horizontal_range_max": 50.0,
+    "vertical_range_min": 10.0,
+    "vertical_range_max": 30.0
+  }
+}

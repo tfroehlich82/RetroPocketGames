@@ -1,0 +1,22 @@
+{
+  "timer": {
+    "start_time": 30.0,
+    "max_time": 60.0,
+    "drain_ramp": 0.015
+  },
+  "spawning": {
+    "initial_interval": 1.0,
+    "min_interval": 0.25,
+    "interval_step": 0.04,
+    "ramp_seconds": 6.0,
+    "base_max_bugs": 8,
+    "absolute_max_bugs": 18,
+    "bugs_per_score": 100
+  },
+  "bug_types": {
+    "standard": {"speed": 22.0, "hp": 1, "weight": 40, "points": 20, "time_gain": 1.0},
+    "fast": {"speed": 52.0, "hp": 1, "weight": 30, "points": 30, "time_gain": 1.2},
+    "armored": {"speed": 14.0, "hp": 2, "weight": 20, "points": 50, "time_gain": 2.0},
+    "glitch": {"speed": 68.0, "hp": 1, "weight": 10, "points": 75, "time_gain": 2.5}
+  }
+}

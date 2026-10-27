@@ -1,0 +1,20 @@
+{
+  "player": {
+    "lives": 3,
+    "speed": 190.0,
+    "min_x": 25.0,
+    "max_x": 295.0,
+    "hit_invulnerability": 1.5,
+    "particles_per_switch": 6
+  },
+  "enemies": {
+    "spawn_base_interval": 0.9,
+    "spawn_min_interval": 0.35,
+    "spawn_ramp": 0.008,
+    "speed_min": 70.0,
+    "speed_max": 105.0,
+    "speed_ramp": 0.8,
+    "speed_boost_max": 45.0,
+    "kill_score": 40
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "game": {
+    "lives": 3,
+    "max_levels": 20
+  },
+  "paddle": {
+    "base_width": 100,
+    "min_width": 45,
+    "shrink_per_level": 3,
+    "y": 215,
+    "height": 8,
+    "move_step": 7
+  },
+  "ball": {
+    "radius": 5,
+    "base_speed": 100.0,
+    "speed_per_level": 7.0,
+    "speed_ramp": 0.004,
+    "max_speed_mod": 1.6
+  },
+  "bricks": {
+    "base_rows": 4,
+    "max_rows": 6,
+    "rows_step_levels": 5,
+    "cols": 7,
+    "tough_from_level": 10,
+    "score_per_level": 25
+  }
+}

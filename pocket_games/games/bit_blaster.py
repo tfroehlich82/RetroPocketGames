@@ -10,6 +10,8 @@ from __future__ import annotations
 import pygame
 
 from pocket_games.core.physics import clamp, handle_paddle_collision
+from pocket_games.core.settings import BIT_BLASTER_TUNING_FILE
+from pocket_games.core.tuning import get_number, get_section
 from pocket_games.games.base import BaseGame
 
 
@@ -35,25 +37,55 @@ class Ball:
 
 class BitBlasterGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, "Bit Blaster")
+        super().__init__(engine, "Bit Blaster", tuning_file=BIT_BLASTER_TUNING_FILE)
+        self._game = get_section(self.tuning, "game")
+        self._paddle_cfg = get_section(self.tuning, "paddle")
+        self._ball_cfg = get_section(self.tuning, "ball")
+        self._brick_cfg = get_section(self.tuning, "bricks")
         self.px = 160.0
-        self.lives = 3
+        self.lives = int(get_number(self._game, "lives", 3))
         self.level = 1
-        self.max_levels = 20
+        self.max_levels = int(get_number(self._game, "max_levels", 20))
 
-        paddle_w = max(45, 100 - (self.level - 1) * 3)
-        self.paddle = Paddle(int(self.px) - paddle_w // 2, 215, paddle_w, 8)
+        paddle_w = self._paddle_width()
+        self.paddle = Paddle(
+            int(self.px) - paddle_w // 2,
+            int(get_number(self._paddle_cfg, "y", 215)),
+            paddle_w,
+            int(get_number(self._paddle_cfg, "height", 8)),
+        )
 
-        initial_speed = 100.0 + (self.level - 1) * 7.0
-        self.ball = Ball(160.0, 120.0, 5, initial_speed, -initial_speed)
+        initial_speed = self._ball_speed()
+        self.ball = Ball(
+            160.0,
+            120.0,
+            int(get_number(self._ball_cfg, "radius", 5)),
+            initial_speed,
+            -initial_speed,
+        )
 
         self.blocks = []
         self._init_blocks()
 
+    def _paddle_width(self) -> int:
+        base = get_number(self._paddle_cfg, "base_width", 100)
+        minimum = get_number(self._paddle_cfg, "min_width", 45)
+        shrink = get_number(self._paddle_cfg, "shrink_per_level", 3)
+        return int(max(minimum, base - (self.level - 1) * shrink))
+
+    def _ball_speed(self) -> float:
+        base = get_number(self._ball_cfg, "base_speed", 100.0)
+        per_level = get_number(self._ball_cfg, "speed_per_level", 7.0)
+        return base + (self.level - 1) * per_level
+
     def _init_blocks(self) -> None:
         self.blocks.clear()
-        rows = min(6, 4 + (self.level - 1) // 5)
-        cols = 7
+        base_rows = int(get_number(self._brick_cfg, "base_rows", 4))
+        max_rows = int(get_number(self._brick_cfg, "max_rows", 6))
+        rows_step = int(get_number(self._brick_cfg, "rows_step_levels", 5))
+        tough_from = int(get_number(self._brick_cfg, "tough_from_level", 10))
+        rows = min(max_rows, base_rows + (self.level - 1) // rows_step)
+        cols = int(get_number(self._brick_cfg, "cols", 7))
 
         colors = [
             (255, 80, 80),
@@ -66,7 +98,7 @@ class BitBlasterGame(BaseGame):
 
         for r in range(rows):
             for c in range(cols):
-                hp = 2 if (self.level >= 10 and r == 0 and c % 2 == 0) else 1
+                hp = 2 if (self.level >= tough_from and r == 0 and c % 2 == 0) else 1
                 color = colors[r % len(colors)]
                 self.blocks.append(
                     {
@@ -79,7 +111,7 @@ class BitBlasterGame(BaseGame):
                 )
 
     def _reset_ball_position(self) -> None:
-        speed = 100.0 + (self.level - 1) * 7.0
+        speed = self._ball_speed()
         self.ball.x, self.ball.y = 160.0, 120.0
         self.ball.vx = speed if self.ball.vx > 0 else -speed
         self.ball.vy = -abs(speed)
@@ -95,10 +127,11 @@ class BitBlasterGame(BaseGame):
         min_x = 5 + half_w
         max_x = 315 - half_w
 
+        step = get_number(self._paddle_cfg, "move_step", 7)
         if inp.is_left_pressed():
-            self.px = max(min_x, self.px - 7)
+            self.px = max(min_x, self.px - step)
         if inp.is_right_pressed():
-            self.px = min(max_x, self.px + 7)
+            self.px = min(max_x, self.px + step)
         if inp.mouse_clicked:
             vx, _vy = self.get_virtual_mouse_pos()
             self.px = clamp(vx, float(min_x), float(max_x))
@@ -110,7 +143,10 @@ class BitBlasterGame(BaseGame):
         if self.game_over:
             return
 
-        speed_mod = min(1.6, 1.0 + (self.elapsed_time * 0.004))
+        speed_mod = min(
+            get_number(self._ball_cfg, "max_speed_mod", 1.6),
+            1.0 + (self.elapsed_time * get_number(self._ball_cfg, "speed_ramp", 0.004)),
+        )
         self.ball.x += self.ball.vx * dt * speed_mod
         self.ball.y += self.ball.vy * dt * speed_mod
         self.ball.update_rect()
@@ -145,7 +181,7 @@ class BitBlasterGame(BaseGame):
                     blk["hp"] -= 1
                     if blk["hp"] <= 0:
                         blk["alive"] = False
-                        self.add_score(25 * self.level)
+                        self.add_score(int(get_number(self._brick_cfg, "score_per_level", 25)) * self.level)
                         self.play_sound("score")
                     else:
                         self.play_sound("hit")
@@ -155,8 +191,7 @@ class BitBlasterGame(BaseGame):
         if all_cleared:
             if self.level < self.max_levels:
                 self.level += 1
-                paddle_w = max(45, 100 - (self.level - 1) * 3)
-                self.paddle.rect.width = paddle_w
+                self.paddle.rect.width = self._paddle_width()
                 self.play_sound("confirm")
                 self._reset_ball_position()
                 self._init_blocks()

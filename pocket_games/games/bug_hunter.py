@@ -12,21 +12,33 @@ import random
 
 import pygame
 
+from pocket_games.core.settings import BUG_HUNTER_TUNING_FILE
+from pocket_games.core.tuning import get_number, get_section
 from pocket_games.games.base import BaseGame
+
+BUG_COLORS = {
+    "standard": (0, 255, 120),
+    "fast": (255, 200, 0),
+    "armored": (200, 50, 255),
+    "glitch": (0, 240, 255),
+}
 
 
 class BugHunterGame(BaseGame):
     def __init__(self, engine) -> None:
-        super().__init__(engine, game_name="Bug Hunter")
+        super().__init__(engine, game_name="Bug Hunter", tuning_file=BUG_HUNTER_TUNING_FILE)
+        self._timer_cfg = get_section(self.tuning, "timer")
+        self._spawn_cfg = get_section(self.tuning, "spawning")
+        self._types_cfg = get_section(self.tuning, "bug_types")
         self.bugs: list[dict] = []
         self.splats: list[dict] = []
         self.spawn_timer = 0.0
-        self.spawn_interval = 1.0
+        self.spawn_interval = get_number(self._spawn_cfg, "initial_interval", 1.0)
         self.difficulty_timer = 0.0
 
         # Start timer (e.g. 30 seconds)
-        self.time_left = 30.0
-        self.max_time = 60.0  # Upper limit for the timer
+        self.time_left = get_number(self._timer_cfg, "start_time", 30.0)
+        self.max_time = get_number(self._timer_cfg, "max_time", 60.0)  # Upper limit for the timer
 
         # Visual background nodes
         self.nodes = [
@@ -41,24 +53,13 @@ class BugHunterGame(BaseGame):
         self.spawn_bug()
 
     def spawn_bug(self) -> None:
-        bug_type = random.choices(
-            ["standard", "fast", "armored", "glitch"], weights=[40, 30, 20, 10]
-        )[0]
-        speed = 22.0
-        hp = 1
-        color = (0, 255, 120)
-
-        if bug_type == "fast":
-            speed = 52.0
-            color = (255, 200, 0)
-        elif bug_type == "armored":
-            speed = 14.0
-            hp = 2
-            color = (200, 50, 255)
-        elif bug_type == "glitch":
-            speed = 68.0
-            hp = 1
-            color = (0, 240, 255)
+        names = list(BUG_COLORS)
+        weights = [get_number(get_section(self._types_cfg, name), "weight", 1) for name in names]
+        bug_type = random.choices(names, weights=weights)[0]
+        type_cfg = get_section(self._types_cfg, bug_type)
+        speed = get_number(type_cfg, "speed", 22.0)
+        hp = int(get_number(type_cfg, "hp", 1))
+        color = BUG_COLORS[bug_type]
 
         self.bugs.append(
             {
@@ -94,14 +95,9 @@ class BugHunterGame(BaseGame):
 
                         # Points & time gain depending on bug type
                         # Glitch & Armored give more time, Standard & Fast less
-                        if b["type"] == "glitch":
-                            points, time_gain = 75, 2.5
-                        elif b["type"] == "armored":
-                            points, time_gain = 50, 2.0
-                        elif b["type"] == "fast":
-                            points, time_gain = 30, 1.2
-                        else:
-                            points, time_gain = 20, 1.0
+                        type_cfg = get_section(self._types_cfg, b["type"])
+                        points = int(get_number(type_cfg, "points", 20))
+                        time_gain = get_number(type_cfg, "time_gain", 1.0)
 
                         self.add_score(points)
                         self.time_left = min(self.max_time, self.time_left + time_gain)
@@ -137,7 +133,7 @@ class BugHunterGame(BaseGame):
             return
 
         # Dynamic timer drain rate: runs down faster as play time (elapsed_time) progresses
-        drain_multiplier = 1.0 + (self.elapsed_time * 0.015)
+        drain_multiplier = 1.0 + (self.elapsed_time * get_number(self._timer_cfg, "drain_ramp", 0.015))
         self.time_left -= dt * drain_multiplier
 
         if self.time_left <= 0.0:
@@ -149,12 +145,17 @@ class BugHunterGame(BaseGame):
         self.spawn_timer += dt
         self.difficulty_timer += dt
 
-        if self.difficulty_timer > 6.0 and self.spawn_interval > 0.25:
-            self.spawn_interval -= 0.04
+        min_interval = get_number(self._spawn_cfg, "min_interval", 0.25)
+        if self.difficulty_timer > get_number(self._spawn_cfg, "ramp_seconds", 6.0) and self.spawn_interval > min_interval:
+            self.spawn_interval -= get_number(self._spawn_cfg, "interval_step", 0.04)
             self.difficulty_timer = 0.0
 
         # Higher score spawns more bugs at the same time
-        max_bugs = min(18, 8 + int(self.score / 100))
+        max_bugs = min(
+            int(get_number(self._spawn_cfg, "absolute_max_bugs", 18)),
+            int(get_number(self._spawn_cfg, "base_max_bugs", 8))
+            + int(self.score / get_number(self._spawn_cfg, "bugs_per_score", 100)),
+        )
         if self.spawn_timer >= self.spawn_interval and len(self.bugs) < max_bugs:
             self.spawn_timer = 0.0
             self.spawn_bug()

@@ -51,6 +51,40 @@ class TestBitBlasterGame(unittest.TestCase):
         # Überprüfen, dass das Paddle in Level 2 auf 97px angepasst wurde (100 - 3)
         self.assertEqual(game.paddle.rect.width, 97)
 
+    def test_lives_and_levels_come_from_tuning(self) -> None:
+        game = BitBlasterGame(MockEngine())
+        self.assertEqual(game.lives, 3)
+        self.assertEqual(game.tuning["game"]["lives"], 3)
+
+    def test_paddle_width_shrinks_to_minimum(self) -> None:
+        game = BitBlasterGame(MockEngine())
+        game.level = 50
+        self.assertEqual(game._paddle_width(), 45)
+
+    def test_ball_speed_increases_per_level(self) -> None:
+        game = BitBlasterGame(MockEngine())
+        self.assertAlmostEqual(game._ball_speed(), 100.0)
+        game.level = 3
+        self.assertAlmostEqual(game._ball_speed(), 114.0)
+
+    def test_brick_rows_grow_and_cap(self) -> None:
+        game = BitBlasterGame(MockEngine())
+        self.assertEqual(len(game.blocks), 4 * 7)
+        game.level = 6
+        game._init_blocks()
+        self.assertEqual(len(game.blocks), 5 * 7)
+        game.level = 30
+        game._init_blocks()
+        self.assertEqual(len(game.blocks), 6 * 7)
+
+    def test_tough_bricks_start_at_configured_level(self) -> None:
+        game = BitBlasterGame(MockEngine())
+        self.assertTrue(all(blk["max_hp"] == 1 for blk in game.blocks))
+        game.level = 10
+        game._init_blocks()
+        self.assertEqual(game.blocks[0]["max_hp"], 2)
+        self.assertEqual(game.blocks[1]["max_hp"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
